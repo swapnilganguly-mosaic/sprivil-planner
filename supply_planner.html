@@ -1234,7 +1234,7 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
   const matchCount = result ? Object.keys(result.updates).length : 0;
 
   return (
-    <div className="modal-backdrop">
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{maxWidth:'520px'}}>
         <div className="modal-header">
           <h2>📦 Import Stock & Open PO — {kind.toUpperCase()}</h2>
