@@ -1379,10 +1379,8 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
                     </td>
                   )}
                   {kind==='pm' && (
-                    <td style={{fontSize:'10px',background:'#f0fdf4'}}>
-                      {m.mosaicCodes && m.mosaicCodes.length > 0
-                        ? m.mosaicCodes.map((c,i) => <div key={i} style={{fontFamily:'monospace',color:'#166534'}}>{c}</div>)
-                        : <span style={{color:'#94a3b8'}}>—</span>}
+                    <td style={{fontSize:'10px',background:'#f0fdf4',fontFamily:'monospace',color:'#166534'}}>
+                      {m.id || <span style={{color:'#94a3b8'}}>—</span>}
                     </td>
                   )}
                   {kind==='rm' && (
