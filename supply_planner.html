@@ -1165,6 +1165,133 @@ function SkuImportModal({ skus, m1Label, m2Label, onApply, onClose }) {
 }
 
 // ─────────────────────────────────────────────
+// REQ QTY IMPORT MODAL (M1 + M2 separate uploads)
+// ─────────────────────────────────────────────
+function ReqImportModal({ kind, materials, vendorMap, onApply, onClose }) {
+  const m1Ref = useRef(); const m2Ref = useRef();
+  const [m1Data, setM1Data] = useState(null); // {matches, unmatched}
+  const [m2Data, setM2Data] = useState(null);
+  const [error, setError] = useState('');
+
+  function detectIdAndQty(p) {
+    const hn = p.headers.map(h => String(h||'').toLowerCase().trim());
+    // qty col: first numeric-looking column that isn't the id col
+    const idIdx = hn.findIndex(h => h.includes('code') || h.includes('name') || h.includes('material') || h.includes('ingredient'));
+    const idCol = p.headers[idIdx >= 0 ? idIdx : 0];
+    const qtyCol = p.headers.find(h => h !== idCol && p.rows.slice(0,5).some(r => isNumeric(r[h]))) || p.headers[1];
+    return { idCol, qtyCol };
+  }
+
+  async function handleFile(file, month) {
+    if (!file) return;
+    setError('');
+    try {
+      const p = await parseUpload(file);
+      const { idCol, qtyCol } = detectIdAndQty(p);
+      const matches = {}; const unmatched = [];
+      for (const row of p.rows) {
+        const rawId = row[idCol];
+        const qty = parseNum(row[qtyCol]);
+        const ids = resolveAll(rawId, materials, vendorMap);
+        if (ids.length === 0) { if (rawId) unmatched.push(String(rawId)); continue; }
+        for (const id of ids) matches[id] = (matches[id] || 0) + qty;
+      }
+      const result = { matches, unmatched, fileName: file.name, idCol, qtyCol };
+      if (month === 1) setM1Data(result);
+      else setM2Data(result);
+    } catch(e) {
+      setError('Failed to parse: ' + e.message);
+    }
+  }
+
+  function applyAll() {
+    const updates = {};
+    if (m1Data) for (const [id, qty] of Object.entries(m1Data.matches)) {
+      if (!updates[id]) updates[id] = { reqM1: 0, reqM2: 0 };
+      updates[id].reqM1 = qty;
+    }
+    if (m2Data) for (const [id, qty] of Object.entries(m2Data.matches)) {
+      if (!updates[id]) updates[id] = { reqM1: updates[id]?.reqM1 || 0, reqM2: 0 };
+      updates[id].reqM2 = qty;
+    }
+    onApply(updates, 'req', true);
+    onClose();
+  }
+
+  function UploadZone({ month, data, fileRef }) {
+    const [drag, setDrag] = useState(false);
+    const label = month === 1 ? 'M1' : 'M2';
+    const matched = data ? Object.keys(data.matches).length : 0;
+    return (
+      <div style={{flex:1,minWidth:'220px'}}>
+        <div style={{fontWeight:'700',fontSize:'13px',marginBottom:'8px',color: month===1?'#1e40af':'#065f46'}}>
+          {label} Required Qty
+        </div>
+        <div
+          className={`upload-zone${drag?' drag':''}`}
+          style={{padding:'16px',minHeight:'90px'}}
+          onDragOver={e=>{e.preventDefault();setDrag(true);}}
+          onDragLeave={()=>setDrag(false)}
+          onDrop={e=>{e.preventDefault();setDrag(false);handleFile(e.dataTransfer.files[0],month);}}
+          onClick={()=>fileRef.current.click()}
+        >
+          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={e=>handleFile(e.target.files[0],month)} />
+          {data ? (
+            <div>
+              <div style={{fontSize:'20px',marginBottom:'4px'}}>✅</div>
+              <div style={{fontSize:'12px',fontWeight:'600',color:'#065f46'}}>{matched} matched</div>
+              <div style={{fontSize:'11px',color:'#64748b',marginTop:'2px'}}>{data.fileName}</div>
+              {data.unmatched.length > 0 && <div style={{fontSize:'11px',color:'#b45309',marginTop:'2px'}}>{data.unmatched.length} unmatched</div>}
+            </div>
+          ) : (
+            <div>
+              <div style={{fontSize:'24px',marginBottom:'4px'}}>📂</div>
+              <div style={{fontSize:'12px',color:'#6366f1'}}>Upload {label} file</div>
+              <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'2px'}}>Identifier + Qty columns</div>
+            </div>
+          )}
+        </div>
+        {data && (
+          <button style={{marginTop:'6px',fontSize:'11px',color:'#64748b',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}
+            onClick={()=>{ month===1?setM1Data(null):setM2Data(null); }}>
+            Clear
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  const canApply = m1Data || m2Data;
+
+  return (
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:'560px'}}>
+        <div className="modal-hdr">
+          <h2>📥 Import Required Qty — {kind.toUpperCase()}</h2>
+          <button className="btn btn-secondary btn-sm" onClick={onClose}>✕ Close</button>
+        </div>
+        <div className="modal-body">
+          <p style={{fontSize:'13px',color:'#64748b',marginBottom:'16px'}}>
+            Upload separate files for M1 and M2. Each file needs a material identifier column and a quantity column.
+          </p>
+          {error && <div className="warn-box">⚠️ {error}</div>}
+          <div style={{display:'flex',gap:'16px',flexWrap:'wrap'}}>
+            <UploadZone month={1} data={m1Data} fileRef={m1Ref} />
+            <UploadZone month={2} data={m2Data} fileRef={m2Ref} />
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={applyAll} disabled={!canApply}>
+            Apply {m1Data && m2Data ? 'M1 & M2' : m1Data ? 'M1' : m2Data ? 'M2' : ''}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // STOCK / OPEN PO IMPORT MODAL
 // ─────────────────────────────────────────────
 function StockPOImportModal({ kind, materials, onApply, onClose }) {
@@ -1617,10 +1744,20 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
         />
       )}
 
-      {modal && modal.type !== 'vendorMap' && modal.type !== 'stockpo' && (
+      {modal && modal.type === 'req' && (
+        <ReqImportModal
+          kind={kind}
+          materials={materials}
+          vendorMap={vendorMap}
+          onApply={handleApply}
+          onClose={()=>setModal(null)}
+        />
+      )}
+
+      {modal && modal.type === 'moq' && (
         <ImportModal
-          title={modal.type==='req' ? `Import Required Qty — ${kind.toUpperCase()}` : `Import MOQ — ${kind.toUpperCase()}`}
-          importType={modal.type}
+          title={`Import MOQ — ${kind.toUpperCase()}`}
+          importType="moq"
           materials={materials}
           vendorMap={vendorMap}
           onApply={handleApply}
