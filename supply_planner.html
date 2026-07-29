@@ -1241,6 +1241,7 @@ function ReqImportModal({ kind, materials, vendorMap, onApply, onClose }) {
               <div style={{fontSize:'20px',marginBottom:'4px'}}>✅</div>
               <div style={{fontSize:'12px',fontWeight:'600',color:'#065f46'}}>{matched} matched</div>
               <div style={{fontSize:'11px',color:'#64748b',marginTop:'2px'}}>{data.fileName}</div>
+              <div style={{fontSize:'10px',color:'#94a3b8',marginTop:'2px'}}>val col: "{data.detectedCols?.valCol}"</div>
               {data.unmatched.length > 0 && <div style={{fontSize:'11px',color:'#b45309',marginTop:'2px'}}>{data.unmatched.length} unmatched</div>}
             </div>
           ) : (
@@ -1326,17 +1327,24 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
       const sprivilMap = buildSprivilMap();
       const hn = p.headers.map(h => String(h||'').toLowerCase().trim());
 
-      // detect code col and value col
+      // Detect code column: prefer header containing 'code', else col 0
       const codeIdx = hn.findIndex(h => h.includes('code'));
       const codeCol = p.headers[codeIdx >= 0 ? codeIdx : 0];
 
-      let valIdx;
+      // Detect value column: try by keyword first, then fall back to first numeric col
+      let valCol = null;
       if (type === 'stock') {
-        valIdx = hn.findIndex(h => h.includes('stock') || h.includes('kg'));
+        const idx = hn.findIndex(h => h.includes('stock') || h.includes('unit') || h.includes('kg'));
+        if (idx >= 0 && p.headers[idx] !== codeCol) valCol = p.headers[idx];
       } else {
-        valIdx = hn.findIndex(h => h.includes('open') || h.includes('po'));
+        const idx = hn.findIndex(h => h.includes('open') || h.includes('po'));
+        if (idx >= 0 && p.headers[idx] !== codeCol) valCol = p.headers[idx];
       }
-      const valCol = p.headers[valIdx >= 0 ? valIdx : 1];
+      // Fallback: first column with mostly numeric values
+      if (!valCol) {
+        const detected = detectQtyCol(p.headers, p.rows, codeCol);
+        valCol = detected.col || p.headers.find(h => h !== codeCol) || p.headers[1];
+      }
 
       const matches = {}; const unmatched = [];
       for (const row of p.rows) {
@@ -1347,7 +1355,7 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
         if (!matId) { if (rawCode) unmatched.push(String(rawCode)); continue; }
         matches[matId] = val;
       }
-      const result = { matches, unmatched, fileName: file.name };
+      const result = { matches, unmatched, fileName: file.name, detectedCols: { codeCol, valCol } };
       if (type === 'stock') setStockData(result);
       else setOpenData(result);
     } catch(e) {
@@ -1401,6 +1409,7 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
               <div style={{fontSize:'20px',marginBottom:'4px'}}>✅</div>
               <div style={{fontSize:'12px',fontWeight:'600',color:'#065f46'}}>{matched} matched</div>
               <div style={{fontSize:'11px',color:'#64748b',marginTop:'2px'}}>{data.fileName}</div>
+              <div style={{fontSize:'10px',color:'#94a3b8',marginTop:'2px'}}>val col: "{data.detectedCols?.valCol}"</div>
               {data.unmatched.length > 0 && <div style={{fontSize:'11px',color:'#b45309',marginTop:'2px'}}>{data.unmatched.length} unmatched</div>}
             </div>
           ) : (
