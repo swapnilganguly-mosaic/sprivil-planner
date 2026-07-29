@@ -1248,7 +1248,7 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
           </p>
 
           <div
-            className={`drop-zone${drag?' drag':''}`}
+            className={`upload-zone${drag?' drag':''}`}
             onDragOver={e=>{e.preventDefault();setDrag(true);}}
             onDragLeave={()=>setDrag(false)}
             onDrop={e=>{e.preventDefault();setDrag(false);handleFile(e.dataTransfer.files[0]);}}
