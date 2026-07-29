@@ -1295,13 +1295,11 @@ function ReqImportModal({ kind, materials, vendorMap, onApply, onClose }) {
 // STOCK / OPEN PO IMPORT MODAL
 // ─────────────────────────────────────────────
 function StockPOImportModal({ kind, materials, onApply, onClose }) {
-  const [drag, setDrag] = useState(false);
-  const [parsed, setParsed] = useState(null);
-  const [result, setResult] = useState(null);
+  const stockRef = useRef(); const openRef = useRef();
+  const [stockData, setStockData] = useState(null);
+  const [openData, setOpenData]   = useState(null);
   const [error, setError] = useState('');
-  const fileRef = useRef();
 
-  // Normalise a Sprivil code: strip MOS_ prefix, trim, uppercase
   function normaliseSprivil(raw) {
     if (!raw) return '';
     let s = String(raw).trim();
@@ -1309,130 +1307,145 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
     return s.toUpperCase();
   }
 
-  // Build lookup: normalisedSprivilCode → material id
   function buildSprivilMap() {
     const map = {};
     for (const m of materials) {
       const sc = normaliseSprivil(m.sprivilCode);
       if (sc) map[sc] = m.id;
+      // for RM: also index by the id itself (which IS the Mosaic code)
+      if (kind === 'rm') map[normaliseSprivil(m.id)] = m.id;
     }
     return map;
   }
 
-  async function handleFile(file) {
+  async function handleFile(file, type) {
     if (!file) return;
-    setError(''); setResult(null);
+    setError('');
     try {
       const p = await parseUpload(file);
-      setParsed(p);
-      runPreview(p);
-    } catch(e) {
-      setError('Failed to parse file: ' + e.message);
-    }
-  }
+      const sprivilMap = buildSprivilMap();
+      const hn = p.headers.map(h => String(h||'').toLowerCase().trim());
 
-  function runPreview(p) {
-    const sprivilMap = buildSprivilMap();
-    const updates = {};
-    const unmatched = [];
+      // detect code col and value col
+      const codeIdx = hn.findIndex(h => h.includes('code'));
+      const codeCol = p.headers[codeIdx >= 0 ? codeIdx : 0];
 
-    // Detect columns by header name (case-insensitive)
-    const hn = p.headers.map(h => String(h||'').toLowerCase().trim());
-    const codeIdx  = hn.findIndex(h => h.includes('code'));
-    const stockIdx = hn.findIndex(h => h.includes('stock') || h.includes('kgs') || h.includes('kg'));
-    const openIdx  = hn.findIndex(h => h.includes('open') || (h.includes('po') && !h.includes('code')));
-    const codeCol  = p.headers[codeIdx  >= 0 ? codeIdx  : 0];
-    const stockCol = p.headers[stockIdx >= 0 ? stockIdx : 2];
-    const openCol  = p.headers[openIdx  >= 0 ? openIdx  : 3];
-
-    for (const row of p.rows) {
-      const rawCode  = row[codeCol];
-      const stockVal = parseNum(row[stockCol]);
-      const openPOVal = parseNum(row[openCol]);
-      const normCode = normaliseSprivil(rawCode);
-      const matId = sprivilMap[normCode];
-      if (!matId) {
-        if (rawCode) unmatched.push(rawCode);
-        continue;
+      let valIdx;
+      if (type === 'stock') {
+        valIdx = hn.findIndex(h => h.includes('stock') || h.includes('kg'));
+      } else {
+        valIdx = hn.findIndex(h => h.includes('open') || h.includes('po'));
       }
-      updates[matId] = { stock: stockVal, openPO: openPOVal };
+      const valCol = p.headers[valIdx >= 0 ? valIdx : 1];
+
+      const matches = {}; const unmatched = [];
+      for (const row of p.rows) {
+        const rawCode = row[codeCol];
+        const val = parseNum(row[valCol]);
+        const normCode = normaliseSprivil(rawCode);
+        const matId = sprivilMap[normCode];
+        if (!matId) { if (rawCode) unmatched.push(String(rawCode)); continue; }
+        matches[matId] = val;
+      }
+      const result = { matches, unmatched, fileName: file.name };
+      if (type === 'stock') setStockData(result);
+      else setOpenData(result);
+    } catch(e) {
+      setError('Failed to parse: ' + e.message);
     }
-    setResult({ updates, unmatched, detectedCols: { codeCol, stockCol, openCol } });
   }
 
-  function applyUpdates() {
-    if (!result) return;
-    onApply(result.updates);
+  function applyAll() {
+    const updates = {};
+    if (stockData) for (const [id, val] of Object.entries(stockData.matches)) {
+      if (!updates[id]) updates[id] = { stock: 0, openPO: 0 };
+      updates[id].stock = val;
+    }
+    if (openData) for (const [id, val] of Object.entries(openData.matches)) {
+      if (!updates[id]) updates[id] = { stock: updates[id]?.stock || 0, openPO: 0 };
+      updates[id].openPO = val;
+    }
+    // preserve existing values for fields not uploaded
+    const finalUpdates = {};
+    for (const [id, u] of Object.entries(updates)) {
+      const existing = materials.find(m => m.id === id) || {};
+      finalUpdates[id] = {
+        stock:  'stock'  in u ? u.stock  : (existing.stock  || 0),
+        openPO: 'openPO' in u ? u.openPO : (existing.openPO || 0),
+      };
+    }
+    onApply(finalUpdates);
     onClose();
   }
 
-  const matchCount = result ? Object.keys(result.updates).length : 0;
-
-  return (
-    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="modal" style={{maxWidth:'520px'}}>
-        <div className="modal-header">
-          <h2>📦 Import Stock & Open PO — {kind.toUpperCase()}</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-        <div className="modal-body">
-          <p style={{fontSize:'13px',color:'#64748b',marginBottom:'12px'}}>
-            Upload Excel with headers: <strong>CODE</strong>, <strong>STOCK</strong>, <strong>Open PO</strong><br/>
-            Column order doesn't matter — matched by header name.
-            {kind==='pm' && <span><br/><em>PM codes accepted as <code>BBSS01</code> or <code>MOS_BBSS01</code></em></span>}
-          </p>
-
-          <div
-            className={`upload-zone${drag?' drag':''}`}
-            onDragOver={e=>{e.preventDefault();setDrag(true);}}
-            onDragLeave={()=>setDrag(false)}
-            onDrop={e=>{e.preventDefault();setDrag(false);handleFile(e.dataTransfer.files[0]);}}
-            onClick={()=>fileRef.current.click()}
-            style={{cursor:'pointer',padding:'24px',textAlign:'center',border:'2px dashed #cbd5e1',borderRadius:'8px',marginBottom:'12px'}}
-          >
-            <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])} />
-            <div style={{fontSize:'32px',marginBottom:'8px'}}>📂</div>
-            <div style={{fontSize:'13px',color:'#64748b'}}>Drop file here or click to browse</div>
-          </div>
-
-          {error && <div style={{color:'#dc2626',fontSize:'13px',marginBottom:'8px'}}>{error}</div>}
-
-          {result && (
+  function Zone({ type, data, fileRef }) {
+    const [drag, setDrag] = useState(false);
+    const isStock = type === 'stock';
+    const label = isStock ? 'Stock' : 'Open PO';
+    const color = isStock ? '#1e40af' : '#065f46';
+    const matched = data ? Object.keys(data.matches).length : 0;
+    return (
+      <div style={{flex:1,minWidth:'200px'}}>
+        <div style={{fontWeight:'700',fontSize:'13px',marginBottom:'8px',color}}>{label}</div>
+        <div
+          className={`upload-zone${drag?' drag':''}`}
+          style={{padding:'16px',minHeight:'90px'}}
+          onDragOver={e=>{e.preventDefault();setDrag(true);}}
+          onDragLeave={()=>setDrag(false)}
+          onDrop={e=>{e.preventDefault();setDrag(false);handleFile(e.dataTransfer.files[0],type);}}
+          onClick={()=>fileRef.current.click()}
+        >
+          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={e=>handleFile(e.target.files[0],type)} />
+          {data ? (
             <div>
-              <div style={{fontSize:'13px',marginBottom:'8px',color:'#065f46',background:'#f0fdf4',padding:'8px 12px',borderRadius:'6px'}}>
-                ✅ {matchCount} material{matchCount!==1?'s':''} matched &nbsp;
-              <span style={{fontSize:'11px',color:'#64748b'}}>
-                [Code: "{result.detectedCols?.codeCol}" · Stock: "{result.detectedCols?.stockCol}" · Open PO: "{result.detectedCols?.openCol}"]
-              </span>
-                {result.unmatched.length > 0 && <span style={{color:'#b45309'}}> · {result.unmatched.length} unmatched: {result.unmatched.slice(0,5).join(', ')}{result.unmatched.length>5?' …':''}</span>}
-              </div>
-              {matchCount > 0 && (
-                <div style={{maxHeight:'200px',overflowY:'auto',fontSize:'12px',border:'1px solid #e2e8f0',borderRadius:'6px'}}>
-                  <table style={{width:'100%',borderCollapse:'collapse'}}>
-                    <thead><tr style={{background:'#f8fafc'}}>
-                      <th style={{padding:'6px 8px',textAlign:'left'}}>Sprivil Code</th>
-                      <th style={{padding:'6px 8px',textAlign:'right'}}>Stock</th>
-                      <th style={{padding:'6px 8px',textAlign:'right'}}>Open PO</th>
-                    </tr></thead>
-                    <tbody>
-                      {materials.filter(m=>result.updates[m.id]).map(m=>(
-                        <tr key={m.id} style={{borderTop:'1px solid #f1f5f9'}}>
-                          <td style={{padding:'5px 8px',fontFamily:'monospace',color:'#b45309'}}>{m.sprivilCode}</td>
-                          <td style={{padding:'5px 8px',textAlign:'right'}}>{result.updates[m.id].stock}</td>
-                          <td style={{padding:'5px 8px',textAlign:'right'}}>{result.updates[m.id].openPO}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              <div style={{fontSize:'20px',marginBottom:'4px'}}>✅</div>
+              <div style={{fontSize:'12px',fontWeight:'600',color:'#065f46'}}>{matched} matched</div>
+              <div style={{fontSize:'11px',color:'#64748b',marginTop:'2px'}}>{data.fileName}</div>
+              {data.unmatched.length > 0 && <div style={{fontSize:'11px',color:'#b45309',marginTop:'2px'}}>{data.unmatched.length} unmatched</div>}
+            </div>
+          ) : (
+            <div>
+              <div style={{fontSize:'24px',marginBottom:'4px'}}>📂</div>
+              <div style={{fontSize:'12px',color:'#6366f1'}}>Upload {label} file</div>
+              <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'2px'}}>Code + {label} columns</div>
             </div>
           )}
         </div>
+        {data && (
+          <button style={{marginTop:'6px',fontSize:'11px',color:'#64748b',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}
+            onClick={()=>isStock?setStockData(null):setOpenData(null)}>
+            Clear
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  const canApply = stockData || openData;
+  const isSeparate = kind === 'pm'; // PM always separate; RM also separate now
+
+  return (
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:'560px'}}>
+        <div className="modal-hdr">
+          <h2>📦 Import Stock & Open PO — {kind.toUpperCase()}</h2>
+          <button className="btn btn-secondary btn-sm" onClick={onClose}>✕ Close</button>
+        </div>
+        <div className="modal-body">
+          <p style={{fontSize:'13px',color:'#64748b',marginBottom:'16px'}}>
+            Upload separate files for Stock and Open PO. Each file needs a <strong>CODE</strong> column and a value column.
+            {kind==='pm' && <span><br/><em>Codes accepted as <code>BBSS01</code> or <code>MOS_BBSS01</code></em></span>}
+          </p>
+          {error && <div className="warn-box">⚠️ {error}</div>}
+          <div style={{display:'flex',gap:'16px',flexWrap:'wrap'}}>
+            <Zone type="stock" data={stockData} fileRef={stockRef} />
+            <Zone type="open"  data={openData}  fileRef={openRef}  />
+          </div>
+        </div>
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={applyUpdates} disabled={!result || matchCount===0}>
-            Apply {matchCount > 0 ? `(${matchCount})` : ''}
+          <button className="btn btn-primary" onClick={applyAll} disabled={!canApply}>
+            Apply {stockData && openData ? 'Stock & Open PO' : stockData ? 'Stock' : openData ? 'Open PO' : ''}
           </button>
         </div>
       </div>
