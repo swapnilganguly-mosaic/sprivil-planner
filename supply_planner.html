@@ -1218,30 +1218,30 @@ function ReqImportModal({ kind, materials, vendorMap, onApply, onClose }) {
     onClose();
   }
 
-  function UploadZone({ month, data, fileRef }) {
-    const [drag, setDrag] = useState(false);
-    const label = month === 1 ? 'M1' : 'M2';
+  const canApply = m1Data || m2Data;
+
+  function renderReqZone(month) {
+    const data    = month === 1 ? m1Data : m2Data;
+    const ref     = month === 1 ? m1Ref  : m2Ref;
+    const label   = month === 1 ? 'M1' : 'M2';
+    const color   = month === 1 ? '#1e40af' : '#065f46';
     const matched = data ? Object.keys(data.matches).length : 0;
     return (
       <div style={{flex:1,minWidth:'220px'}}>
-        <div style={{fontWeight:'700',fontSize:'13px',marginBottom:'8px',color: month===1?'#1e40af':'#065f46'}}>
-          {label} Required Qty
-        </div>
+        <div style={{fontWeight:'700',fontSize:'13px',marginBottom:'8px',color}}>{label} Required Qty</div>
         <div
-          className={`upload-zone${drag?' drag':''}`}
+          className="upload-zone"
           style={{padding:'16px',minHeight:'90px'}}
-          onDragOver={e=>{e.preventDefault();setDrag(true);}}
-          onDragLeave={()=>setDrag(false)}
-          onDrop={e=>{e.preventDefault();setDrag(false);handleFile(e.dataTransfer.files[0],month);}}
-          onClick={()=>fileRef.current.click()}
+          onDragOver={e=>e.preventDefault()}
+          onDrop={e=>{e.preventDefault();handleFile(e.dataTransfer.files[0],month);}}
+          onClick={()=>ref.current.click()}
         >
-          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={e=>handleFile(e.target.files[0],month)} />
+          <input ref={ref} type="file" accept=".csv,.xlsx,.xls" onChange={e=>handleFile(e.target.files[0],month)} />
           {data ? (
             <div>
               <div style={{fontSize:'20px',marginBottom:'4px'}}>✅</div>
               <div style={{fontSize:'12px',fontWeight:'600',color:'#065f46'}}>{matched} matched</div>
               <div style={{fontSize:'11px',color:'#64748b',marginTop:'2px'}}>{data.fileName}</div>
-              <div style={{fontSize:'10px',color:'#94a3b8',marginTop:'2px'}}>val col: "{data.detectedCols?.valCol}"</div>
               {data.unmatched.length > 0 && <div style={{fontSize:'11px',color:'#b45309',marginTop:'2px'}}>{data.unmatched.length} unmatched</div>}
             </div>
           ) : (
@@ -1254,15 +1254,11 @@ function ReqImportModal({ kind, materials, vendorMap, onApply, onClose }) {
         </div>
         {data && (
           <button style={{marginTop:'6px',fontSize:'11px',color:'#64748b',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}
-            onClick={()=>{ month===1?setM1Data(null):setM2Data(null); }}>
-            Clear
-          </button>
+            onClick={()=>month===1?setM1Data(null):setM2Data(null)}>Clear</button>
         )}
       </div>
     );
   }
-
-  const canApply = m1Data || m2Data;
 
   return (
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
@@ -1277,8 +1273,8 @@ function ReqImportModal({ kind, materials, vendorMap, onApply, onClose }) {
           </p>
           {error && <div className="warn-box">⚠️ {error}</div>}
           <div style={{display:'flex',gap:'16px',flexWrap:'wrap'}}>
-            <UploadZone month={1} data={m1Data} fileRef={m1Ref} />
-            <UploadZone month={2} data={m2Data} fileRef={m2Ref} />
+            {renderReqZone(1)}
+            {renderReqZone(2)}
           </div>
         </div>
         <div className="modal-footer">
@@ -1386,30 +1382,31 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
     onClose();
   }
 
-  function Zone({ type, data, fileRef }) {
-    const [drag, setDrag] = useState(false);
+  const canApply = stockData || openData;
+
+  function renderZone(type) {
     const isStock = type === 'stock';
-    const label = isStock ? 'Stock' : 'Open PO';
-    const color = isStock ? '#1e40af' : '#065f46';
+    const data    = isStock ? stockData : openData;
+    const ref     = isStock ? stockRef  : openRef;
+    const label   = isStock ? 'Stock' : 'Open PO';
+    const color   = isStock ? '#1e40af' : '#065f46';
     const matched = data ? Object.keys(data.matches).length : 0;
     return (
       <div style={{flex:1,minWidth:'200px'}}>
         <div style={{fontWeight:'700',fontSize:'13px',marginBottom:'8px',color}}>{label}</div>
         <div
-          className={`upload-zone${drag?' drag':''}`}
+          className="upload-zone"
           style={{padding:'16px',minHeight:'90px'}}
-          onDragOver={e=>{e.preventDefault();setDrag(true);}}
-          onDragLeave={()=>setDrag(false)}
-          onDrop={e=>{e.preventDefault();setDrag(false);handleFile(e.dataTransfer.files[0],type);}}
-          onClick={()=>fileRef.current.click()}
+          onDragOver={e=>e.preventDefault()}
+          onDrop={e=>{e.preventDefault();handleFile(e.dataTransfer.files[0],type);}}
+          onClick={()=>ref.current.click()}
         >
-          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={e=>handleFile(e.target.files[0],type)} />
+          <input ref={ref} type="file" accept=".csv,.xlsx,.xls" onChange={e=>handleFile(e.target.files[0],type)} />
           {data ? (
             <div>
               <div style={{fontSize:'20px',marginBottom:'4px'}}>✅</div>
               <div style={{fontSize:'12px',fontWeight:'600',color:'#065f46'}}>{matched} matched</div>
               <div style={{fontSize:'11px',color:'#64748b',marginTop:'2px'}}>{data.fileName}</div>
-              <div style={{fontSize:'10px',color:'#94a3b8',marginTop:'2px'}}>val col: "{data.detectedCols?.valCol}"</div>
               {data.unmatched.length > 0 && <div style={{fontSize:'11px',color:'#b45309',marginTop:'2px'}}>{data.unmatched.length} unmatched</div>}
             </div>
           ) : (
@@ -1430,9 +1427,6 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
     );
   }
 
-  const canApply = stockData || openData;
-  const isSeparate = kind === 'pm'; // PM always separate; RM also separate now
-
   return (
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{maxWidth:'560px'}}>
@@ -1447,8 +1441,8 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
           </p>
           {error && <div className="warn-box">⚠️ {error}</div>}
           <div style={{display:'flex',gap:'16px',flexWrap:'wrap'}}>
-            <Zone type="stock" data={stockData} fileRef={stockRef} />
-            <Zone type="open"  data={openData}  fileRef={openRef}  />
+            {renderZone('stock')}
+            {renderZone('open')}
           </div>
         </div>
         <div className="modal-footer">
