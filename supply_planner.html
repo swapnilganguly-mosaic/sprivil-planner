@@ -1210,10 +1210,13 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
     const unmatched = [];
 
     // Detect columns by header name (case-insensitive)
-    const hn = p.headers.map(h => String(h||'').toLowerCase());
-    const codeCol  = p.headers[hn.findIndex(h => h.includes('code'))] || p.headers[0];
-    const stockCol = p.headers[hn.findIndex(h => h.includes('stock'))] || p.headers[2];
-    const openCol  = p.headers[hn.findIndex(h => h.includes('open') || h.includes('po'))] || p.headers[3];
+    const hn = p.headers.map(h => String(h||'').toLowerCase().trim());
+    const codeIdx  = hn.findIndex(h => h.includes('code'));
+    const stockIdx = hn.findIndex(h => h.includes('stock') || h.includes('kgs') || h.includes('kg'));
+    const openIdx  = hn.findIndex(h => h.includes('open') || (h.includes('po') && !h.includes('code')));
+    const codeCol  = p.headers[codeIdx  >= 0 ? codeIdx  : 0];
+    const stockCol = p.headers[stockIdx >= 0 ? stockIdx : 2];
+    const openCol  = p.headers[openIdx  >= 0 ? openIdx  : 3];
 
     for (const row of p.rows) {
       const rawCode  = row[codeCol];
@@ -1227,7 +1230,7 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
       }
       updates[matId] = { stock: stockVal, openPO: openPOVal };
     }
-    setResult({ updates, unmatched });
+    setResult({ updates, unmatched, detectedCols: { codeCol, stockCol, openCol } });
   }
 
   function applyUpdates() {
@@ -1270,7 +1273,10 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
           {result && (
             <div>
               <div style={{fontSize:'13px',marginBottom:'8px',color:'#065f46',background:'#f0fdf4',padding:'8px 12px',borderRadius:'6px'}}>
-                ✅ {matchCount} material{matchCount!==1?'s':''} matched
+                ✅ {matchCount} material{matchCount!==1?'s':''} matched &nbsp;
+              <span style={{fontSize:'11px',color:'#64748b'}}>
+                [Code: "{result.detectedCols?.codeCol}" · Stock: "{result.detectedCols?.stockCol}" · Open PO: "{result.detectedCols?.openCol}"]
+              </span>
                 {result.unmatched.length > 0 && <span style={{color:'#b45309'}}> · {result.unmatched.length} unmatched: {result.unmatched.slice(0,5).join(', ')}{result.unmatched.length>5?' …':''}</span>}
               </div>
               {matchCount > 0 && (
