@@ -1209,15 +1209,20 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
     const updates = {};
     const unmatched = [];
 
+    // Detect columns by header name (case-insensitive)
+    const hn = p.headers.map(h => String(h||'').toLowerCase());
+    const codeCol  = p.headers[hn.findIndex(h => h.includes('code'))] || p.headers[0];
+    const stockCol = p.headers[hn.findIndex(h => h.includes('stock'))] || p.headers[2];
+    const openCol  = p.headers[hn.findIndex(h => h.includes('open') || h.includes('po'))] || p.headers[3];
+
     for (const row of p.rows) {
-      // col 0 = sprivil code, col 1 = stock, col 2 = open PO
-      const rawCode = row[p.headers[0]];
-      const stockVal = parseNum(row[p.headers[1]]);
-      const openPOVal = parseNum(row[p.headers[2]]);
+      const rawCode  = row[codeCol];
+      const stockVal = parseNum(row[stockCol]);
+      const openPOVal = parseNum(row[openCol]);
       const normCode = normaliseSprivil(rawCode);
       const matId = sprivilMap[normCode];
       if (!matId) {
-        unmatched.push(rawCode);
+        if (rawCode) unmatched.push(rawCode);
         continue;
       }
       updates[matId] = { stock: stockVal, openPO: openPOVal };
@@ -1242,8 +1247,8 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
         </div>
         <div className="modal-body">
           <p style={{fontSize:'13px',color:'#64748b',marginBottom:'12px'}}>
-            Upload an Excel/CSV with 3 columns:<br/>
-            <strong>Col A:</strong> Sprivil Code &nbsp;|&nbsp; <strong>Col B:</strong> Stock &nbsp;|&nbsp; <strong>Col C:</strong> Open PO
+            Upload Excel with headers: <strong>CODE</strong>, <strong>STOCK</strong>, <strong>Open PO</strong><br/>
+            Column order doesn't matter — matched by header name.
             {kind==='pm' && <span><br/><em>PM codes accepted as <code>BBSS01</code> or <code>MOS_BBSS01</code></em></span>}
           </p>
 
