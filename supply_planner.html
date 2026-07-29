@@ -1165,6 +1165,144 @@ function SkuImportModal({ skus, m1Label, m2Label, onApply, onClose }) {
 }
 
 // ─────────────────────────────────────────────
+// STOCK / OPEN PO IMPORT MODAL
+// ─────────────────────────────────────────────
+function StockPOImportModal({ kind, materials, onApply, onClose }) {
+  const [drag, setDrag] = useState(false);
+  const [parsed, setParsed] = useState(null);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  const fileRef = useRef();
+
+  // Normalise a Sprivil code: strip MOS_ prefix, trim, uppercase
+  function normaliseSprivil(raw) {
+    if (!raw) return '';
+    let s = String(raw).trim();
+    if (s.toUpperCase().startsWith('MOS_')) s = s.slice(4);
+    return s.toUpperCase();
+  }
+
+  // Build lookup: normalisedSprivilCode → material id
+  function buildSprivilMap() {
+    const map = {};
+    for (const m of materials) {
+      const sc = normaliseSprivil(m.sprivilCode);
+      if (sc) map[sc] = m.id;
+    }
+    return map;
+  }
+
+  async function handleFile(file) {
+    if (!file) return;
+    setError(''); setResult(null);
+    try {
+      const p = await parseUpload(file);
+      setParsed(p);
+      runPreview(p);
+    } catch(e) {
+      setError('Failed to parse file: ' + e.message);
+    }
+  }
+
+  function runPreview(p) {
+    const sprivilMap = buildSprivilMap();
+    const updates = {};
+    const unmatched = [];
+
+    for (const row of p.rows) {
+      // col 0 = sprivil code, col 1 = stock, col 2 = open PO
+      const rawCode = row[p.headers[0]];
+      const stockVal = parseNum(row[p.headers[1]]);
+      const openPOVal = parseNum(row[p.headers[2]]);
+      const normCode = normaliseSprivil(rawCode);
+      const matId = sprivilMap[normCode];
+      if (!matId) {
+        unmatched.push(rawCode);
+        continue;
+      }
+      updates[matId] = { stock: stockVal, openPO: openPOVal };
+    }
+    setResult({ updates, unmatched });
+  }
+
+  function applyUpdates() {
+    if (!result) return;
+    onApply(result.updates);
+    onClose();
+  }
+
+  const matchCount = result ? Object.keys(result.updates).length : 0;
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal" style={{maxWidth:'520px'}}>
+        <div className="modal-header">
+          <h2>📦 Import Stock & Open PO — {kind.toUpperCase()}</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <p style={{fontSize:'13px',color:'#64748b',marginBottom:'12px'}}>
+            Upload an Excel/CSV with 3 columns:<br/>
+            <strong>Col A:</strong> Sprivil Code &nbsp;|&nbsp; <strong>Col B:</strong> Stock &nbsp;|&nbsp; <strong>Col C:</strong> Open PO
+            {kind==='pm' && <span><br/><em>PM codes accepted as <code>BBSS01</code> or <code>MOS_BBSS01</code></em></span>}
+          </p>
+
+          <div
+            className={`drop-zone${drag?' drag':''}`}
+            onDragOver={e=>{e.preventDefault();setDrag(true);}}
+            onDragLeave={()=>setDrag(false)}
+            onDrop={e=>{e.preventDefault();setDrag(false);handleFile(e.dataTransfer.files[0]);}}
+            onClick={()=>fileRef.current.click()}
+            style={{cursor:'pointer',padding:'24px',textAlign:'center',border:'2px dashed #cbd5e1',borderRadius:'8px',marginBottom:'12px'}}
+          >
+            <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])} />
+            <div style={{fontSize:'32px',marginBottom:'8px'}}>📂</div>
+            <div style={{fontSize:'13px',color:'#64748b'}}>Drop file here or click to browse</div>
+          </div>
+
+          {error && <div style={{color:'#dc2626',fontSize:'13px',marginBottom:'8px'}}>{error}</div>}
+
+          {result && (
+            <div>
+              <div style={{fontSize:'13px',marginBottom:'8px',color:'#065f46',background:'#f0fdf4',padding:'8px 12px',borderRadius:'6px'}}>
+                ✅ {matchCount} material{matchCount!==1?'s':''} matched
+                {result.unmatched.length > 0 && <span style={{color:'#b45309'}}> · {result.unmatched.length} unmatched: {result.unmatched.slice(0,5).join(', ')}{result.unmatched.length>5?' …':''}</span>}
+              </div>
+              {matchCount > 0 && (
+                <div style={{maxHeight:'200px',overflowY:'auto',fontSize:'12px',border:'1px solid #e2e8f0',borderRadius:'6px'}}>
+                  <table style={{width:'100%',borderCollapse:'collapse'}}>
+                    <thead><tr style={{background:'#f8fafc'}}>
+                      <th style={{padding:'6px 8px',textAlign:'left'}}>Sprivil Code</th>
+                      <th style={{padding:'6px 8px',textAlign:'right'}}>Stock</th>
+                      <th style={{padding:'6px 8px',textAlign:'right'}}>Open PO</th>
+                    </tr></thead>
+                    <tbody>
+                      {materials.filter(m=>result.updates[m.id]).map(m=>(
+                        <tr key={m.id} style={{borderTop:'1px solid #f1f5f9'}}>
+                          <td style={{padding:'5px 8px',fontFamily:'monospace',color:'#b45309'}}>{m.sprivilCode}</td>
+                          <td style={{padding:'5px 8px',textAlign:'right'}}>{result.updates[m.id].stock}</td>
+                          <td style={{padding:'5px 8px',textAlign:'right'}}>{result.updates[m.id].openPO}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={applyUpdates} disabled={!result || matchCount===0}>
+            Apply {matchCount > 0 ? `(${matchCount})` : ''}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // SUPPLY ENTRY TAB
 // ─────────────────────────────────────────────
 function SupplyEntryTab({ skus, onUpdateSkus, m1Label, m2Label }) {
@@ -1264,6 +1402,15 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
     setModal(null);
   }
 
+  function handleStockPOApply(updates) {
+    const updated = materials.map(m => {
+      if (!updates[m.id]) return m;
+      return { ...m, stock: updates[m.id].stock, openPO: updates[m.id].openPO };
+    });
+    onUpdate(kind, updated);
+    setModal(null);
+  }
+
   function clearReq() {
     onUpdate(kind, materials.map(m => ({ ...m, reqM1: 0, reqM2: 0 })));
   }
@@ -1297,6 +1444,7 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
           <option value="excess">Excess MOQ only</option>
         </select>
         <div className="spacer"/>
+        <button className="btn btn-secondary" onClick={()=>setModal({type:'stockpo'})} style={{background:'#1e40af',color:'#fff',border:'none'}}>📦 Import Stock / Open PO</button>
         <button className="btn btn-secondary" onClick={()=>setModal({type:'req'})}>📥 Import Req Qty</button>
         <button className="btn btn-secondary" onClick={()=>setModal({type:'moq'})}>📥 Import MOQ</button>
         <button className="btn btn-secondary" onClick={clearReq} title="Reset all required quantities to 0">🗑 Clear Req</button>
@@ -1449,7 +1597,16 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
         </table>
       </div>
 
-      {modal && modal.type !== 'vendorMap' && (
+      {modal && modal.type === 'stockpo' && (
+        <StockPOImportModal
+          kind={kind}
+          materials={materials}
+          onApply={handleStockPOApply}
+          onClose={()=>setModal(null)}
+        />
+      )}
+
+      {modal && modal.type !== 'vendorMap' && modal.type !== 'stockpo' && (
         <ImportModal
           title={modal.type==='req' ? `Import Required Qty — ${kind.toUpperCase()}` : `Import MOQ — ${kind.toUpperCase()}`}
           importType={modal.type}
