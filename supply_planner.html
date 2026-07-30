@@ -247,7 +247,6 @@ function mkSKU(code, name) {
 const SEED_SKUS = [
   mkSKU('MWBWHFP.00575.B0_N',     'BB Hair Growth Serum Roll on -25ml'),
   mkSKU('MWBWHFP.00672.B0_N',     'BB Hair Growth Serum Roll on- 50ml'),
-  mkSKU('MWBWHFP.00541.B0_N',     'BB Hair Growth Serum- 50ml'),
   mkSKU('MWMMBDP.0132.AAAA.B0_R','BeardGro Serum- 30ml'),
   mkSKU('MWBWHFP.00637.B0_N',     'BB Hair Growth Serum- 10ml'),
   mkSKU('MWMMHRP.6298.AAAA.B0_N','MM Advanced Hair Serum-30ml'),
@@ -324,7 +323,7 @@ function saveState(state) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
 }
 
-const LS_KEY_SKUS = 'sprivil_skus_v1';
+const LS_KEY_SKUS = 'sprivil_skus_v2';
 function loadSkus() {
   try {
     const s = localStorage.getItem(LS_KEY_SKUS);
