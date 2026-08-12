@@ -256,6 +256,106 @@ const SEED_SKUS = [
   mkSKU('MWBWSKP.00587.B0_N',     'BB Brow & Lash Growth Serum- 5ml'),
 ];
 
+// ─────────────────────────────────────────────
+// BOM DATA
+// ─────────────────────────────────────────────
+
+// Formulation BOM: tradeName → % in formula
+const SEED_BOM_RM = {
+  HairGrowthSerum: [
+    {tradeName:'Water',pct:52.319},{tradeName:'Propanediol',pct:12},{tradeName:'Butylene Glycol',pct:10},
+    {tradeName:'Propylene Glycol',pct:10},{tradeName:'Redensyl',pct:3},{tradeName:'Fenugreek Extract',pct:3},
+    {tradeName:'Aminexil',pct:2},{tradeName:'Anagain',pct:2},{tradeName:'Procapil',pct:1},
+    {tradeName:'Phenoxyethanol (and) Ethylhexylglycerin',pct:1},{tradeName:'Red Clover Extract',pct:1},
+    {tradeName:'Rosemary extract',pct:3},{tradeName:'D-Panthanol',pct:0.5},{tradeName:'Glycerin',pct:0.5},
+    {tradeName:'Moringa Extract',pct:0.3},{tradeName:'Disodium EDTA',pct:0.1},{tradeName:'Baicapil',pct:0.1},
+    {tradeName:'Saw Palmetto Extract',pct:0.1},{tradeName:'Fragrance',pct:0.08},{tradeName:'CI 19140',pct:0.001},
+  ],
+  IntimateWash: [
+    {tradeName:'Purified Water',pct:80.45},{tradeName:'Disodium EDTA',pct:0.01},{tradeName:'Genecare OSMS BA',pct:1},
+    {tradeName:'Cocamidopropyl Betaine',pct:4},{tradeName:'Alfodet XL 46',pct:4},{tradeName:'Rewopol SB FA 30 B',pct:4.5},
+    {tradeName:'FM 1200',pct:1},{tradeName:'Glycerine',pct:0.2},{tradeName:'Olivem 300',pct:0.7},
+    {tradeName:'Chamomile Extract',pct:0.5},{tradeName:'Tea Tree Oil',pct:0.01},{tradeName:'Aloe Vera Extract',pct:0.6},
+    {tradeName:'Arnica Extract',pct:0.5},{tradeName:'Sage Extract',pct:0.3},{tradeName:'Pine Extract',pct:0.5},
+    {tradeName:'Microcare PEHG',pct:0.6},{tradeName:'D-Panthenol',pct:0.2},{tradeName:'Citric Acid',pct:0.5},
+    {tradeName:'Fragrance',pct:0.8},{tradeName:'Brilliant Blue',pct:0.1},{tradeName:'Pea Green',pct:0.1},
+  ],
+  BeardGroSerum: [
+    {tradeName:'Purified Water',pct:55.3},{tradeName:'Butylene Glycol',pct:16},{tradeName:'Propylene Glycol',pct:10},
+    {tradeName:'Propanediol',pct:10},{tradeName:'Moringa Extract',pct:0.1},{tradeName:'Red Clover Extract',pct:0.1},
+    {tradeName:'Tribulus Terrestris Extract',pct:0.1},{tradeName:'Rosemary extract',pct:1},
+    {tradeName:'Anagain',pct:4},{tradeName:'Aminexil',pct:2},
+    {tradeName:'Phenoxyethanol (and) Ethylhexylglycerin',pct:1},{tradeName:'Fragrance',pct:0.1},
+    {tradeName:'Xanthan Gum',pct:0.1},{tradeName:'Hydroxyethyl Cellulose',pct:0.1},{tradeName:'Sodium Gluconate',pct:0.1},
+  ],
+  AdvancedHairSerum: [
+    {tradeName:'Purified Water',pct:52.719},{tradeName:'Zemea',pct:12},{tradeName:'Butylene Glycol',pct:10},
+    {tradeName:'Saw Palmetto Extract',pct:0.5},{tradeName:'Procapil',pct:3},{tradeName:'Fenugreek Extract',pct:0.3},
+    {tradeName:'Moringa Extract',pct:0.3},{tradeName:'Redensyl',pct:3},{tradeName:'Baicapil',pct:2},
+    {tradeName:'Rosemary extract',pct:1},{tradeName:'D-Panthanol',pct:0.5},{tradeName:'Glycerine',pct:0.5},
+    {tradeName:'Disodium EDTA',pct:0.1},{tradeName:'Fragrance',pct:0.08},{tradeName:'Microcare PEHG',pct:1},
+    {tradeName:'Propylene Glycol',pct:10},{tradeName:'Anagain',pct:2},{tradeName:'Aminexil',pct:1},
+  ],
+  BrowLashSerum: [
+    {tradeName:'Purified Water',pct:61.78},{tradeName:'Butylene Glycol',pct:16},{tradeName:'Propanediol',pct:10},
+    {tradeName:'Anagain',pct:4},{tradeName:'Redensyl',pct:3},{tradeName:'Aminexil',pct:1},
+    {tradeName:'Biotinoyl Tripeptide-1',pct:2},{tradeName:'Phenoxyethanol (and) Ethylhexylglycerin',pct:1},
+    {tradeName:'Rosemary extract',pct:1},{tradeName:'Xanthan Gum',pct:0.12},{tradeName:'Hydroxyethyl Cellulose',pct:0.1},
+  ],
+  HairDensitySerum: [
+    {tradeName:'Purified Water',pct:44.65},{tradeName:'Propanediol',pct:12},{tradeName:'Butylene Glycol',pct:10},
+    {tradeName:'Propylene Glycol',pct:10},{tradeName:'Redensyl',pct:3},{tradeName:'Fenugreek Extract',pct:3},
+    {tradeName:'Anagain',pct:4},{tradeName:'Aminexil',pct:2},{tradeName:'Procapil',pct:1},
+    {tradeName:'Phenoxyethanol (and) Ethylhexylglycerin',pct:1},{tradeName:'Red Clover Extract',pct:1},
+    {tradeName:'Rosemary extract',pct:3},{tradeName:'Panthenol',pct:0.5},{tradeName:'Glycerin',pct:0.5},
+    {tradeName:'Moringa Extract',pct:0.3},{tradeName:'Disodium EDTA',pct:0.1},{tradeName:'Baicapil',pct:0.1},
+    {tradeName:'Xanthan Gum',pct:0.15},{tradeName:'Fragrance',pct:0.2},{tradeName:'Saw Palmetto Extract',pct:1},
+    {tradeName:'Niacinamide',pct:1},{tradeName:'Centella Asiatica Extract',pct:1},{tradeName:'Copper Tripeptide-1',pct:0.5},
+  ],
+};
+
+// Packaging BOM: SKU code → [{sprivilCode, count}]
+const SEED_BOM_PM = {
+  'MWBWHFP.00637.B0_N': [
+    {sprivilCode:'PGBBB10',count:1},{sprivilCode:'BBHGSL01',count:1},
+    {sprivilCode:'BBHGSC01',count:1},{sprivilCode:'PLBBW1',count:1},
+  ],
+  'MWBWHFP.00672.B0_N': [
+    {sprivilCode:'BBHGST50',count:1},{sprivilCode:'BBHGSC50',count:1},
+    {sprivilCode:'BBHGSL50',count:1},{sprivilCode:'BBSS01',count:1},
+  ],
+  'MWBWSKP.00587.B0_N': [
+    {sprivilCode:'PMCBB32',count:1},{sprivilCode:'BBSS01',count:1},
+    {sprivilCode:'PBTGN33',count:1},{sprivilCode:'PBL001',count:1},
+  ],
+  'MWMMBDP.0132.AAAA.B0_R': [
+    {sprivilCode:'PGBBB5',count:3},{sprivilCode:'PDGTN9',count:3},
+    {sprivilCode:'PMCMM51',count:1},{sprivilCode:'PLBMM44',count:1},
+    {sprivilCode:'PMPG01',count:2},{sprivilCode:'MMSS01',count:1},
+  ],
+  'MWMMHRP.6298.AAAA.B0_N': [
+    {sprivilCode:'PGBBB5',count:3},{sprivilCode:'PDGTN9',count:3},
+    {sprivilCode:'PMMC01',count:1},{sprivilCode:'PMBBLB01',count:1},
+  ],
+  'MWMMHTP.0001.AAAA.B0_N': [
+    {sprivilCode:'PPUGN4',count:1},{sprivilCode:'PBTGN8',count:1},
+    {sprivilCode:'PLBMM21',count:1},{sprivilCode:'POIGN45',count:1},
+  ],
+};
+
+// SKU → formulation key + fill weight (grams)
+const SKU_FORMULA = {
+  'MWBWHFP.00575.B0_N': {key:'HairGrowthSerum',  fillG:25},
+  'MWBWHFP.00672.B0_N': {key:'HairGrowthSerum',  fillG:50},
+  'MWBWHFP.00637.B0_N': {key:'HairGrowthSerum',  fillG:10},
+  'MWMMBDP.0132.AAAA.B0_R': {key:'BeardGroSerum',   fillG:30},
+  'MWMMHRP.6298.AAAA.B0_N': {key:'AdvancedHairSerum',fillG:30},
+  'MWMMHTP.0001.AAAA.B0_N': {key:'IntimateWash',    fillG:120},
+  'MWBWHFP.00188.BO_N': {key:'HairDensitySerum', fillG:25},
+  'MWBWSKP.00587.B0_N': {key:'BrowLashSerum',    fillG:5},
+  // MWBWSKP.00771.B0_N — formula not available
+};
+
 const SEED_PM = [
   mkPM('PBWSTK011000052','PBWSTK011000052','BW_Tamper Proof Sticker',[],'BBSS01',[]),
   mkPM('PCOBOT013000331','PCOBOT013000331','CO_PP Bottle_30 ml',[],'PBTGN26 -1',[]),
@@ -393,6 +493,53 @@ function resolveInternal(raw, materials) {
     if (norm(m.code) === n || norm(m.name) === n) hits.add(m.id);
   }
   return [...hits];
+}
+
+// Compute required RM/PM quantities from SKU supply numbers using embedded BOM
+function extractBomQty(skus, rmMaterials, pmMaterials, vendorMap) {
+  const rmM1 = {}, rmM2 = {}, pmM1 = {}, pmM2 = {};
+
+  // Build PM sprivil-code → id map
+  const pmSprivilMap = {};
+  for (const m of pmMaterials) {
+    let sc = (m.sprivilCode || '').trim();
+    if (sc.toUpperCase().startsWith('MOS_')) sc = sc.slice(4);
+    if (sc) pmSprivilMap[sc.toUpperCase()] = m.id;
+  }
+
+  for (const sku of skus) {
+    const m1qty = sku.supplyM1 || 0;
+    const m2qty = sku.supplyM2 || 0;
+    if (!m1qty && !m2qty) continue;
+
+    // --- RM formulation ---
+    const f = SKU_FORMULA[sku.code];
+    if (f) {
+      const ings = SEED_BOM_RM[f.key] || [];
+      const fillKg = f.fillG / 1000;
+      for (const ing of ings) {
+        const ids = resolveAll(ing.tradeName, rmMaterials, vendorMap);
+        for (const id of ids) {
+          rmM1[id] = (rmM1[id] || 0) + (ing.pct / 100) * fillKg * m1qty;
+          rmM2[id] = (rmM2[id] || 0) + (ing.pct / 100) * fillKg * m2qty;
+        }
+      }
+    }
+
+    // --- PM packaging ---
+    const pkgItems = SEED_BOM_PM[sku.code] || [];
+    for (const pkg of pkgItems) {
+      let sc = (pkg.sprivilCode || '').trim();
+      if (sc.toUpperCase().startsWith('MOS_')) sc = sc.slice(4);
+      const id = pmSprivilMap[sc.toUpperCase()];
+      if (id) {
+        pmM1[id] = (pmM1[id] || 0) + (pkg.count || 1) * m1qty;
+        pmM2[id] = (pmM2[id] || 0) + (pkg.count || 1) * m2qty;
+      }
+    }
+  }
+
+  return { rmM1, rmM2, pmM1, pmM2 };
 }
 
 function isNumeric(v) {
@@ -1458,7 +1605,7 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
 // ─────────────────────────────────────────────
 // SUPPLY ENTRY TAB
 // ─────────────────────────────────────────────
-function SupplyEntryTab({ skus, onUpdateSkus, m1Label, m2Label }) {
+function SupplyEntryTab({ skus, onUpdateSkus, onExtract, m1Label, m2Label }) {
   const [search, setSearch] = useState('');
   const [showImport, setShowImport] = useState(false);
   const filtered = search
@@ -1478,9 +1625,8 @@ function SupplyEntryTab({ skus, onUpdateSkus, m1Label, m2Label }) {
         <button className="btn btn-secondary" onClick={()=>setShowImport(true)}>📥 Import Supply Numbers</button>
         <button
           className="btn btn-primary"
-          disabled
-          title="Will be linked to external tool"
-          style={{opacity:0.6,cursor:'not-allowed'}}
+          onClick={onExtract}
+          title="Calculate RM & PM required quantities from SKU supply numbers using embedded BOM"
         >
           ⚡ Extract Required Quantities
         </button>
@@ -1928,6 +2074,21 @@ function App() {
     }).length;
   }, [pmMaterials]);
 
+  function handleExtractBom() {
+    const { rmM1, rmM2, pmM1, pmM2 } = extractBomQty(skus, rmMaterials, pmMaterials, vendorMap);
+    setRm(rmMaterials.map(m => ({
+      ...m,
+      reqM1: rmM1[m.id] != null ? Math.round(rmM1[m.id] * 1000) / 1000 : m.reqM1,
+      reqM2: rmM2[m.id] != null ? Math.round(rmM2[m.id] * 1000) / 1000 : m.reqM2,
+    })));
+    setPm(pmMaterials.map(m => ({
+      ...m,
+      reqM1: pmM1[m.id] != null ? Math.round(pmM1[m.id]) : m.reqM1,
+      reqM2: pmM2[m.id] != null ? Math.round(pmM2[m.id]) : m.reqM2,
+    })));
+    alert('✅ Required quantities updated in Consolidated RM & PM tabs!');
+  }
+
   function resetAll() {
     if (!window.confirm('Reset ALL data to defaults? This cannot be undone.')) return;
     setRm(SEED_RM);
@@ -1977,6 +2138,7 @@ function App() {
           <SupplyEntryTab
             skus={skus}
             onUpdateSkus={setSkus}
+            onExtract={handleExtractBom}
             m1Label={m1Label}
             m2Label={m2Label}
           />
