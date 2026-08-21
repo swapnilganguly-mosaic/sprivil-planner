@@ -497,19 +497,18 @@ function loadFactories() {
     const s = localStorage.getItem(LS_FACTORIES);
     if (!s) return null;
     const factories = JSON.parse(s);
-    // Migration: clear sprivilCodes for non-Sprivil factories that incorrectly inherited Sprivil codes
-    const sprivilCodeSet = new Set(SEED_RM.map(m => m.sprivilCode).concat(SEED_PM.map(m => m.sprivilCode)).filter(Boolean));
+    // Migration: non-Sprivil factories that inherited Sprivil's SEED materials should start empty.
+    // Detect by checking if all material IDs match SEED_RM/SEED_PM ids (i.e. still the seed data).
+    const seedRmIds = new Set(SEED_RM.map(m => m.id));
+    const seedPmIds = new Set(SEED_PM.map(m => m.id));
     return factories.map(f => {
       if (f.id === 'sprivil') return f;
-      // Check if this factory has ONLY Sprivil codes (i.e. was never mapped) → clear them
-      const rmCodes = (f.rm || []).map(m => m.sprivilCode).filter(Boolean);
-      const hasOnlySprivilCodes = rmCodes.length > 0 && rmCodes.every(c => sprivilCodeSet.has(c));
-      if (!hasOnlySprivilCodes) return f; // already mapped, don't touch
-      return {
-        ...f,
-        rm: (f.rm || []).map(m => ({ ...m, sprivilCode: '' })),
-        pm: (f.pm || []).map(m => ({ ...m, sprivilCode: '' })),
-      };
+      const rmIds = (f.rm || []).map(m => m.id);
+      const pmIds = (f.pm || []).map(m => m.id);
+      const rmIsSeeded = rmIds.length > 0 && rmIds.every(id => seedRmIds.has(id));
+      const pmIsSeeded = pmIds.length > 0 && pmIds.every(id => seedPmIds.has(id));
+      if (!rmIsSeeded && !pmIsSeeded) return f; // already custom-mapped, don't touch
+      return { ...f, rm: rmIsSeeded ? [] : f.rm, pm: pmIsSeeded ? [] : f.pm };
     });
   } catch(e) {}
   return null;
@@ -549,8 +548,8 @@ function initNewFactory(name, hasRM, hasPM) {
   return {
     id: 'factory_' + Date.now(),
     name, hasRM, hasPM, skus: [],
-    rm: SEED_RM.map(m => ({ ...m, stock: 0, openPO: 0, reqM1: 0, reqM2: 0, moq: 0, sprivilCode: '' })),
-    pm: SEED_PM.map(m => ({ ...m, stock: 0, openPO: 0, reqM1: 0, reqM2: 0, moq: 0, sprivilCode: '' })),
+    rm: [],
+    pm: [],
     vendorMap: {}, m1Label: 'M1', m2Label: 'M2',
   };
 }
@@ -2025,6 +2024,13 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
         <button className="btn btn-secondary" onClick={()=>setModal({type:'factorymap'})} style={{background:'#7c3aed',color:'#fff',border:'none'}}>🔗 {factoryName} Code Mapping</button>
       </div>
 
+      {materials.length === 0 && (
+        <div style={{textAlign:'center',padding:'48px 24px',color:'#64748b'}}>
+          <div style={{fontSize:'32px',marginBottom:'12px'}}>📋</div>
+          <div style={{fontWeight:600,marginBottom:'6px'}}>No materials yet</div>
+          <div style={{fontSize:'13px'}}>Click <strong>"{factoryName} Code Mapping"</strong> above to import this factory's materials list.</div>
+        </div>
+      )}
       <div className="tbl-wrap">
         <table>
           <colgroup>
@@ -2413,22 +2419,36 @@ function FactoryCodeMapModal({ kind, materials, factoryName, onApply, onClose })
       setData(mapped); setError('');
     } catch(e) { setError(String(e)); }
   }
-  const matchCount = useMemo(() => {
-    if (!data) return 0;
-    const idMap = Object.fromEntries(materials.map(m => [m.id.toUpperCase(), true]));
-    const nmMap = Object.fromEntries(materials.map(m => [norm(m.name), true]));
-    return data.filter(r => idMap[r.mosaicCode.toUpperCase()] || nmMap[norm(r.mosaicName)]).length;
-  }, [data, materials]);
+  // Deduplicate rows by mosaicCode, keeping first occurrence
+  const dedupedData = useMemo(() => {
+    if (!data) return [];
+    const seen = new Set();
+    return data.filter(r => { const k = r.mosaicCode.toUpperCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+  }, [data]);
+  const updateCount = useMemo(() => {
+    if (!dedupedData.length) return 0;
+    const existingIds = new Set(materials.map(m => m.id.toUpperCase()));
+    return dedupedData.filter(r => existingIds.has(r.mosaicCode.toUpperCase())).length;
+  }, [dedupedData, materials]);
+  const newCount = dedupedData.length - updateCount;
   function apply() {
-    if (!data) return;
-    const idMap = Object.fromEntries(materials.map(m => [m.id.toUpperCase(), m.id]));
-    const nmMap = Object.fromEntries(materials.map(m => [norm(m.name), m.id]));
-    const updates = {};
-    for (const r of data) {
-      const id = idMap[r.mosaicCode.toUpperCase()] || nmMap[norm(r.mosaicName)];
-      if (id) updates[id] = r.factoryCode;
-    }
-    onApply(materials.map(m => updates[m.id] ? { ...m, sprivilCode: updates[m.id] } : m));
+    if (!dedupedData.length) return;
+    const existingMap = Object.fromEntries(materials.map(m => [m.id.toUpperCase(), m]));
+    const newMaterials = dedupedData.map(r => {
+      const existing = existingMap[r.mosaicCode.toUpperCase()];
+      if (existing) {
+        // Update factory code but preserve stock/PO/req data
+        return { ...existing, sprivilCode: r.factoryCode, name: r.mosaicName || existing.name };
+      }
+      return {
+        id: r.mosaicCode, code: r.mosaicCode,
+        name: r.mosaicName || r.mosaicCode,
+        sprivilCode: r.factoryCode,
+        aliases: [], active: true,
+        stock: 0, openPO: 0, reqM1: 0, reqM2: 0, moq: 0,
+      };
+    });
+    onApply(newMaterials);
   }
   return (
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
@@ -2440,7 +2460,7 @@ function FactoryCodeMapModal({ kind, materials, factoryName, onApply, onClose })
           <div className="upload-zone" onClick={()=>fileRef.current?.click()} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleFile(e.dataTransfer.files[0]);}}>
             <input ref={fileRef} type="file" accept=".xlsx,.csv" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])} />
             {data
-              ? <span style={{color:'#16a34a'}}>✓ {data.length} rows loaded</span>
+              ? <span style={{color:'#16a34a'}}>✓ {data.length} rows loaded → {dedupedData.length} unique materials</span>
               : <span>Click or drag Excel / CSV file here</span>}
           </div>
           {detectedCols && data && (
@@ -2473,16 +2493,16 @@ function FactoryCodeMapModal({ kind, materials, factoryName, onApply, onClose })
                 </tbody>
               </table>
               {data.length > 5 && <div style={{color:'#64748b',marginTop:'4px'}}>…and {data.length-5} more rows</div>}
-              <div style={{marginTop:'8px', color: matchCount > 0 ? '#16a34a' : '#dc2626', fontWeight:600}}>
-                {matchCount} of {data.length} rows matched to {kind.toUpperCase()} materials
-                {matchCount === 0 && <span style={{fontWeight:400,color:'#64748b'}}> — check that Mosaic codes match (e.g. RMPC0320)</span>}
+              <div style={{marginTop:'8px', color:'#16a34a', fontWeight:600}}>
+                {dedupedData.length} materials will be imported
+                {updateCount > 0 && <span style={{color:'#0369a1'}}> ({updateCount} updates, {newCount} new)</span>}
               </div>
             </div>
           )}
         </div>
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={()=>{apply();onClose();}} disabled={!data||matchCount===0}>Apply {matchCount} Mappings</button>
+          <button className="btn btn-primary" onClick={()=>{apply();onClose();}} disabled={!dedupedData.length}>Import {dedupedData.length} Materials</button>
         </div>
       </div>
     </div>
