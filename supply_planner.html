@@ -1649,7 +1649,12 @@ function loadFactories() {
 }
 
 function saveFactories(factories) {
-  try { localStorage.setItem(FACTORY_KEY, JSON.stringify(factories)); } catch(e) {}
+  try {
+    // Strip hardcoded BOMs before saving — they're rehydrated from constants on load,
+    // so there's no need to persist them (and they'd bloat localStorage significantly).
+    const toSave = factories.map(({ bom_rm, bom_pm, ...rest }) => rest);
+    localStorage.setItem(FACTORY_KEY, JSON.stringify(toSave));
+  } catch(e) {}
 }
 
 function loadActiveFactoryId() {
