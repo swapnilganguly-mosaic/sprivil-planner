@@ -3063,7 +3063,7 @@ function SupplyEntryTab({ skus, onUpdateSkus, onImportSkus, m1Label, m2Label, on
         <div className="spacer"/>
         <button className="btn btn-secondary" onClick={()=>setShowImportSkus(true)}>📋 Import SKU List</button>
         <button className="btn btn-secondary" onClick={()=>setShowImport(true)}>📥 Import Supply Numbers</button>
-        {((bom_rm && bom_rm.length > 0) || (bom_pm && bom_pm.length > 0)) && (
+        {onCalcFromBom && (
           <button className="btn btn-secondary" onClick={onCalcFromBom} style={{background:'#d97706',color:'#fff',border:'none'}}>
             ⚡ Calculate Req Qty from BOM
           </button>
