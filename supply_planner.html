@@ -3862,20 +3862,47 @@ function App() {
     function findSku(val) {
       const n = norm(val);
       return skuByCode[n] || skuByName[n] ||
-        // partial name match
         skus.find(s => norm(s.name).includes(n) || n.includes(norm(s.name))) || null;
     }
 
-    // Build material name/alias index for RM
+    // Auto-create RM materials from BOM if none exist yet
+    let currentRM = rmMaterials;
+    if (hasRM && bom_rm && bom_rm.length > 0 && rmMaterials.length === 0) {
+      const seen = {};
+      currentRM = [];
+      for (const entry of bom_rm) {
+        if (!seen[entry.materialCode]) {
+          seen[entry.materialCode] = true;
+          currentRM.push({ id: entry.materialCode, code: entry.materialCode, name: entry.materialName || entry.materialCode,
+            stock: 0, supplyM1: 0, supplyM2: 0, reqM1: 0, reqM2: 0, moq: 0, aliases: [], mosaicCodes: [] });
+        }
+      }
+    }
+
+    // Auto-create PM materials from BOM if none exist yet
+    let currentPM = pmMaterials;
+    if (hasPM && bom_pm && bom_pm.length > 0 && pmMaterials.length === 0) {
+      const seen = {};
+      currentPM = [];
+      for (const entry of bom_pm) {
+        if (!seen[entry.materialCode]) {
+          seen[entry.materialCode] = true;
+          currentPM.push({ id: entry.materialCode, code: entry.materialCode, name: entry.materialName || entry.materialCode,
+            stock: 0, supplyM1: 0, supplyM2: 0, reqM1: 0, reqM2: 0, moq: 0, aliases: [], mosaicCodes: [] });
+        }
+      }
+    }
+
+    // Build material index for RM
     const rmByKey = {};
-    for (const m of rmMaterials) {
+    for (const m of currentRM) {
       const keys = [m.id, m.code, m.name, m.sprivilCode, ...(m.aliases||[]), ...(m.mosaicCodes||[])];
       for (const k of keys) { if (k) rmByKey[norm(k)] = m.id; }
     }
 
     // Build material index for PM
     const pmByKey = {};
-    for (const m of pmMaterials) {
+    for (const m of currentPM) {
       const keys = [m.id, m.code, m.name, m.sprivilCode, ...(m.aliases||[]), ...(m.mosaicCodes||[])];
       for (const k of keys) { if (k) pmByKey[norm(k)] = m.id; }
     }
@@ -3889,13 +3916,11 @@ function App() {
         const matId = rmByKey[norm(entry.materialCode)];
         if (!matId) continue;
         const packKg = (entry.packSizeG || 0) / 1000;
-        // packSizeG given → req = supply × (packSizeG/1000) × (value/100)
-        // no packSizeG → treat value as kg/unit directly
         const factor = packKg > 0 ? packKg * (entry.value / 100) : entry.value;
         req1[matId] = (req1[matId] || 0) + (sku.supplyM1 || 0) * factor;
         req2[matId] = (req2[matId] || 0) + (sku.supplyM2 || 0) * factor;
       }
-      updateFactory({ rm: rmMaterials.map(m =>
+      updateFactory({ rm: currentRM.map(m =>
         req1[m.id] != null ? { ...m, reqM1: Math.round(req1[m.id]*100)/100, reqM2: Math.round((req2[m.id]||0)*100)/100 } : m
       )});
     }
@@ -3911,7 +3936,7 @@ function App() {
         req1[matId] = (req1[matId] || 0) + (sku.supplyM1 || 0) * entry.value;
         req2[matId] = (req2[matId] || 0) + (sku.supplyM2 || 0) * entry.value;
       }
-      updateFactory({ pm: pmMaterials.map(m =>
+      updateFactory({ pm: currentPM.map(m =>
         req1[m.id] != null ? { ...m, reqM1: Math.round(req1[m.id]), reqM2: Math.round(req2[m.id]||0) } : m
       )});
     }
