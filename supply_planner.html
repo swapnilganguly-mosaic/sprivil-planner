@@ -2503,7 +2503,7 @@ function FactoryCodeMapModal({ kind, materials, factoryName, onApply, onClose })
               </table>
               {data.length > 5 && <div style={{color:'#64748b',marginTop:'4px'}}>…and {data.length-5} more rows</div>}
               <div style={{marginTop:'8px', color:'#16a34a', fontWeight:600}}>
-                {dedupedData.length} materials will be imported
+                {groupedData.length} materials will be imported
                 {updateCount > 0 && <span style={{color:'#0369a1'}}> ({updateCount} updates, {newCount} new)</span>}
               </div>
             </div>
