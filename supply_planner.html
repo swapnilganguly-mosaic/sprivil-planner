@@ -2517,54 +2517,67 @@ function App() {
   }
 
   function handleCalcFromBom() {
-    // Build lookup: skuCode → supplyM1, supplyM2
-    const skuMap = {};
-    for (const s of skus) { skuMap[norm(s.code)] = s; }
+    // Build SKU lookup by both code AND name
+    const skuByCode = {}, skuByName = {};
+    for (const s of skus) {
+      skuByCode[norm(s.code)] = s;
+      skuByName[norm(s.name)] = s;
+    }
+    function findSku(val) {
+      const n = norm(val);
+      return skuByCode[n] || skuByName[n] ||
+        // partial name match
+        skus.find(s => norm(s.name).includes(n) || n.includes(norm(s.name))) || null;
+    }
+
+    // Build material name/alias index for RM
+    const rmByKey = {};
+    for (const m of rmMaterials) {
+      const keys = [m.id, m.code, m.name, m.sprivilCode, ...(m.aliases||[]), ...(m.mosaicCodes||[])];
+      for (const k of keys) { if (k) rmByKey[norm(k)] = m.id; }
+    }
+
+    // Build material index for PM
+    const pmByKey = {};
+    for (const m of pmMaterials) {
+      const keys = [m.id, m.code, m.name, m.sprivilCode, ...(m.aliases||[]), ...(m.mosaicCodes||[])];
+      for (const k of keys) { if (k) pmByKey[norm(k)] = m.id; }
+    }
 
     // Calculate reqM1/reqM2 for RM
     if (bom_rm && bom_rm.length > 0 && hasRM) {
-      const req1 = {}; const req2 = {};
+      const req1 = {}, req2 = {};
       for (const entry of bom_rm) {
-        const sku = skuMap[norm(entry.skuCode)];
+        const sku = findSku(entry.skuCode);
         if (!sku) continue;
-        const matKey = norm(entry.materialCode);
+        const matId = rmByKey[norm(entry.materialCode)];
+        if (!matId) continue;
         const packKg = (entry.packSizeG || 0) / 1000;
-        // If packSizeG given: req = supply × packSizeG/1000 × value/100
-        // If not: treat value as kg/unit directly
+        // packSizeG given → req = supply × (packSizeG/1000) × (value/100)
+        // no packSizeG → treat value as kg/unit directly
         const factor = packKg > 0 ? packKg * (entry.value / 100) : entry.value;
-        req1[matKey] = (req1[matKey] || 0) + (sku.supplyM1 || 0) * factor;
-        req2[matKey] = (req2[matKey] || 0) + (sku.supplyM2 || 0) * factor;
+        req1[matId] = (req1[matId] || 0) + (sku.supplyM1 || 0) * factor;
+        req2[matId] = (req2[matId] || 0) + (sku.supplyM2 || 0) * factor;
       }
-      const updatedRM = rmMaterials.map(m => {
-        const key = norm(m.id || m.code || '');
-        const candidates = [key, norm(m.sprivilCode||''), ...(m.mosaicCodes||[]).map(c=>norm(c))];
-        for (const c of candidates) {
-          if (c && req1[c] != null) return { ...m, reqM1: Math.round(req1[c]*100)/100, reqM2: Math.round(req2[c]*100)/100 };
-        }
-        return m;
-      });
-      updateFactory({ rm: updatedRM });
+      updateFactory({ rm: rmMaterials.map(m =>
+        req1[m.id] != null ? { ...m, reqM1: Math.round(req1[m.id]*100)/100, reqM2: Math.round((req2[m.id]||0)*100)/100 } : m
+      )});
     }
 
     // Calculate reqM1/reqM2 for PM
     if (bom_pm && bom_pm.length > 0 && hasPM) {
-      const req1 = {}; const req2 = {};
+      const req1 = {}, req2 = {};
       for (const entry of bom_pm) {
-        const sku = skuMap[norm(entry.skuCode)];
+        const sku = findSku(entry.skuCode);
         if (!sku) continue;
-        const matKey = norm(entry.materialCode);
-        req1[matKey] = (req1[matKey] || 0) + (sku.supplyM1 || 0) * entry.value;
-        req2[matKey] = (req2[matKey] || 0) + (sku.supplyM2 || 0) * entry.value;
+        const matId = pmByKey[norm(entry.materialCode)];
+        if (!matId) continue;
+        req1[matId] = (req1[matId] || 0) + (sku.supplyM1 || 0) * entry.value;
+        req2[matId] = (req2[matId] || 0) + (sku.supplyM2 || 0) * entry.value;
       }
-      const updatedPM = pmMaterials.map(m => {
-        const key = norm(m.id || m.code || '');
-        const candidates = [key, norm(m.sprivilCode||''), ...(m.mosaicCodes||[]).map(c=>norm(c))];
-        for (const c of candidates) {
-          if (c && req1[c] != null) return { ...m, reqM1: Math.round(req1[c]), reqM2: Math.round(req2[c]) };
-        }
-        return m;
-      });
-      updateFactory({ pm: updatedPM });
+      updateFactory({ pm: pmMaterials.map(m =>
+        req1[m.id] != null ? { ...m, reqM1: Math.round(req1[m.id]), reqM2: Math.round(req2[m.id]||0) } : m
+      )});
     }
   }
 
