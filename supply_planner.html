@@ -1327,43 +1327,24 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
 // SKU DOC TAB
 // ─────────────────────────────────────────────
 function SkuDocTab({ skus, rmMaterials, pmMaterials, vendorMap, m1Label, m2Label }) {
-  const [selectedSku, setSelectedSku] = useState(skus[0]?.code || '');
 
-  const sku = skus.find(s => s.code === selectedSku);
-  const f = sku ? SKU_FORMULA[sku.code] : null;
-
-  // Build RM rows for this SKU
+  // Build RM rows from all materials with reqM1 > 0
   const rmRows = useMemo(() => {
-    if (!f) return [];
-    const ings = SEED_BOM_RM[f.key] || [];
-    const rows = [];
-    for (const ing of ings) {
-      const ids = resolveAll(ing.tradeName, rmMaterials, vendorMap);
-      for (const id of ids) {
-        const m = rmMaterials.find(x => x.id === id);
-        if (!m) continue;
-        const m1 = calcM1(m);
-        const m2 = calcM2(m, m1);
-        rows.push({ name: m.name, id, pct: ing.pct, docM1: m1.doc, docM2: m2.doc });
-      }
-    }
-    return rows;
-  }, [f, rmMaterials, vendorMap, selectedSku]);
-
-  // Build PM rows for this SKU
-  const pmRows = useMemo(() => {
-    if (!sku) return [];
-    const pkgItems = SEED_BOM_PM[sku.code] || [];
-    const rows = [];
-    for (const pkg of pkgItems) {
-      const m = pmMaterials.find(x => x.id === pkg.mosaicCode);
-      if (!m) continue;
+    return rmMaterials.map(m => {
       const m1 = calcM1(m);
       const m2 = calcM2(m, m1);
-      rows.push({ name: m.name, id: m.id, count: pkg.count, docM1: m1.doc, docM2: m2.doc });
-    }
-    return rows;
-  }, [sku, pmMaterials, selectedSku]);
+      return { name: m.name, id: m.id, docM1: m1.doc, docM2: m2.doc };
+    }).filter(r => r.docM1 != null || r.docM2 != null);
+  }, [rmMaterials]);
+
+  // Build PM rows from all materials with reqM1 > 0
+  const pmRows = useMemo(() => {
+    return pmMaterials.map(m => {
+      const m1 = calcM1(m);
+      const m2 = calcM2(m, m1);
+      return { name: m.name, id: m.id, docM1: m1.doc, docM2: m2.doc };
+    }).filter(r => r.docM1 != null || r.docM2 != null);
+  }, [pmMaterials]);
 
   // Find bottlenecks
   const validDocM1 = r => r.docM1 != null;
@@ -1400,7 +1381,7 @@ function SkuDocTab({ skus, rmMaterials, pmMaterials, vendorMap, m1Label, m2Label
   }
 
   function DocTable({ rows, kind, minM1, minM2, overallM1, overallM2 }) {
-    if (!rows.length) return <div style={{color:'#94a3b8',fontSize:'13px',padding:'8px'}}>No {kind.toUpperCase()} BOM data for this SKU.</div>;
+    if (!rows.length) return <div style={{color:'#94a3b8',fontSize:'13px',padding:'8px'}}>No {kind.toUpperCase()} materials with required quantities set.</div>;
     return (
       <table style={{width:'100%',borderCollapse:'collapse',fontSize:'13px'}}>
         <thead>
@@ -1429,18 +1410,10 @@ function SkuDocTab({ skus, rmMaterials, pmMaterials, vendorMap, m1Label, m2Label
 
   return (
     <div style={{padding:'16px'}}>
-      {/* SKU selector */}
-      <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'20px'}}>
-        <label style={{fontWeight:600,color:'#1e293b'}}>SKU</label>
-        <select
-          value={selectedSku}
-          onChange={e => setSelectedSku(e.target.value)}
-          style={{padding:'6px 12px',borderRadius:'6px',border:'1px solid #cbd5e1',fontSize:'14px',minWidth:'360px'}}
-        >
-          {skus.map(s => <option key={s.code} value={s.code}>{s.name} ({s.code})</option>)}
-        </select>
-        {!f && <span style={{color:'#f59e0b',fontSize:'13px'}}>⚠️ No BOM mapped for this SKU</span>}
-        {f && <span style={{color:'#64748b',fontSize:'13px'}}>{f.fillG} ml · {f.key}</span>}
+      {/* Header */}
+      <div style={{marginBottom:'20px'}}>
+        <div style={{fontWeight:700,fontSize:'15px',color:'#1e293b'}}>Materials DOC Overview</div>
+        <div style={{fontSize:'13px',color:'#64748b',marginTop:'4px'}}>Days of Cover for all factory materials based on required quantities.</div>
       </div>
 
       {/* Summary */}
