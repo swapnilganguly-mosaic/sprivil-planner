@@ -1556,7 +1556,7 @@ function SkuDocTab({ skus, rmMaterials, pmMaterials, vendorMap, m1Label, m2Label
 // ─────────────────────────────────────────────
 // SUPPLY ENTRY TAB
 // ─────────────────────────────────────────────
-function SupplyEntryTab({ skus, onUpdateSkus, onImportSkus, m1Label, m2Label }) {
+function SupplyEntryTab({ skus, onUpdateSkus, onImportSkus, m1Label, m2Label, onFetchReqQty, fetchReqStatus }) {
   const [search, setSearch] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [showImportSkus, setShowImportSkus] = useState(false);
@@ -1576,6 +1576,22 @@ function SupplyEntryTab({ skus, onUpdateSkus, onImportSkus, m1Label, m2Label }) 
         <div className="spacer"/>
         <button className="btn btn-secondary" onClick={()=>setShowImportSkus(true)}>📋 Import SKU List</button>
         <button className="btn btn-secondary" onClick={()=>setShowImport(true)}>📥 Import Supply Numbers</button>
+        {onFetchReqQty && (
+          <button
+            className="btn btn-secondary"
+            onClick={onFetchReqQty}
+            disabled={fetchReqStatus === 'loading'}
+            style={{background:'#059669',color:'#fff',border:'none',opacity:fetchReqStatus==='loading'?0.6:1}}
+            title="Fetch required RM & PM quantities from NovaCore API"
+          >
+            {fetchReqStatus === 'loading' ? '⏳ Fetching…' : '🌐 Fetch Req Qty (API)'}
+          </button>
+        )}
+        {fetchReqStatus && fetchReqStatus !== 'loading' && fetchReqStatus !== 'idle' && (
+          <span style={{fontSize:'12px',fontWeight:600,color: fetchReqStatus.startsWith('✓') ? '#059669' : '#dc2626'}}>
+            {fetchReqStatus}
+          </span>
+        )}
       </div>
 
       {showImportSkus && (
@@ -1779,18 +1795,6 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
         <div className="spacer"/>
         <button className="btn btn-secondary" onClick={()=>setModal({type:'stockpo'})} style={{background:'#1e40af',color:'#fff',border:'none'}}>📦 Import Stock / Open PO</button>
         <button className="btn btn-secondary" onClick={()=>setModal({type:'req'})}>📥 Import Req Qty</button>
-        <button
-          className="btn btn-secondary"
-          onClick={fetchReqQtyFromApi}
-          disabled={apiLoading}
-          style={{background:'#059669',color:'#fff',border:'none',opacity:apiLoading?0.6:1}}
-          title="Fetch required quantities from NovaCore API using M1 supply plan"
-        >
-          {apiLoading ? '⏳ Fetching…' : '🌐 Fetch Req Qty (API)'}
-        </button>
-        {apiResult && apiResult.ok && apiResult.applied > 0 && (
-          <span style={{fontSize:'12px',color:'#059669',fontWeight:600}}>✓ {apiResult.applied} updated</span>
-        )}
         <button className="btn btn-secondary" onClick={()=>setModal({type:'moq'})}>📥 Import MOQ</button>
         <button className="btn btn-secondary" onClick={clearReq} title="Reset all required quantities to 0">🗑 Clear Req</button>
         <button className="btn btn-secondary" onClick={()=>setModal({type:'vendorMap'})}>🔗 Vendor Codes</button>
@@ -2351,6 +2355,72 @@ function App() {
     setActiveTab('supply');
   }
 
+  const [fetchReqStatus, setFetchReqStatus] = useState('idle');
+
+  async function handleFetchReqQty() {
+    const items = skus.filter(s => (s.supplyM1 || 0) > 0).map(s => ({ skuCode: s.code, quantity: s.supplyM1 }));
+    if (!items.length) {
+      alert('No SKUs with M1 supply quantities set. Enter supply numbers first.');
+      return;
+    }
+    setFetchReqStatus('loading');
+    try {
+      const res = await fetch('/api/required-quantity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items })
+      });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch {
+        setFetchReqStatus('⚠️ API only available on Vercel (not GitHub Pages)');
+        return;
+      }
+      if (!res.ok) {
+        setFetchReqStatus('❌ ' + (data.error || 'API error'));
+        return;
+      }
+
+      // Apply to RM
+      const rmTarget = data.rm || data.RM || data.rawMaterials || (data.items ? null : data);
+      // Apply to PM
+      const pmTarget = data.pm || data.PM || data.packagingMaterials || null;
+
+      function applyToMaterials(mats, target) {
+        if (!target || typeof target !== 'object' || Array.isArray(target)) return null;
+        const lookup = {};
+        Object.entries(target).forEach(([k, v]) => { lookup[norm(k)] = parseFloat(v) || 0; });
+        let applied = 0;
+        const updated = mats.map(m => {
+          const candidates = [m.id, m.code, m.sprivilCode, ...(m.mosaicCodes||[])].map(c => norm(String(c||'')));
+          for (const c of candidates) {
+            if (c && lookup[c] != null) { applied++; return { ...m, reqM1: lookup[c] }; }
+          }
+          return m;
+        });
+        return applied > 0 ? { updated, applied } : null;
+      }
+
+      let totalApplied = 0;
+      if (rmTarget) {
+        const r = applyToMaterials(rmMaterials, rmTarget);
+        if (r) { updateFactory({ rm: r.updated }); totalApplied += r.applied; }
+      }
+      if (pmTarget) {
+        const r = applyToMaterials(pmMaterials, pmTarget);
+        if (r) { updateFactory({ pm: r.updated }); totalApplied += r.applied; }
+      }
+
+      if (totalApplied > 0) {
+        setFetchReqStatus(`✓ ${totalApplied} materials updated`);
+      } else {
+        setFetchReqStatus('⚠️ Got response but could not match materials — check raw: ' + JSON.stringify(data).slice(0, 80));
+      }
+    } catch (err) {
+      setFetchReqStatus('❌ ' + err.message);
+    }
+  }
+
   return (
     <div>
       <div className="app-header">
@@ -2401,6 +2471,8 @@ function App() {
             onImportSkus={s=>updateFactory({skus:s})}
             m1Label={m1Label}
             m2Label={m2Label}
+            onFetchReqQty={handleFetchReqQty}
+            fetchReqStatus={fetchReqStatus}
           />
         )}
         {activeTab==='rm' && hasRM && (
