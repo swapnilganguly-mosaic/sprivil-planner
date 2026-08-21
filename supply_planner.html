@@ -261,6 +261,75 @@ const SEED_SKUS = [
 ];
 
 
+// ─────────────────────────────────────────────
+// PM SEED DATA (Sprivil defaults — empty; upload via Code Mapping)
+// ─────────────────────────────────────────────
+const SEED_PM = [];
+
+// ─────────────────────────────────────────────
+// UTILITY
+// ─────────────────────────────────────────────
+function norm(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+}
+
+// ─────────────────────────────────────────────
+// FACTORY PERSISTENCE
+// ─────────────────────────────────────────────
+const FACTORY_KEY = 'sprivil_factories_v1';
+const ACTIVE_KEY  = 'sprivil_active_factory';
+
+function initSprivilFactory() {
+  return {
+    id: 'sprivil', name: 'Sprivil',
+    hasRM: true, hasPM: true,
+    rm: SEED_RM, pm: SEED_PM,
+    skus: SEED_SKUS,
+    vendorMap: {},
+    m1Label: 'M1', m2Label: 'M2',
+    bom_rm: [], bom_pm: [],
+  };
+}
+
+function initNewFactory(name, hasRM, hasPM) {
+  const id = 'factory_' + Date.now();
+  return {
+    id, name,
+    hasRM: !!hasRM, hasPM: !!hasPM,
+    rm: [], pm: [],
+    skus: [],
+    vendorMap: {},
+    m1Label: 'M1', m2Label: 'M2',
+    bom_rm: [], bom_pm: [],
+  };
+}
+
+function loadFactories() {
+  try {
+    const raw = localStorage.getItem(FACTORY_KEY);
+    if (!raw) return null;
+    const factories = JSON.parse(raw);
+    // Migration: ensure bom_rm/bom_pm exist on all factories
+    return factories.map(f => ({
+      bom_rm: [], bom_pm: [],
+      ...f,
+    }));
+  } catch(e) { return null; }
+}
+
+function saveFactories(factories) {
+  try { localStorage.setItem(FACTORY_KEY, JSON.stringify(factories)); } catch(e) {}
+}
+
+function loadActiveFactoryId() {
+  try { return localStorage.getItem(ACTIVE_KEY) || 'sprivil'; } catch(e) { return 'sprivil'; }
+}
+
+function saveActiveFactoryId(id) {
+  try { localStorage.setItem(ACTIVE_KEY, id); } catch(e) {}
+}
+
+// ─────────────────────────────────────────────
 function isNumeric(v) {
   if (v == null || v === '') return false;
   return !isNaN(parseFloat(String(v).replace(/,/g,'')));
