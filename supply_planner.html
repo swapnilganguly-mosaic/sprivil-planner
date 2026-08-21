@@ -264,6 +264,1305 @@ const SEED_SKUS = [
 // ─────────────────────────────────────────────
 // PM SEED DATA (Sprivil defaults — empty; upload via Code Mapping)
 // ─────────────────────────────────────────────
+
+
+// ─────────────────────────────────────────────
+// SPRIVIL BOM DATA (hardcoded from formulation sheet)
+// ─────────────────────────────────────────────
+const SPRIVIL_BOM_RM = [
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Water",
+    "value": 80.45,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Disodium EDTA",
+    "value": 0.01,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Genecare OSMS BA",
+    "value": 1.0,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Cocamidopropyl Betain",
+    "value": 4.0,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Alfodet XL 46",
+    "value": 4.0,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Rewopol SB FA 30 B",
+    "value": 4.5,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "FM 1200",
+    "value": 1.0,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Glycerine",
+    "value": 0.2,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Olivem 300",
+    "value": 0.7,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Chamomile Extract",
+    "value": 0.5,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Tea Tree Oil",
+    "value": 0.01,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Aloe Vera Extract",
+    "value": 0.6,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Arnica Extract",
+    "value": 0.5,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Sage Extract",
+    "value": 0.3,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Pine Extract",
+    "value": 0.5,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Microcare PEHG",
+    "value": 0.6,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "D- Panthenol",
+    "value": 0.2,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Citric Acid",
+    "value": 0.5,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Fragrance",
+    "value": 0.8,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Brilliant Blue",
+    "value": 0.1,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "Pea Green",
+    "value": 0.1,
+    "packSizeG": 120
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Water",
+    "value": 52.319,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Water",
+    "value": 52.319,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Water",
+    "value": 52.319,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Water",
+    "value": 52.319,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Propanediol",
+    "value": 12.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Propanediol",
+    "value": 12.0,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Propanediol",
+    "value": 12.0,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Propanediol",
+    "value": 12.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Butylene Glycol",
+    "value": 10.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Butylene Glycol",
+    "value": 10.0,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Butylene Glycol",
+    "value": 10.0,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Butylene Glycol",
+    "value": 10.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Propylene Glycol",
+    "value": 10.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Propylene Glycol",
+    "value": 10.0,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Propylene Glycol",
+    "value": 10.0,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Propylene Glycol",
+    "value": 10.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Glycerin (and) Aqua (and) Sodium Metabisulfite (and) Larix Europaea Wood Extract (and) Glycine (and) Zinc Chloride (and) Camellia Sinensis Leaf Extract (Redensyl)",
+    "value": 3.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Glycerin (and) Aqua (and) Sodium Metabisulfite (and) Larix Europaea Wood Extract (and) Glycine (and) Zinc Chloride (and) Camellia Sinensis Leaf Extract (Redensyl)",
+    "value": 3.0,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Glycerin (and) Aqua (and) Sodium Metabisulfite (and) Larix Europaea Wood Extract (and) Glycine (and) Zinc Chloride (and) Camellia Sinensis Leaf Extract (Redensyl)",
+    "value": 3.0,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Glycerin (and) Aqua (and) Sodium Metabisulfite (and) Larix Europaea Wood Extract (and) Glycine (and) Zinc Chloride (and) Camellia Sinensis Leaf Extract (Redensyl)",
+    "value": 3.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Trigonella Foenum-Graecum (Fenugreek) Seed Extract",
+    "value": 3.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Trigonella Foenum-Graecum (Fenugreek) Seed Extract",
+    "value": 3.0,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Trigonella Foenum-Graecum (Fenugreek) Seed Extract",
+    "value": 3.0,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Trigonella Foenum-Graecum (Fenugreek) Seed Extract",
+    "value": 3.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Diaminopyrimidine Oxide (Aminexil )",
+    "value": 2.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Diaminopyrimidine Oxide (Aminexil )",
+    "value": 2.0,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Diaminopyrimidine Oxide (Aminexil )",
+    "value": 2.0,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Diaminopyrimidine Oxide (Aminexil )",
+    "value": 2.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Pisum Sativum (Pea) Sprout Extract (and) Phenoxyethanol (and) Sodium Benzoate (and) Aqua (Anagain)",
+    "value": 2.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Pisum Sativum (Pea) Sprout Extract (and) Phenoxyethanol (and) Sodium Benzoate (and) Aqua (Anagain)",
+    "value": 2.0,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Pisum Sativum (Pea) Sprout Extract (and) Phenoxyethanol (and) Sodium Benzoate (and) Aqua (Anagain)",
+    "value": 2.0,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Pisum Sativum (Pea) Sprout Extract (and) Phenoxyethanol (and) Sodium Benzoate (and) Aqua (Anagain)",
+    "value": 2.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Butylene Glycol (and) Aqua (and) PPG-26-Buteth-26 (and) PEG-40 Hydrogenated Castor Oil (and) Apigenin (and) Oleanolic Acid (and) Biotinoyl Tripeptide-1 (Procapil)",
+    "value": 1.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Butylene Glycol (and) Aqua (and) PPG-26-Buteth-26 (and) PEG-40 Hydrogenated Castor Oil (and) Apigenin (and) Oleanolic Acid (and) Biotinoyl Tripeptide-1 (Procapil)",
+    "value": 1.0,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Butylene Glycol (and) Aqua (and) PPG-26-Buteth-26 (and) PEG-40 Hydrogenated Castor Oil (and) Apigenin (and) Oleanolic Acid (and) Biotinoyl Tripeptide-1 (Procapil)",
+    "value": 1.0,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Butylene Glycol (and) Aqua (and) PPG-26-Buteth-26 (and) PEG-40 Hydrogenated Castor Oil (and) Apigenin (and) Oleanolic Acid (and) Biotinoyl Tripeptide-1 (Procapil)",
+    "value": 1.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Phenoxyethanol (and) Ethylhexylglycerin",
+    "value": 1.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Phenoxyethanol (and) Ethylhexylglycerin",
+    "value": 1.0,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Phenoxyethanol (and) Ethylhexylglycerin",
+    "value": 1.0,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Phenoxyethanol (and) Ethylhexylglycerin",
+    "value": 1.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Red Clover Extract",
+    "value": 1.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Red Clover Extract",
+    "value": 1.0,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Red Clover Extract",
+    "value": 1.0,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Red Clover Extract",
+    "value": 1.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Rosmarinus Officinalis (Rosemary) Leaf Extract",
+    "value": 3.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Rosmarinus Officinalis (Rosemary) Leaf Extract",
+    "value": 3.0,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Rosmarinus Officinalis (Rosemary) Leaf Extract",
+    "value": 3.0,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Rosmarinus Officinalis (Rosemary) Leaf Extract",
+    "value": 3.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "D-Panthanol",
+    "value": 0.5,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "D-Panthanol",
+    "value": 0.5,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "D-Panthanol",
+    "value": 0.5,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "D-Panthanol",
+    "value": 0.5,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Glycerin",
+    "value": 0.5,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Glycerin",
+    "value": 0.5,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Glycerin",
+    "value": 0.5,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Glycerin",
+    "value": 0.5,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Moringa Oleifera (Moringa) Leaf Extract",
+    "value": 0.3,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Moringa Oleifera (Moringa) Leaf Extract",
+    "value": 0.3,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Moringa Oleifera (Moringa) Leaf Extract",
+    "value": 0.3,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Moringa Oleifera (Moringa) Leaf Extract",
+    "value": 0.3,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Ethylenediaminetetraacetic Acid",
+    "value": 0.1,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Ethylenediaminetetraacetic Acid",
+    "value": 0.1,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Ethylenediaminetetraacetic Acid",
+    "value": 0.1,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Ethylenediaminetetraacetic Acid",
+    "value": 0.1,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Propanediol (and) Aqua (and) Arginine (and) Lactic Acid (and) Glycine Soja (Soybean) Germ Extract (and) Triticum Vulgare (Wheat) Germ Extract (and) Scutellaria Baicalensis Root Extract (and) Sodium Benzoate (and) Gluconolactone (and) Calcium Gluconate (Baicapil)",
+    "value": 0.1,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Propanediol (and) Aqua (and) Arginine (and) Lactic Acid (and) Glycine Soja (Soybean) Germ Extract (and) Triticum Vulgare (Wheat) Germ Extract (and) Scutellaria Baicalensis Root Extract (and) Sodium Benzoate (and) Gluconolactone (and) Calcium Gluconate (Baicapil)",
+    "value": 0.1,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Propanediol (and) Aqua (and) Arginine (and) Lactic Acid (and) Glycine Soja (Soybean) Germ Extract (and) Triticum Vulgare (Wheat) Germ Extract (and) Scutellaria Baicalensis Root Extract (and) Sodium Benzoate (and) Gluconolactone (and) Calcium Gluconate (Baicapil)",
+    "value": 0.1,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Propanediol (and) Aqua (and) Arginine (and) Lactic Acid (and) Glycine Soja (Soybean) Germ Extract (and) Triticum Vulgare (Wheat) Germ Extract (and) Scutellaria Baicalensis Root Extract (and) Sodium Benzoate (and) Gluconolactone (and) Calcium Gluconate (Baicapil)",
+    "value": 0.1,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Serenoa Serrulata (Saw Palmetto) Fruit Extract",
+    "value": 0.1,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Serenoa Serrulata (Saw Palmetto) Fruit Extract",
+    "value": 0.1,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Serenoa Serrulata (Saw Palmetto) Fruit Extract",
+    "value": 0.1,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Serenoa Serrulata (Saw Palmetto) Fruit Extract",
+    "value": 0.1,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "Fragrance",
+    "value": 0.08,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "Fragrance",
+    "value": 0.08,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "Fragrance",
+    "value": 0.08,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "Fragrance",
+    "value": 0.08,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00575.B0_N",
+    "materialCode": "CI 19140 , CI 42090.",
+    "value": 0.001,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "CI 19140 , CI 42090.",
+    "value": 0.001,
+    "packSizeG": 50
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "CI 19140 , CI 42090.",
+    "value": 0.001,
+    "packSizeG": 10
+  },
+  {
+    "skuCode": "MWBWHFP.00188.BO_N",
+    "materialCode": "CI 19140 , CI 42090.",
+    "value": 0.001,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Aqua",
+    "value": 55.3,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Butylene Glycol",
+    "value": 16.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Propylene glycol",
+    "value": 10.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Propanediol",
+    "value": 10.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Moringa oleifera (Moringa) Extract",
+    "value": 0.1,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Trifolium Pratense (Clover) Flower Extract",
+    "value": 0.1,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Tribulus Terrestris (Gokshura) Exatract",
+    "value": 0.1,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Rosmarinus Officinalis (Rosemary) Extract",
+    "value": 1.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Pisum Sativum (Pea) Sprout Extract (and) Phenoxyethanol (and) Sodium Benzoate (and) Aqua (Anagain)",
+    "value": 4.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Diaminopyrimidine Oxide (Aminexil)",
+    "value": 2.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Phenoxyethanol (and) Ethylhexylglycerin",
+    "value": 1.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Perfume",
+    "value": 0.1,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Xanthan Gum",
+    "value": 0.1,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Hydroxyethyl cellulose",
+    "value": 0.1,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "Sodium Gluconate",
+    "value": 0.1,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Water",
+    "value": 52.719,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Zemea Propanediol",
+    "value": 12.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Butylene Glycol",
+    "value": 10.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Saw Palmetto Extract",
+    "value": 0.5,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Procapil",
+    "value": 3.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Fenugreek Extract",
+    "value": 0.3,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Moringa Extract",
+    "value": 0.3,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Redensyl",
+    "value": 3.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Baicapil",
+    "value": 2.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Rosemary extract",
+    "value": 1.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "D-Panthanol",
+    "value": 0.5,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Glycerine",
+    "value": 0.5,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Ethylenediaminetetraacetic Acid",
+    "value": 0.1,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Green apple",
+    "value": 0.001,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "FR 3666 - Jadour",
+    "value": 0.08,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Euxyl PE 9010 / Microcare PEHG",
+    "value": 1.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Propylene Glycol",
+    "value": 10.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Anagain",
+    "value": 2.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "Aminexil (Kopexil)",
+    "value": 1.0,
+    "packSizeG": 30
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "Aqua",
+    "value": 61.78,
+    "packSizeG": 5
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "Butylene Glycol",
+    "value": 16.0,
+    "packSizeG": 5
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "Propanediol",
+    "value": 10.0,
+    "packSizeG": 5
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "Pisum Sativum (Pea) Sprout Extract (and) Phenoxyethanol (and) Sodium Benzoate (and) Aqua (Anagain)",
+    "value": 4.0,
+    "packSizeG": 5
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "Glycerin (and) Aqua (and) Sodium Metabisulfite (and) Larix Europaea Wood Extract (and) Glycine (and) Zinc Chloride (and) Camellia Sinensis Leaf Extract",
+    "value": 3.0,
+    "packSizeG": 5
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "Diaminopyrimidine Oxide",
+    "value": 1.0,
+    "packSizeG": 5
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "Biotinoyl Tripeptide-1 (and) Glycerin (and) Aqua (and) Caprylyl Glycol (and) Ethylhexylglycerin (and) Panthenol (and) Trehalose",
+    "value": 2.0,
+    "packSizeG": 5
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "Phenoxyethanol (and) Ethylhexylglycerin",
+    "value": 1.0,
+    "packSizeG": 5
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "Rosmarinus Officinalis (Rosemary) Extract",
+    "value": 1.0,
+    "packSizeG": 5
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "Xanthan Gum",
+    "value": 0.12,
+    "packSizeG": 5
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "Hydroxyethyl cellulose",
+    "value": 0.1,
+    "packSizeG": 5
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Aqua",
+    "value": 44.65,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Propanediol",
+    "value": 12.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Butylene Glycol",
+    "value": 10.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Propylene Glycol",
+    "value": 10.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Glycerin (and) Aqua (and) Sodium Metabisulfite (and) Larix Europaea Wood Extract (and) Glycine (and) Zinc Chloride (and) Camellia Sinensis Leaf Extract (Redensyl)",
+    "value": 3.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Trigonella Foenum-Graecum (Fenugreek) Seed Extract",
+    "value": 3.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Pisum Sativum (Pea) Sprout Extract (and) Phenoxyethanol (and) Sodium Benzoate (and) Aqua (Anagain)",
+    "value": 4.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Diaminopyrimidine Oxide",
+    "value": 2.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Butylene Glycol (and) Aqua (and) PPG-26-Buteth-26 (and) PEG-40 Hydrogenated Castor Oil (and) Apigenin (and) Oleanolic Acid (and) Biotinoyl Tripeptide-1 (Procapil)",
+    "value": 1.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Phenoxyethanol (and) Ethylhexylglycerin",
+    "value": 1.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Red Clover Extract",
+    "value": 1.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Rosmarinus Officinalis (Rosemary) Leaf Extract",
+    "value": 3.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Panthenol",
+    "value": 0.5,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Glycerin",
+    "value": 0.5,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Moringa Oleifera (Moringa) Leaf Extract",
+    "value": 0.3,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Ethylenediaminetetraacetic Acid",
+    "value": 0.1,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Propanediol (and) Aqua (and) Arginine (and) Lactic Acid (and) Glycine Soja (Soybean) Germ Extract (and) Triticum Vulgare (Wheat) Germ Extract (and) Scutellaria Baicalensis Root Extract (and) Sodium Benzoate (and) Gluconolactone (and) Calcium Gluconate (Baicapil)",
+    "value": 0.1,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Xanthan gum",
+    "value": 0.15,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Fragrance",
+    "value": 0.2,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Serenoa Serrulata (Saw Palmetto) Fruit Extract",
+    "value": 1.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Water (and) Propanediol (and) Niacinamide (and) Caffeine (and) Lecithin (and) Tocopherol",
+    "value": 1.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Centella Asiatica Extract",
+    "value": 1.0,
+    "packSizeG": 25
+  },
+  {
+    "skuCode": "MWBWUSAPR.00P.026_B0_N",
+    "materialCode": "Copper Tripeptide-1",
+    "value": 0.5,
+    "packSizeG": 25
+  }
+];
+
+const SPRIVIL_BOM_PM = [
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "PPUGN4",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "PBTGN8",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "PLBMM21",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMHTP.0001.AAAA.B0_N",
+    "materialCode": "POIGN45",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWHFP.00541.B0_N",
+    "materialCode": "PGBBB8",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWHFP.00541.B0_N",
+    "materialCode": "PDGTN14",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWHFP.00541.B0_N",
+    "materialCode": "BBWP01",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWHFP.00541.B0_N",
+    "materialCode": "BBLBAS01",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWHFP.00541.B0_N",
+    "materialCode": "BBMCAS02",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWHFP.00541.B0_N",
+    "materialCode": "BBSS01",
+    "value": 10.0
+  },
+  {
+    "skuCode": "MWMMBDP.0128.AAAA.B0_R",
+    "materialCode": "PMCBB31",
+    "value": 3.0
+  },
+  {
+    "skuCode": "MWMMBDP.0128.AAAA.B0_R",
+    "materialCode": "PLBBW40",
+    "value": 3.0
+  },
+  {
+    "skuCode": "MWMMBDP.0128.AAAA.B0_R",
+    "materialCode": "PBTGN26",
+    "value": 7.0
+  },
+  {
+    "skuCode": "MWMMBDP.0128.AAAA.B0_R",
+    "materialCode": "BBSS01",
+    "value": 10.0
+  },
+  {
+    "skuCode": "MWBWHFP.00635.B0_N",
+    "materialCode": "PGBBB5",
+    "value": 3.0
+  },
+  {
+    "skuCode": "MWBWHFP.00635.B0_N",
+    "materialCode": "PDGTN9",
+    "value": 3.0
+  },
+  {
+    "skuCode": "MWBWHFP.00635.B0_N",
+    "materialCode": "PMCBB33",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWHFP.00635.B0_N",
+    "materialCode": "PLBBW43",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWHFP.00635.B0_N",
+    "materialCode": "PMPG01",
+    "value": 2.0
+  },
+  {
+    "skuCode": "MWBWHFP.00635.B0_N",
+    "materialCode": "BBSS01",
+    "value": 10.0
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "PGBBB10",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "BBHGSL01",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "BBHGSC01",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWHFP.00637.B0_N",
+    "materialCode": "PLBBW1",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMBDP.0128.AAAA.B0_R",
+    "materialCode": "PMCMM50",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMBDP.0128.AAAA.B0_R",
+    "materialCode": "PLBMM43",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMBDP.0128.AAAA.B0_R",
+    "materialCode": "PLBMM20",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMBDP.0128.AAAA.B0_R",
+    "materialCode": "PBTGN26",
+    "value": 7.0
+  },
+  {
+    "skuCode": "MWMMBDP.0128.AAAA.B0_R",
+    "materialCode": "POIGN64",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "PGBBB5",
+    "value": 3.0
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "PDGTN9",
+    "value": 3.0
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "PMCMM51",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "PLBMM44",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "PMPG01",
+    "value": 2.0
+  },
+  {
+    "skuCode": "MWMMBDP.0132.AAAA.B0_R",
+    "materialCode": "PLBMM1",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "PGBBB5",
+    "value": 3.0
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "PDGTN9",
+    "value": 3.0
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "PMMC01",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMHRP.6298.AAAA.B0_N",
+    "materialCode": "PMBBLB01",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWLJPCP.0003.B0_N",
+    "materialCode": "LJMC01",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWLJPCP.0003.B0_N",
+    "materialCode": "LJLB01",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWLJPCP.0003.B0_N",
+    "materialCode": "LJLB02",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWLJPCP.0003.B0_N",
+    "materialCode": "LJLB03",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWLJPCP.0003.B0_N",
+    "materialCode": "PLBLJ6",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWLJPCP.0003.B0_N",
+    "materialCode": "PBTGN26",
+    "value": 7.0
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "PMCBB32",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "MOS_BBSS01",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "PBTGN33",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWBWSKP.00587.B0_N",
+    "materialCode": "PBL001",
+    "value": 1.0
+  },
+  {
+    "skuCode": "MWMMHRP.6663.B0_N",
+    "materialCode": "PBTGN26",
+    "value": 7.0
+  },
+  {
+    "skuCode": "MWMMHRP.6663.B0_N",
+    "materialCode": "BBSS01",
+    "value": 10.0
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "BBHGST50",
+    "value": 1
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "BBHGSC50",
+    "value": 1
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "BBHGSL50",
+    "value": 1
+  },
+  {
+    "skuCode": "MWBWHFP.00672.B0_N",
+    "materialCode": "BBSS01",
+    "value": 1
+  }
+];
 const SEED_PM = [];
 
 // ─────────────────────────────────────────────
@@ -287,7 +1586,8 @@ function initSprivilFactory() {
     skus: SEED_SKUS,
     vendorMap: {},
     m1Label: 'M1', m2Label: 'M2',
-    bom_rm: [], bom_pm: [],
+    bom_rm: SPRIVIL_BOM_RM,
+    bom_pm: SPRIVIL_BOM_PM,
   };
 }
 
@@ -1727,15 +3027,9 @@ function SupplyEntryTab({ skus, onUpdateSkus, onImportSkus, m1Label, m2Label, on
         <div className="spacer"/>
         <button className="btn btn-secondary" onClick={()=>setShowImportSkus(true)}>📋 Import SKU List</button>
         <button className="btn btn-secondary" onClick={()=>setShowImport(true)}>📥 Import Supply Numbers</button>
-        <button className="btn btn-secondary" onClick={()=>setShowBomModal('rm')} style={{background:'#1d4ed8',color:'#fff',border:'none'}}>
-          📊 Upload RM BOM {bom_rm && bom_rm.length > 0 ? `(${bom_rm.length})` : ''}
-        </button>
-        <button className="btn btn-secondary" onClick={()=>setShowBomModal('pm')} style={{background:'#7c3aed',color:'#fff',border:'none'}}>
-          📊 Upload PM BOM {bom_pm && bom_pm.length > 0 ? `(${bom_pm.length})` : ''}
-        </button>
         {((bom_rm && bom_rm.length > 0) || (bom_pm && bom_pm.length > 0)) && (
           <button className="btn btn-secondary" onClick={onCalcFromBom} style={{background:'#d97706',color:'#fff',border:'none'}}>
-            ⚡ Calculate Req Qty
+            ⚡ Calculate Req Qty from BOM
           </button>
         )}
         {onFetchReqQty && (
