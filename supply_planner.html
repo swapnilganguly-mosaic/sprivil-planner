@@ -1554,12 +1554,163 @@ function SkuDocTab({ skus, rmMaterials, pmMaterials, vendorMap, m1Label, m2Label
 }
 
 // ─────────────────────────────────────────────
+// BOM UPLOAD MODAL
+// ─────────────────────────────────────────────
+function BomUploadModal({ kind, existingBom, onApply, onClose }) {
+  const [phase, setPhase] = useState('upload');
+  const [drag, setDrag] = useState(false);
+  const [parsed, setParsed] = useState(null);
+  const [skuCol, setSkuCol] = useState('');
+  const [matCol, setMatCol] = useState('');
+  const [valCol, setValCol] = useState('');
+  const [packCol, setPackCol] = useState('');
+  const [preview, setPreview] = useState([]);
+  const [error, setError] = useState('');
+
+  const isRM = kind === 'rm';
+
+  async function handleFile(file) {
+    setError('');
+    try {
+      const p = await parseUpload(file);
+      setParsed(p);
+      const hdrs = p.headers;
+      // Auto-detect columns
+      const find = (...kws) => hdrs.find(h => kws.some(k => norm(h).includes(norm(k)))) || '';
+      setSkuCol(find('sku'));
+      setMatCol(find('mosaic', 'material', 'rm code', 'pm code', 'mat code', 'code'));
+      setValCol(find('%', 'pct', 'formul', 'qty', 'quantity', 'value', 'per unit'));
+      setPackCol(find('pack', 'fill', 'size', 'gram', 'ml', 'weight'));
+      setPhase('configure');
+    } catch(e) { setError('Failed to parse: ' + e.message); }
+  }
+
+  function buildPreview() {
+    if (!parsed || !skuCol || !matCol || !valCol) return;
+    const rows = [];
+    for (const row of parsed.rows) {
+      const skuCode = String(row[skuCol] || '').trim();
+      const materialCode = String(row[matCol] || '').trim();
+      const value = parseNum(row[valCol]);
+      const packSizeG = packCol ? parseNum(row[packCol]) : 0;
+      if (!skuCode || !materialCode || !value) continue;
+      rows.push({ skuCode, materialCode, value, packSizeG });
+    }
+    setPreview(rows);
+    setPhase('preview');
+  }
+
+  const dropZone = (
+    <div
+      className={`drop-zone${drag?' drag':''}`}
+      onDragOver={e=>{e.preventDefault();setDrag(true);}}
+      onDragLeave={()=>setDrag(false)}
+      onDrop={e=>{e.preventDefault();setDrag(false);const f=e.dataTransfer.files[0];if(f)handleFile(f);}}
+      onClick={()=>document.getElementById('bom-file-input').click()}
+    >
+      <div style={{fontSize:'28px',marginBottom:'6px'}}>📊</div>
+      <div style={{fontWeight:600}}>Drop Excel/CSV here or click to browse</div>
+      <div style={{fontSize:'12px',color:'#94a3b8',marginTop:'4px'}}>
+        Columns needed: SKU Code | {isRM ? 'RM' : 'PM'} Material Code | {isRM ? 'Formulation % or kg/unit' : 'Qty per unit'}
+        {isRM && ' | Pack Size g (optional)'}
+      </div>
+      <input id="bom-file-input" type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])handleFile(e.target.files[0]);}} />
+    </div>
+  );
+
+  return (
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:'700px'}}>
+        <div className="modal-hdr">
+          <h2>📊 Upload {isRM ? 'RM' : 'PM'} BOM — Formulation Data</h2>
+          <button className="btn btn-secondary btn-sm" onClick={onClose}>✕ Close</button>
+        </div>
+        <div className="modal-body">
+          {existingBom && existingBom.length > 0 && (
+            <div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:'6px',padding:'8px 12px',marginBottom:'12px',fontSize:'13px',color:'#166534'}}>
+              ✓ {existingBom.length} BOM rows already loaded. Upload a new file to replace.
+            </div>
+          )}
+          {error && <div style={{color:'#dc2626',marginBottom:'8px',fontSize:'13px'}}>{error}</div>}
+
+          {phase === 'upload' && dropZone}
+
+          {phase === 'configure' && parsed && (
+            <div>
+              <p style={{fontSize:'13px',color:'#64748b',marginBottom:'12px'}}>Map columns from your file:</p>
+              {[
+                ['SKU Code column', skuCol, setSkuCol, true],
+                ['Material Code column', matCol, setMatCol, true],
+                [isRM ? 'Formulation % (or kg/unit) column' : 'Qty per unit column', valCol, setValCol, true],
+                ...(isRM ? [['Pack Size (g) column — optional', packCol, setPackCol, false]] : []),
+              ].map(([label, val, setter, required]) => (
+                <div key={label} style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'8px'}}>
+                  <label style={{minWidth:'260px',fontSize:'13px',fontWeight:600}}>{label}{required && ' *'}</label>
+                  <select value={val} onChange={e=>setter(e.target.value)}
+                    style={{padding:'5px 10px',border:'1px solid #d1d5db',borderRadius:'6px',fontSize:'13px',minWidth:'200px'}}>
+                    <option value="">— none —</option>
+                    {parsed.headers.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                </div>
+              ))}
+              <div style={{marginTop:'16px',display:'flex',gap:'8px'}}>
+                <button className="btn btn-secondary" onClick={()=>setPhase('upload')}>← Back</button>
+                <button className="btn btn-primary" onClick={buildPreview} disabled={!skuCol||!matCol||!valCol}>
+                  Preview →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {phase === 'preview' && (
+            <div>
+              <p style={{fontSize:'13px',color:'#64748b',marginBottom:'8px'}}>
+                {preview.length} rows parsed. Showing first 10:
+              </p>
+              <div style={{border:'1px solid #e2e8f0',borderRadius:'8px',overflow:'hidden',marginBottom:'16px'}}>
+                <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px'}}>
+                  <thead>
+                    <tr style={{background:'#f8fafc'}}>
+                      <th style={{padding:'6px 10px',textAlign:'left'}}>SKU Code</th>
+                      <th style={{padding:'6px 10px',textAlign:'left'}}>Material Code</th>
+                      <th style={{padding:'6px 10px',textAlign:'right'}}>{isRM ? 'Formulation / kg·unit⁻¹' : 'Qty/Unit'}</th>
+                      {isRM && <th style={{padding:'6px 10px',textAlign:'right'}}>Pack Size (g)</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.slice(0,10).map((r,i) => (
+                      <tr key={i} style={{borderTop:'1px solid #f1f5f9'}}>
+                        <td style={{padding:'4px 10px',fontFamily:'monospace',fontSize:'11px'}}>{r.skuCode}</td>
+                        <td style={{padding:'4px 10px',fontFamily:'monospace',fontSize:'11px'}}>{r.materialCode}</td>
+                        <td style={{padding:'4px 10px',textAlign:'right'}}>{r.value}</td>
+                        {isRM && <td style={{padding:'4px 10px',textAlign:'right'}}>{r.packSizeG || '—'}</td>}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{display:'flex',gap:'8px'}}>
+                <button className="btn btn-secondary" onClick={()=>setPhase('configure')}>← Back</button>
+                <button className="btn btn-primary" onClick={()=>onApply(preview)}>
+                  ✓ Save {preview.length} BOM Rows
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // SUPPLY ENTRY TAB
 // ─────────────────────────────────────────────
-function SupplyEntryTab({ skus, onUpdateSkus, onImportSkus, m1Label, m2Label, onFetchReqQty, fetchReqStatus }) {
+function SupplyEntryTab({ skus, onUpdateSkus, onImportSkus, m1Label, m2Label, onFetchReqQty, fetchReqStatus, bom_rm, bom_pm, onUploadBom, onCalcFromBom }) {
   const [search, setSearch] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [showImportSkus, setShowImportSkus] = useState(false);
+  const [showBomModal, setShowBomModal] = useState(null); // 'rm' | 'pm' | null
   const filtered = search
     ? skus.filter(s => norm(s.name+' '+s.code).includes(norm(search)))
     : skus;
@@ -1576,6 +1727,17 @@ function SupplyEntryTab({ skus, onUpdateSkus, onImportSkus, m1Label, m2Label, on
         <div className="spacer"/>
         <button className="btn btn-secondary" onClick={()=>setShowImportSkus(true)}>📋 Import SKU List</button>
         <button className="btn btn-secondary" onClick={()=>setShowImport(true)}>📥 Import Supply Numbers</button>
+        <button className="btn btn-secondary" onClick={()=>setShowBomModal('rm')} style={{background:'#1d4ed8',color:'#fff',border:'none'}}>
+          📊 Upload RM BOM {bom_rm && bom_rm.length > 0 ? `(${bom_rm.length})` : ''}
+        </button>
+        <button className="btn btn-secondary" onClick={()=>setShowBomModal('pm')} style={{background:'#7c3aed',color:'#fff',border:'none'}}>
+          📊 Upload PM BOM {bom_pm && bom_pm.length > 0 ? `(${bom_pm.length})` : ''}
+        </button>
+        {((bom_rm && bom_rm.length > 0) || (bom_pm && bom_pm.length > 0)) && (
+          <button className="btn btn-secondary" onClick={onCalcFromBom} style={{background:'#d97706',color:'#fff',border:'none'}}>
+            ⚡ Calculate Req Qty
+          </button>
+        )}
         {onFetchReqQty && (
           <button
             className="btn btn-secondary"
@@ -1609,6 +1771,15 @@ function SupplyEntryTab({ skus, onUpdateSkus, onImportSkus, m1Label, m2Label, on
           m2Label={m2Label}
           onApply={handleImportApply}
           onClose={()=>setShowImport(false)}
+        />
+      )}
+
+      {showBomModal && (
+        <BomUploadModal
+          kind={showBomModal}
+          existingBom={showBomModal === 'rm' ? bom_rm : bom_pm}
+          onApply={rows => { onUploadBom(showBomModal, rows); setShowBomModal(null); }}
+          onClose={()=>setShowBomModal(null)}
         />
       )}
 
@@ -2332,11 +2503,69 @@ function App() {
     setFactories(prev => prev.map(f => f.id === factory.id ? { ...f, ...updates } : f));
   }
 
-  const { skus, rm: rmMaterials, pm: pmMaterials, vendorMap, m1Label, m2Label, hasRM, hasPM, name: factoryName } = factory;
+  const { skus, rm: rmMaterials, pm: pmMaterials, vendorMap, m1Label, m2Label, hasRM, hasPM, name: factoryName,
+          bom_rm = [], bom_pm = [] } = factory;
 
   function handleUpdate(kind, updated) {
     if (kind === 'rm') updateFactory({ rm: updated });
     else updateFactory({ pm: updated });
+  }
+
+  function handleUploadBom(kind, rows) {
+    if (kind === 'rm') updateFactory({ bom_rm: rows });
+    else updateFactory({ bom_pm: rows });
+  }
+
+  function handleCalcFromBom() {
+    // Build lookup: skuCode → supplyM1, supplyM2
+    const skuMap = {};
+    for (const s of skus) { skuMap[norm(s.code)] = s; }
+
+    // Calculate reqM1/reqM2 for RM
+    if (bom_rm && bom_rm.length > 0 && hasRM) {
+      const req1 = {}; const req2 = {};
+      for (const entry of bom_rm) {
+        const sku = skuMap[norm(entry.skuCode)];
+        if (!sku) continue;
+        const matKey = norm(entry.materialCode);
+        const packKg = (entry.packSizeG || 0) / 1000;
+        // If packSizeG given: req = supply × packSizeG/1000 × value/100
+        // If not: treat value as kg/unit directly
+        const factor = packKg > 0 ? packKg * (entry.value / 100) : entry.value;
+        req1[matKey] = (req1[matKey] || 0) + (sku.supplyM1 || 0) * factor;
+        req2[matKey] = (req2[matKey] || 0) + (sku.supplyM2 || 0) * factor;
+      }
+      const updatedRM = rmMaterials.map(m => {
+        const key = norm(m.id || m.code || '');
+        const candidates = [key, norm(m.sprivilCode||''), ...(m.mosaicCodes||[]).map(c=>norm(c))];
+        for (const c of candidates) {
+          if (c && req1[c] != null) return { ...m, reqM1: Math.round(req1[c]*100)/100, reqM2: Math.round(req2[c]*100)/100 };
+        }
+        return m;
+      });
+      updateFactory({ rm: updatedRM });
+    }
+
+    // Calculate reqM1/reqM2 for PM
+    if (bom_pm && bom_pm.length > 0 && hasPM) {
+      const req1 = {}; const req2 = {};
+      for (const entry of bom_pm) {
+        const sku = skuMap[norm(entry.skuCode)];
+        if (!sku) continue;
+        const matKey = norm(entry.materialCode);
+        req1[matKey] = (req1[matKey] || 0) + (sku.supplyM1 || 0) * entry.value;
+        req2[matKey] = (req2[matKey] || 0) + (sku.supplyM2 || 0) * entry.value;
+      }
+      const updatedPM = pmMaterials.map(m => {
+        const key = norm(m.id || m.code || '');
+        const candidates = [key, norm(m.sprivilCode||''), ...(m.mosaicCodes||[]).map(c=>norm(c))];
+        for (const c of candidates) {
+          if (c && req1[c] != null) return { ...m, reqM1: Math.round(req1[c]), reqM2: Math.round(req2[c]) };
+        }
+        return m;
+      });
+      updateFactory({ pm: updatedPM });
+    }
   }
 
   const ordersRM = useMemo(() => hasRM ? rmMaterials.filter(m => { const m1=calcM1(m); const m2=calcM2(m,m1); return m1.actual>0||m2.actual>0; }).length : 0, [rmMaterials, hasRM]);
@@ -2471,6 +2700,10 @@ function App() {
             onImportSkus={s=>updateFactory({skus:s})}
             m1Label={m1Label}
             m2Label={m2Label}
+            bom_rm={bom_rm}
+            bom_pm={bom_pm}
+            onUploadBom={handleUploadBom}
+            onCalcFromBom={handleCalcFromBom}
             onFetchReqQty={handleFetchReqQty}
             fetchReqStatus={fetchReqStatus}
           />
