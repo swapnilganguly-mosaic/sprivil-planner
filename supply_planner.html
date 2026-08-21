@@ -283,6 +283,43 @@ function fmtPct(n) {
 }
 
 // ─────────────────────────────────────────────
+// MATERIAL RESOLUTION (match import codes/names to internal IDs)
+// ─────────────────────────────────────────────
+function resolveInternal(value, materials) {
+  if (!value) return [];
+  const v = String(value).trim();
+  const vn = norm(v);
+  const matches = new Set();
+  for (const m of materials) {
+    const candidates = [m.id, m.code, m.name, ...(m.aliases || []), ...(m.mosaicCodes || [])];
+    for (const c of candidates) {
+      if (c && norm(String(c)) === vn) { matches.add(m.id); break; }
+    }
+  }
+  return [...matches];
+}
+
+function resolveAll(value, materials, vendorMap) {
+  if (!value) return [];
+  const v = String(value).trim();
+  // Check vendorMap first: external code → internal id
+  const mapped = vendorMap && vendorMap[norm(v)];
+  if (mapped) return Array.isArray(mapped) ? mapped : [mapped];
+  const vn = norm(v);
+  const matches = new Set();
+  for (const m of materials) {
+    // Check sprivilCode (may be comma-separated)
+    const spCodes = String(m.sprivilCode || '').split(',').map(c => norm(c.trim())).filter(Boolean);
+    if (spCodes.includes(vn)) { matches.add(m.id); continue; }
+    const candidates = [m.id, m.code, m.name, ...(m.aliases || []), ...(m.mosaicCodes || [])];
+    for (const c of candidates) {
+      if (c && norm(String(c)) === vn) { matches.add(m.id); break; }
+    }
+  }
+  return [...matches];
+}
+
+// ─────────────────────────────────────────────
 // CALCULATIONS
 // ─────────────────────────────────────────────
 function calcM1(mat) {
