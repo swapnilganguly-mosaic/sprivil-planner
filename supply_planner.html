@@ -1531,9 +1531,89 @@ function SupplyEntryTab({ skus, onUpdateSkus, onImportSkus, m1Label, m2Label }) 
 // ─────────────────────────────────────────────
 // CONSOLIDATED TAB (RM or PM)
 // ─────────────────────────────────────────────
-function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Label, factoryName }) {
+function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Label, factoryName, skus }) {
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState('');
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiResult, setApiResult] = useState(null); // null | { ok, data, applied }
+
+  async function fetchReqQtyFromApi() {
+    const items = (skus || [])
+      .filter(s => (s.supplyM1 || 0) > 0)
+      .map(s => ({ skuCode: s.code, quantity: s.supplyM1 }));
+
+    if (!items.length) {
+      alert('No SKUs with M1 supply quantities set. Enter supply numbers in the Supply Entry tab first.');
+      return;
+    }
+
+    setApiLoading(true);
+    setApiResult(null);
+    try {
+      const res = await fetch('/api/required-quantity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setApiResult({ ok: false, data, applied: 0 });
+        setModal({ type: 'apiraw', data });
+        return;
+      }
+
+      // Try to apply: look for a flat object or nested rm/pm keyed by material code
+      const target = kind === 'rm'
+        ? (data.rm || data.RM || data.rawMaterials || data)
+        : (data.pm || data.PM || data.packagingMaterials || data);
+
+      if (typeof target !== 'object' || Array.isArray(target)) {
+        setApiResult({ ok: true, data, applied: 0 });
+        setModal({ type: 'apiraw', data });
+        return;
+      }
+
+      // Build an index: code → qty
+      const lookup = {};
+      Object.entries(target).forEach(([k, v]) => { lookup[k.trim().toUpperCase()] = parseFloat(v) || 0; });
+
+      // Also try array form: [{code, quantity}]
+      if (Array.isArray(data.items || data.results)) {
+        (data.items || data.results).forEach(r => {
+          const code = (r.code || r.materialCode || r.rm_code || r.pm_code || '').trim().toUpperCase();
+          const qty  = parseFloat(r.quantity || r.qty || r.required || 0);
+          if (code) lookup[code] = qty;
+        });
+      }
+
+      let applied = 0;
+      const updated = materials.map(m => {
+        const key = (m.id || m.code || '').trim().toUpperCase();
+        if (lookup[key] != null) {
+          applied++;
+          return { ...m, reqM1: lookup[key] };
+        }
+        // Also check sprivilCode / mosaicCodes
+        const codes = [m.sprivilCode, ...(m.mosaicCodes || [])].map(c => String(c||'').trim().toUpperCase());
+        for (const c of codes) {
+          if (c && lookup[c] != null) {
+            applied++;
+            return { ...m, reqM1: lookup[c] };
+          }
+        }
+        return m;
+      });
+
+      onUpdate(kind, updated);
+      setApiResult({ ok: true, data, applied });
+      if (applied === 0) setModal({ type: 'apiraw', data });
+    } catch (err) {
+      setApiResult({ ok: false, data: { error: err.message }, applied: 0 });
+      setModal({ type: 'apiraw', data: { error: err.message } });
+    } finally {
+      setApiLoading(false);
+    }
+  }
   const [highlight, setHighlight] = useState('all'); // 'all'|'ordered'|'excess'
   const unit = kind === 'rm' ? 'kg' : 'units';
 
@@ -1593,6 +1673,18 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
         <div className="spacer"/>
         <button className="btn btn-secondary" onClick={()=>setModal({type:'stockpo'})} style={{background:'#1e40af',color:'#fff',border:'none'}}>📦 Import Stock / Open PO</button>
         <button className="btn btn-secondary" onClick={()=>setModal({type:'req'})}>📥 Import Req Qty</button>
+        <button
+          className="btn btn-secondary"
+          onClick={fetchReqQtyFromApi}
+          disabled={apiLoading}
+          style={{background:'#059669',color:'#fff',border:'none',opacity:apiLoading?0.6:1}}
+          title="Fetch required quantities from NovaCore API using M1 supply plan"
+        >
+          {apiLoading ? '⏳ Fetching…' : '🌐 Fetch Req Qty (API)'}
+        </button>
+        {apiResult && apiResult.ok && apiResult.applied > 0 && (
+          <span style={{fontSize:'12px',color:'#059669',fontWeight:600}}>✓ {apiResult.applied} updated</span>
+        )}
         <button className="btn btn-secondary" onClick={()=>setModal({type:'moq'})}>📥 Import MOQ</button>
         <button className="btn btn-secondary" onClick={clearReq} title="Reset all required quantities to 0">🗑 Clear Req</button>
         <button className="btn btn-secondary" onClick={()=>setModal({type:'vendorMap'})}>🔗 Vendor Codes</button>
@@ -1800,6 +1892,27 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
           onApply={updated => { onUpdate(kind, updated); setModal(null); }}
           onClose={()=>setModal(null)}
         />
+      )}
+
+      {modal?.type==='apiraw' && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setModal(null)}>
+          <div className="modal" style={{maxWidth:'680px'}}>
+            <div className="modal-hdr">
+              <h2>🌐 API Raw Response</h2>
+              <button className="btn btn-secondary btn-sm" onClick={()=>setModal(null)}>✕ Close</button>
+            </div>
+            <div className="modal-body">
+              <p style={{color:'#64748b',fontSize:'13px',marginBottom:'12px'}}>
+                {apiResult?.applied === 0
+                  ? "Couldn't auto-map this response to materials. Share this JSON so we can wire up the parser."
+                  : `Applied to ${apiResult?.applied} materials.`}
+              </p>
+              <pre style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:'8px',padding:'12px',fontSize:'12px',overflow:'auto',maxHeight:'400px',whiteSpace:'pre-wrap',wordBreak:'break-all'}}>
+                {JSON.stringify(modal.data, null, 2)}
+              </pre>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -2185,10 +2298,10 @@ function App() {
           />
         )}
         {activeTab==='rm' && hasRM && (
-          <ConsolidatedTab kind="rm" materials={rmMaterials} vendorMap={vendorMap} onUpdate={handleUpdate} m1Label={m1Label} m2Label={m2Label} factoryName={factoryName} />
+          <ConsolidatedTab kind="rm" materials={rmMaterials} vendorMap={vendorMap} onUpdate={handleUpdate} m1Label={m1Label} m2Label={m2Label} factoryName={factoryName} skus={skus} />
         )}
         {activeTab==='pm' && hasPM && (
-          <ConsolidatedTab kind="pm" materials={pmMaterials} vendorMap={vendorMap} onUpdate={handleUpdate} m1Label={m1Label} m2Label={m2Label} factoryName={factoryName} />
+          <ConsolidatedTab kind="pm" materials={pmMaterials} vendorMap={vendorMap} onUpdate={handleUpdate} m1Label={m1Label} m2Label={m2Label} factoryName={factoryName} skus={skus} />
         )}
         {activeTab==='skudoc' && (
           <SkuDocTab skus={skus} rmMaterials={rmMaterials} pmMaterials={pmMaterials} vendorMap={vendorMap} m1Label={m1Label} m2Label={m2Label} />
