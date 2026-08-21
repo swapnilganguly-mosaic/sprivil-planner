@@ -3928,14 +3928,18 @@ function App() {
     // Calculate reqM1/reqM2 for PM
     if (bom_pm && bom_pm.length > 0 && hasPM) {
       const req1 = {}, req2 = {};
+      let skuMiss = 0, matMiss = 0, hits = 0;
       for (const entry of bom_pm) {
         const sku = findSku(entry.skuCode);
-        if (!sku) continue;
+        if (!sku) { skuMiss++; continue; }
         const matId = pmByKey[norm(entry.materialCode)];
-        if (!matId) continue;
+        if (!matId) { matMiss++; continue; }
+        hits++;
         req1[matId] = (req1[matId] || 0) + (sku.supplyM1 || 0) * entry.value;
         req2[matId] = (req2[matId] || 0) + (sku.supplyM2 || 0) * entry.value;
       }
+      console.log('[BOM PM] currentPM.length='+currentPM.length+' hits='+hits+' skuMiss='+skuMiss+' matMiss='+matMiss+' bom_pm.length='+bom_pm.length);
+      alert('PM BOM debug:\ncurrentPM='+currentPM.length+' hits='+hits+' skuMiss='+skuMiss+' matMiss='+matMiss+'\nFirst BOM entry: '+JSON.stringify(bom_pm[0])+'\nFirst SKU: '+JSON.stringify(skus[0]));
       updateFactory({ pm: currentPM.map(m =>
         req1[m.id] != null ? { ...m, reqM1: Math.round(req1[m.id]), reqM2: Math.round(req2[m.id]||0) } : m
       )});
