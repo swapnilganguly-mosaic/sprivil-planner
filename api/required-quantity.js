@@ -34,12 +34,12 @@ export default async function handler(req, res) {
     return;
   }
 
-  const apiKey = process.env.NOVA_CORE_API_KEY;
+  const apiKey = process.env.NOVA_API_KEY || process.env.NOVA_CORE_API_KEY;
   const apiUrl = process.env.NOVA_CORE_API_URL || 'https://novacore.mosaicwellness.in/api/vendor-master/material-planning/batch';
 
   if (!apiKey) {
     res.status(500).json({
-      error: 'Server is not configured yet. Set NOVA_CORE_API_KEY as an Environment Variable in the Vercel project settings, then redeploy.'
+      error: 'Server is not configured yet. Set NOVA_API_KEY as an Environment Variable in the Vercel project settings, then redeploy.'
     });
     return;
   }
