@@ -230,11 +230,14 @@ const SEED_RM = [
   mkRM('RMPC0368','Stearic Acid',[],'SHEM05'),
   mkRM('RMPC0221','LashLD',[],'SHAC28'),
   mkRM('RMPC0116','Disodium EDTA',[],'SHCA02'),
-  mkRM('RMPC0180','HA 1-1.2MD Existing',[],'SHAC08'),
+  mkRM('RMPC0180','HA 1-1.2MD Existing',['Hyaluronic Acid','Sodium Hyaluronate'],'SHAC08'),
   mkRM('RMPC0178','Green Apple Color',['Green Apple','Green apple'],'SHCL27'),
   mkRM('RMPC0380','Tea Tree Oil',[],'SHEC80'),
   mkRM('RM_STRIOVER','STRIOVER (Lipotrue Principle)',[],''  ),
   mkRM('RM_SYMO','SymOcide BHO',[],''  ),
+  mkRM('RM_NIAC','Niacinamide',['Vitamin B3','GLOShine B3TM'],'' ),
+  mkRM('RM_EMU165','Emulgade 165',['Glyceryl Stearate (and) PEG-100 Stearate'],'' ),
+  mkRM('RM_TOCO','Tocopheryl Acetate',['Vitamin E Acetate','Tocopheryl Aceatate'],'' ),
 ];
 
 // ─────────────────────────────────────────────
@@ -254,6 +257,7 @@ const SEED_SKUS = [
   mkSKU('MWMMHTP.0001.AAAA.B0_N','MM Swash Intimate Wash- 120ML'),
   mkSKU('MWBWHFP.00188.BO_N',     'Foli Advance+ Hair Growth Serum-25ml'),
   mkSKU('MWBWSKP.00587.B0_N',     'BB Brow & Lash Growth Serum- 5ml'),
+  mkSKU('MWBWUSAPR.00P.026_B0_N', 'BB Hair Density Serum- 25ml'),
 ];
 
 // ─────────────────────────────────────────────
@@ -266,10 +270,10 @@ const SEED_BOM_RM = {
     {tradeName:'Water',pct:52.319},{tradeName:'Propanediol',pct:12},{tradeName:'Butylene Glycol',pct:10},
     {tradeName:'Propylene Glycol',pct:10},{tradeName:'Redensyl',pct:3},{tradeName:'Fenugreek Extract',pct:3},
     {tradeName:'Aminexil',pct:2},{tradeName:'Anagain',pct:2},{tradeName:'Procapil',pct:1},
-    {tradeName:'Phenoxyethanol (and) Ethylhexylglycerin',pct:1},{tradeName:'Red Clover Extract',pct:1},
+    {tradeName:'Microcare PEHG',pct:1},{tradeName:'Red Clover Extract',pct:1},
     {tradeName:'Rosemary extract',pct:3},{tradeName:'D-Panthanol',pct:0.5},{tradeName:'Glycerin',pct:0.5},
     {tradeName:'Moringa Extract',pct:0.3},{tradeName:'Disodium EDTA',pct:0.1},{tradeName:'Baicapil',pct:0.1},
-    {tradeName:'Saw Palmetto Extract',pct:0.1},{tradeName:'Fragrance',pct:0.08},{tradeName:'CI 19140',pct:0.001},
+    {tradeName:'Saw Palmetto Extract',pct:0.1},{tradeName:'Fragrance',pct:0.08},
   ],
   IntimateWash: [
     {tradeName:'Purified Water',pct:80.45},{tradeName:'Disodium EDTA',pct:0.01},{tradeName:'Genecare OSMS BA',pct:1},
@@ -285,7 +289,7 @@ const SEED_BOM_RM = {
     {tradeName:'Propanediol',pct:10},{tradeName:'Moringa Extract',pct:0.1},{tradeName:'Red Clover Extract',pct:0.1},
     {tradeName:'Tribulus Terrestris Extract',pct:0.1},{tradeName:'Rosemary extract',pct:1},
     {tradeName:'Anagain',pct:4},{tradeName:'Aminexil',pct:2},
-    {tradeName:'Phenoxyethanol (and) Ethylhexylglycerin',pct:1},{tradeName:'Fragrance',pct:0.1},
+    {tradeName:'Microcare PEHG',pct:1},{tradeName:'Fragrance',pct:0.1},
     {tradeName:'Xanthan Gum',pct:0.1},{tradeName:'Hydroxyethyl Cellulose',pct:0.1},{tradeName:'Sodium Gluconate',pct:0.1},
   ],
   AdvancedHairSerum: [
@@ -299,14 +303,40 @@ const SEED_BOM_RM = {
   BrowLashSerum: [
     {tradeName:'Purified Water',pct:61.78},{tradeName:'Butylene Glycol',pct:16},{tradeName:'Propanediol',pct:10},
     {tradeName:'Anagain',pct:4},{tradeName:'Redensyl',pct:3},{tradeName:'Aminexil',pct:1},
-    {tradeName:'Biotinoyl Tripeptide-1',pct:2},{tradeName:'Phenoxyethanol (and) Ethylhexylglycerin',pct:1},
+    {tradeName:'Procapil',pct:2},{tradeName:'Microcare PEHG',pct:1},
     {tradeName:'Rosemary extract',pct:1},{tradeName:'Xanthan Gum',pct:0.12},{tradeName:'Hydroxyethyl Cellulose',pct:0.1},
+  ],
+  AntiStretchMarkRollOn: [
+    {tradeName:'Purified Water',pct:73.5},{tradeName:'Glycerin',pct:1},{tradeName:'Butylene Glycol',pct:2},
+    {tradeName:'Niacinamide',pct:1},{tradeName:'Hyaluronic Acid',pct:0.05},
+    {tradeName:'Allantoin',pct:0.5},{tradeName:'Panthenol',pct:0.5},{tradeName:'Disodium EDTA',pct:0.05},
+    {tradeName:'Dimethicone 350',pct:1},{tradeName:'Isopropyl Myristate (IPM)',pct:1},
+    {tradeName:'Cetostearyl Alcohol',pct:0.5},{tradeName:'Stearic Acid',pct:0.1},{tradeName:'Emulgade 165',pct:2},{tradeName:'GMS SE',pct:1},
+    {tradeName:'Rosehip Oil Pure Virgin Special Grade',pct:0.5},{tradeName:'Argan Oil',pct:0.5},
+    {tradeName:'Shea Butter',pct:0.5},{tradeName:'Olive Squalane',pct:1},{tradeName:'Mirasil CM5',pct:3},
+    {tradeName:'Resiluxe SFB 980',pct:2},{tradeName:'Liquorice Extract',pct:1},
+    {tradeName:'Centella Asiatica Extract',pct:1},{tradeName:'Aloe Vera Extract',pct:1},
+    {tradeName:'Bakuchiol',pct:0.5},{tradeName:'Hydrolyzed Collagen',pct:0.2},{tradeName:'Tocopheryl Acetate',pct:0.5},
+    {tradeName:'Symocide BHO',pct:1},{tradeName:'Regeneryl',pct:1},{tradeName:'Citric Acid',pct:0.2},
+    {tradeName:'STRIOVER (Lipotrue Principle)',pct:1},{tradeName:'Lecitouch',pct:0.2},{tradeName:'Fragrance',pct:0.7},
+  ],
+  BBHairDensitySerum: [
+    {tradeName:'Purified Water',pct:44.65},{tradeName:'Zemea',pct:12},{tradeName:'Butylene Glycol',pct:10},
+    {tradeName:'Propylene Glycol',pct:10},{tradeName:'Redensyl',pct:3},{tradeName:'Fenugreek Extract',pct:3},
+    {tradeName:'Anagain',pct:4},{tradeName:'Procapil',pct:1},{tradeName:'Microcare PEHG',pct:1},
+    {tradeName:'Red Clover Extract',pct:1},{tradeName:'Rosemary extract',pct:3},{tradeName:'D-Panthenol',pct:0.5},
+    {tradeName:'Glycerine',pct:0.5},{tradeName:'Moringa Extract',pct:0.3},{tradeName:'Disodium EDTA',pct:0.1},
+    {tradeName:'Baicapil',pct:0.1},{tradeName:'Xanthan Gum',pct:0.15},
+    {tradeName:'Herbogen PDRN Aloevera (100ppm)',pct:1},{tradeName:'Fragrance',pct:0.2},
+    {tradeName:'Prolicell Malva (Malva Exosomes)',pct:1},{tradeName:'Saw Palmetto Extract',pct:5},
+    {tradeName:'Liposomal Caffeine Herbasome',pct:1},{tradeName:'Centella Asiatica Extract',pct:1},
+    {tradeName:'Copper Tripeptide-1',pct:0.5},
   ],
   HairDensitySerum: [
     {tradeName:'Purified Water',pct:44.65},{tradeName:'Propanediol',pct:12},{tradeName:'Butylene Glycol',pct:10},
     {tradeName:'Propylene Glycol',pct:10},{tradeName:'Redensyl',pct:3},{tradeName:'Fenugreek Extract',pct:3},
     {tradeName:'Anagain',pct:4},{tradeName:'Aminexil',pct:2},{tradeName:'Procapil',pct:1},
-    {tradeName:'Phenoxyethanol (and) Ethylhexylglycerin',pct:1},{tradeName:'Red Clover Extract',pct:1},
+    {tradeName:'Microcare PEHG',pct:1},{tradeName:'Red Clover Extract',pct:1},
     {tradeName:'Rosemary extract',pct:3},{tradeName:'Panthenol',pct:0.5},{tradeName:'Glycerin',pct:0.5},
     {tradeName:'Moringa Extract',pct:0.3},{tradeName:'Disodium EDTA',pct:0.1},{tradeName:'Baicapil',pct:0.1},
     {tradeName:'Xanthan Gum',pct:0.15},{tradeName:'Fragrance',pct:0.2},{tradeName:'Saw Palmetto Extract',pct:1},
@@ -314,32 +344,51 @@ const SEED_BOM_RM = {
   ],
 };
 
-// Packaging BOM: SKU code → [{sprivilCode, count}]
+// Packaging BOM: SKU code → [{mosaicCode, count}]  — sourced from BOM Master.xlsx
 const SEED_BOM_PM = {
+  'MWBWHFP.00188.BO_N': [
+    {mosaicCode:'PCOBOT013000424',count:1},{mosaicCode:'PCOCAP008000922',count:1},
+    {mosaicCode:'PCOPLG023000923',count:1},{mosaicCode:'PBWLBL005000193',count:1},
+    {mosaicCode:'PBWMCT004000829',count:1},{mosaicCode:'PBWSTK011000052',count:1},
+  ],
+  'MWBWHFP.00575.B0_N': [
+    {mosaicCode:'PCOBOT013000331',count:1},{mosaicCode:'PCOCAP008000346',count:1},
+    {mosaicCode:'PBWLBL005000480',count:1},{mosaicCode:'PBWMCT004000481',count:1},
+    {mosaicCode:'PCOPLG023000366',count:1},{mosaicCode:'PBWSTK011000052',count:1},
+  ],
   'MWBWHFP.00637.B0_N': [
-    {sprivilCode:'PGBBB10',count:1},{sprivilCode:'BBHGSL01',count:1},
-    {sprivilCode:'BBHGSC01',count:1},{sprivilCode:'PLBBW1',count:1},
+    {mosaicCode:'PCOBOT013000384',count:1},{mosaicCode:'PCOCAP008000385',count:1},
+    {mosaicCode:'PBWLBL005000487',count:1},{mosaicCode:'PBWMCT004000488',count:1},
+    {mosaicCode:'PCOPLG023000386',count:1},{mosaicCode:'PBWSTK011000052',count:1},
   ],
   'MWBWHFP.00672.B0_N': [
-    {sprivilCode:'BBHGST50',count:1},{sprivilCode:'BBHGSC50',count:1},
-    {sprivilCode:'BBHGSL50',count:1},{sprivilCode:'BBSS01',count:1},
+    {mosaicCode:'PCOBOT013000387',count:1},{mosaicCode:'PCOCAP008000388',count:1},
+    {mosaicCode:'PBWLBL005000490',count:1},{mosaicCode:'PBWMCT004000491',count:1},
+    {mosaicCode:'PCOPLG023000389',count:1},{mosaicCode:'PBWSTK011000052',count:1},
   ],
   'MWBWSKP.00587.B0_N': [
-    {sprivilCode:'PMCBB32',count:1},{sprivilCode:'BBSS01',count:1},
-    {sprivilCode:'PBTGN33',count:1},{sprivilCode:'PBL001',count:1},
+    {mosaicCode:'PBWBOT013000527',count:1},{mosaicCode:'PCOCAP008000408',count:1},
+    {mosaicCode:'PBWLBL005000528',count:1},{mosaicCode:'PCOTRY032000931',count:1},
+    {mosaicCode:'PBWMCT004000529',count:1},{mosaicCode:'PBWSTK011000052',count:2},
+  ],
+  'MWBWSKP.00771.B0_N': [
+    {mosaicCode:'PCOBAL028000367',count:1},{mosaicCode:'PCOBOT013000323',count:1},
+    {mosaicCode:'PCOCAP008000354',count:1},{mosaicCode:'PBWLBL005000729',count:1},
+    {mosaicCode:'PBWMCT004000728',count:1},{mosaicCode:'PBWSTK011000052',count:1},
   ],
   'MWMMBDP.0132.AAAA.B0_R': [
-    {sprivilCode:'PGBBB5',count:3},{sprivilCode:'PDGTN9',count:3},
-    {sprivilCode:'PMCMM51',count:1},{sprivilCode:'PLBMM44',count:1},
-    {sprivilCode:'PMPG01',count:2},{sprivilCode:'MMSS01',count:1},
+    {mosaicCode:'PCOBOT013000330',count:1},{mosaicCode:'PCODRP022000306',count:1},
+    {mosaicCode:'PMMLBL005000613',count:1},{mosaicCode:'PMMMCT004000614',count:1},
+    {mosaicCode:'PCOPLG023000369',count:1},{mosaicCode:'PMMSTK011000067',count:2},
   ],
   'MWMMHRP.6298.AAAA.B0_N': [
-    {sprivilCode:'PGBBB5',count:3},{sprivilCode:'PDGTN9',count:3},
-    {sprivilCode:'PMMC01',count:1},{sprivilCode:'PMBBLB01',count:1},
+    {mosaicCode:'PCOBOT013000330',count:1},{mosaicCode:'PCODRP022000306',count:1},
+    {mosaicCode:'PMMLBL005000638',count:1},{mosaicCode:'PCOPLG023000369',count:1},
+    {mosaicCode:'PMMMCT004000639',count:1},{mosaicCode:'PMMSTK011000067',count:2},
   ],
   'MWMMHTP.0001.AAAA.B0_N': [
-    {sprivilCode:'PPUGN4',count:1},{sprivilCode:'PBTGN8',count:1},
-    {sprivilCode:'PLBMM21',count:1},{sprivilCode:'POIGN45',count:1},
+    {mosaicCode:'PCOBOT013000326',count:1},{mosaicCode:'PMMLBL005000651',count:1},
+    {mosaicCode:'PCOPMP019000336',count:1},{mosaicCode:'PCOSLV010000359',count:1},
   ],
 };
 
@@ -353,7 +402,8 @@ const SKU_FORMULA = {
   'MWMMHTP.0001.AAAA.B0_N': {key:'IntimateWash',    fillG:120},
   'MWBWHFP.00188.BO_N': {key:'HairDensitySerum', fillG:25},
   'MWBWSKP.00587.B0_N': {key:'BrowLashSerum',    fillG:5},
-  // MWBWSKP.00771.B0_N — formula not available
+  'MWBWSKP.00771.B0_N': {key:'AntiStretchMarkRollOn', fillG:50},
+  'MWBWUSAPR.00P.026_B0_N': {key:'BBHairDensitySerum', fillG:25},
 };
 
 const SEED_PM = [
@@ -400,6 +450,10 @@ const SEED_PM = [
   mkPM('PMMLBL005000651','PMMLBL005000651','MM_Swash Intimate Wash - 120 ml_Body Label',[],'PLBMM21',[]),
   mkPM('PCOPMP019000336','PCOPMP019000336','CO_White Foaming Pump With Over Cap',[],'PPUGN4',[]),
   mkPM('PCOSLV010000359','PCOSLV010000359','CO_PVC Sleeve',[],'POIGN45',[]),
+  mkPM('PCOBOT013000424','PCOBOT013000424','CO_PP Roll on Bottle_30 ml_Unique Neck_Radcom_Translucent',[],'',[]),
+  mkPM('PCOCAP008000922','PCOCAP008000922','CO_PP Screw Cap for HGS Roll on_Unique Neck_Radcom_White',[],'',[]),
+  mkPM('PCOPLG023000923','PCOPLG023000923','CO_PP Clear Plug With Metal Ball 25ml_India',[],'',[]),
+  mkPM('PCOTRY032000931','PCOTRY032000931','CO_Paper Tray',[],'',[]),
   mkPM('PBWBOT013000527','PBWBOT013000527','CO_Brow & Lash Growth Serum - 5 ml_PP Printed Bottle_5 ml',[],'PBTGN33',[]),
   mkPM('PCOCAP008000408','PCOCAP008000408','CO_PP Screw Cap',[],'',  []),
   mkPM('PBWLBL005000528','PBWLBL005000528','BW_Brow & Lash Growth Serum - 5 ml_Bottom Label',[],'PBL001',[]),
@@ -423,7 +477,7 @@ function saveState(state) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
 }
 
-const LS_KEY_SKUS = 'sprivil_skus_v2';
+const LS_KEY_SKUS = 'sprivil_skus_v3';
 function loadSkus() {
   try {
     const s = localStorage.getItem(LS_KEY_SKUS);
@@ -433,6 +487,54 @@ function loadSkus() {
 }
 function saveSkus(skus) {
   try { localStorage.setItem(LS_KEY_SKUS, JSON.stringify(skus)); } catch(e) {}
+}
+
+const LS_FACTORIES = 'sprivil_factories_v1';
+const LS_ACTIVE_FACTORY = 'sprivil_active_factory_v1';
+
+function loadFactories() {
+  try { const s = localStorage.getItem(LS_FACTORIES); if (s) return JSON.parse(s); } catch(e) {}
+  return null;
+}
+function saveFactories(f) {
+  try { localStorage.setItem(LS_FACTORIES, JSON.stringify(f)); } catch(e) {}
+}
+function loadActiveFactoryId() {
+  return localStorage.getItem(LS_ACTIVE_FACTORY) || 'sprivil';
+}
+function saveActiveFactoryId(id) {
+  try { localStorage.setItem(LS_ACTIVE_FACTORY, id); } catch(e) {}
+}
+
+function initSprivilFactory() {
+  let init = null;
+  try { const s = localStorage.getItem(LS_KEY); if (s) init = JSON.parse(s); } catch(e) {}
+  let savedSkus = null;
+  try { const s = localStorage.getItem(LS_KEY_SKUS); if (s) savedSkus = JSON.parse(s); } catch(e) {}
+  const savedRm = init?.rm || SEED_RM;
+  const isRmStale = savedRm.length > 0 && savedRm[0].id.startsWith('RM0');
+  const rmBase = isRmStale ? SEED_RM : savedRm;
+  const seedRmMap = Object.fromEntries(SEED_RM.map(m => [m.id, m]));
+  const rm = rmBase.map(m => ({ ...m, openPO: m.openPO ?? 0, sprivilCode: m.sprivilCode || seedRmMap[m.id]?.sprivilCode || '' }));
+  const savedPm = init?.pm || SEED_PM;
+  const isPmStale = savedPm.length > 0 && savedPm[0].id.length < 12;
+  const pmBase = isPmStale ? SEED_PM : savedPm;
+  const seedPmMap = Object.fromEntries(SEED_PM.map(m => [m.id, m]));
+  const pm = pmBase.map(m => ({ ...m, openPO: m.openPO ?? 0, sprivilCode: seedPmMap[m.id]?.sprivilCode || m.sprivilCode || '', mosaicCodes: seedPmMap[m.id]?.mosaicCodes ?? m.mosaicCodes ?? [], aliases: seedPmMap[m.id]?.aliases ?? m.aliases ?? [] }));
+  let skus;
+  if (!savedSkus) { skus = SEED_SKUS; }
+  else { const sc = new Set(savedSkus.map(s => s.code)); const n = SEED_SKUS.filter(s => !sc.has(s.code)); skus = n.length ? [...savedSkus, ...n] : savedSkus; }
+  return { id: 'sprivil', name: 'Sprivil', hasRM: true, hasPM: true, skus, rm, pm, vendorMap: init?.vendorMap || {}, m1Label: init?.m1Label || 'M1', m2Label: init?.m2Label || 'M2' };
+}
+
+function initNewFactory(name, hasRM, hasPM) {
+  return {
+    id: 'factory_' + Date.now(),
+    name, hasRM, hasPM, skus: [],
+    rm: SEED_RM.map(m => ({ ...m, stock: 0, openPO: 0, reqM1: 0, reqM2: 0, moq: 0 })),
+    pm: SEED_PM.map(m => ({ ...m, stock: 0, openPO: 0, reqM1: 0, reqM2: 0, moq: 0 })),
+    vendorMap: {}, m1Label: 'M1', m2Label: 'M2',
+  };
 }
 
 // ─────────────────────────────────────────────
@@ -499,13 +601,8 @@ function resolveInternal(raw, materials) {
 function extractBomQty(skus, rmMaterials, pmMaterials, vendorMap) {
   const rmM1 = {}, rmM2 = {}, pmM1 = {}, pmM2 = {};
 
-  // Build PM sprivil-code → id map
-  const pmSprivilMap = {};
-  for (const m of pmMaterials) {
-    let sc = (m.sprivilCode || '').trim();
-    if (sc.toUpperCase().startsWith('MOS_')) sc = sc.slice(4);
-    if (sc) pmSprivilMap[sc.toUpperCase()] = m.id;
-  }
+  // Build PM id set for fast lookup
+  const pmIdSet = new Set(pmMaterials.map(m => m.id));
 
   for (const sku of skus) {
     const m1qty = sku.supplyM1 || 0;
@@ -526,13 +623,11 @@ function extractBomQty(skus, rmMaterials, pmMaterials, vendorMap) {
       }
     }
 
-    // --- PM packaging ---
+    // --- PM packaging (matched by Mosaic PM code = material id) ---
     const pkgItems = SEED_BOM_PM[sku.code] || [];
     for (const pkg of pkgItems) {
-      let sc = (pkg.sprivilCode || '').trim();
-      if (sc.toUpperCase().startsWith('MOS_')) sc = sc.slice(4);
-      const id = pmSprivilMap[sc.toUpperCase()];
-      if (id) {
+      const id = pkg.mosaicCode;
+      if (pmIdSet.has(id)) {
         pmM1[id] = (pmM1[id] || 0) + (pkg.count || 1) * m1qty;
         pmM2[id] = (pmM2[id] || 0) + (pkg.count || 1) * m2qty;
       }
@@ -1603,11 +1698,163 @@ function StockPOImportModal({ kind, materials, onApply, onClose }) {
 }
 
 // ─────────────────────────────────────────────
+// SKU DOC TAB
+// ─────────────────────────────────────────────
+function SkuDocTab({ skus, rmMaterials, pmMaterials, vendorMap, m1Label, m2Label }) {
+  const [selectedSku, setSelectedSku] = useState(skus[0]?.code || '');
+
+  const sku = skus.find(s => s.code === selectedSku);
+  const f = sku ? SKU_FORMULA[sku.code] : null;
+
+  // Build RM rows for this SKU
+  const rmRows = useMemo(() => {
+    if (!f) return [];
+    const ings = SEED_BOM_RM[f.key] || [];
+    const rows = [];
+    for (const ing of ings) {
+      const ids = resolveAll(ing.tradeName, rmMaterials, vendorMap);
+      for (const id of ids) {
+        const m = rmMaterials.find(x => x.id === id);
+        if (!m) continue;
+        const m1 = calcM1(m);
+        const m2 = calcM2(m, m1);
+        rows.push({ name: m.name, id, pct: ing.pct, docM1: m1.doc, docM2: m2.doc });
+      }
+    }
+    return rows;
+  }, [f, rmMaterials, vendorMap, selectedSku]);
+
+  // Build PM rows for this SKU
+  const pmRows = useMemo(() => {
+    if (!sku) return [];
+    const pkgItems = SEED_BOM_PM[sku.code] || [];
+    const rows = [];
+    for (const pkg of pkgItems) {
+      const m = pmMaterials.find(x => x.id === pkg.mosaicCode);
+      if (!m) continue;
+      const m1 = calcM1(m);
+      const m2 = calcM2(m, m1);
+      rows.push({ name: m.name, id: m.id, count: pkg.count, docM1: m1.doc, docM2: m2.doc });
+    }
+    return rows;
+  }, [sku, pmMaterials, selectedSku]);
+
+  // Find bottlenecks
+  const validDocM1 = r => r.docM1 != null;
+  const validDocM2 = r => r.docM2 != null;
+  const minRmM1 = rmRows.filter(validDocM1).length ? Math.min(...rmRows.filter(validDocM1).map(r => r.docM1)) : null;
+  const minRmM2 = rmRows.filter(validDocM2).length ? Math.min(...rmRows.filter(validDocM2).map(r => r.docM2)) : null;
+  const minPmM1 = pmRows.filter(validDocM1).length ? Math.min(...pmRows.filter(validDocM1).map(r => r.docM1)) : null;
+  const minPmM2 = pmRows.filter(validDocM2).length ? Math.min(...pmRows.filter(validDocM2).map(r => r.docM2)) : null;
+
+  const overallM1 = [minRmM1, minPmM1].filter(v => v != null).reduce((a, b) => Math.min(a, b), Infinity);
+  const overallM2 = [minRmM2, minPmM2].filter(v => v != null).reduce((a, b) => Math.min(a, b), Infinity);
+
+  function docColor(doc, minDoc, overallMin) {
+    if (doc == null) return {};
+    if (Math.abs(doc - overallMin) < 0.01) return { background: '#fef2f2', color: '#b91c1c', fontWeight: 700 }; // overall bottleneck
+    if (Math.abs(doc - minDoc) < 0.01) return { background: '#fffbeb', color: '#92400e', fontWeight: 600 }; // local min
+    return {};
+  }
+
+  function SummaryBox({ label, rmDoc, pmDoc, overallDoc }) {
+    const binding = rmDoc != null && pmDoc != null ? (rmDoc <= pmDoc ? 'RM' : 'PM') : rmDoc != null ? 'RM' : pmDoc != null ? 'PM' : null;
+    return (
+      <div style={{display:'flex',gap:'12px',alignItems:'center',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:'8px',padding:'12px 16px',marginBottom:'4px'}}>
+        <span style={{fontWeight:700,color:'#1e293b',minWidth:'32px'}}>{label}</span>
+        <span style={{fontSize:'13px',color:'#475569'}}>RM: <strong style={{color:'#1d4ed8'}}>{rmDoc != null ? fmt(rmDoc,1)+' days' : '—'}</strong></span>
+        <span style={{fontSize:'13px',color:'#475569'}}>PM: <strong style={{color:'#7c3aed'}}>{pmDoc != null ? fmt(pmDoc,1)+' days' : '—'}</strong></span>
+        {overallDoc !== Infinity && (
+          <span style={{marginLeft:'auto',background:'#fef2f2',color:'#b91c1c',borderRadius:'6px',padding:'4px 12px',fontWeight:700,fontSize:'13px'}}>
+            🚨 Bottleneck: {binding} — {fmt(overallDoc,1)} days
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  function DocTable({ rows, kind, minM1, minM2, overallM1, overallM2 }) {
+    if (!rows.length) return <div style={{color:'#94a3b8',fontSize:'13px',padding:'8px'}}>No {kind.toUpperCase()} BOM data for this SKU.</div>;
+    return (
+      <table style={{width:'100%',borderCollapse:'collapse',fontSize:'13px'}}>
+        <thead>
+          <tr style={{background:'#f1f5f9'}}>
+            <th style={{textAlign:'left',padding:'6px 10px',fontWeight:600}}>Material</th>
+            <th style={{textAlign:'right',padding:'6px 10px'}}>{m1Label} Doc (days)</th>
+            <th style={{textAlign:'right',padding:'6px 10px'}}>{m2Label} Doc (days)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} style={{borderBottom:'1px solid #f1f5f9'}}>
+              <td style={{padding:'5px 10px',color:'#1e293b'}}>{r.name}</td>
+              <td style={{textAlign:'right',padding:'5px 10px',...docColor(r.docM1, minM1, overallM1)}}>
+                {r.docM1 != null ? fmt(r.docM1,1) : '—'}
+              </td>
+              <td style={{textAlign:'right',padding:'5px 10px',...docColor(r.docM2, minM2, overallM2)}}>
+                {r.docM2 != null ? fmt(r.docM2,1) : '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }
+
+  return (
+    <div style={{padding:'16px'}}>
+      {/* SKU selector */}
+      <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'20px'}}>
+        <label style={{fontWeight:600,color:'#1e293b'}}>SKU</label>
+        <select
+          value={selectedSku}
+          onChange={e => setSelectedSku(e.target.value)}
+          style={{padding:'6px 12px',borderRadius:'6px',border:'1px solid #cbd5e1',fontSize:'14px',minWidth:'360px'}}
+        >
+          {skus.map(s => <option key={s.code} value={s.code}>{s.name} ({s.code})</option>)}
+        </select>
+        {!f && <span style={{color:'#f59e0b',fontSize:'13px'}}>⚠️ No BOM mapped for this SKU</span>}
+        {f && <span style={{color:'#64748b',fontSize:'13px'}}>{f.fillG} ml · {f.key}</span>}
+      </div>
+
+      {/* Summary */}
+      {(minRmM1 != null || minPmM1 != null) && (
+        <div style={{marginBottom:'20px'}}>
+          <SummaryBox label={m1Label} rmDoc={minRmM1} pmDoc={minPmM1} overallDoc={overallM1} />
+          <SummaryBox label={m2Label} rmDoc={minRmM2} pmDoc={minPmM2} overallDoc={overallM2} />
+        </div>
+      )}
+
+      {/* RM Table */}
+      <div style={{marginBottom:'20px'}}>
+        <div style={{fontWeight:700,color:'#1d4ed8',marginBottom:'6px',fontSize:'13px',textTransform:'uppercase',letterSpacing:'0.04em'}}>
+          Raw Materials
+        </div>
+        <div style={{border:'1px solid #e2e8f0',borderRadius:'8px',overflow:'hidden'}}>
+          <DocTable rows={rmRows} kind="rm" minM1={minRmM1} minM2={minRmM2} overallM1={overallM1} overallM2={overallM2} />
+        </div>
+      </div>
+
+      {/* PM Table */}
+      <div>
+        <div style={{fontWeight:700,color:'#7c3aed',marginBottom:'6px',fontSize:'13px',textTransform:'uppercase',letterSpacing:'0.04em'}}>
+          Packaging Materials
+        </div>
+        <div style={{border:'1px solid #e2e8f0',borderRadius:'8px',overflow:'hidden'}}>
+          <DocTable rows={pmRows} kind="pm" minM1={minPmM1} minM2={minPmM2} overallM1={overallM1} overallM2={overallM2} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // SUPPLY ENTRY TAB
 // ─────────────────────────────────────────────
-function SupplyEntryTab({ skus, onUpdateSkus, onExtract, m1Label, m2Label }) {
+function SupplyEntryTab({ skus, onUpdateSkus, onExtract, onImportSkus, m1Label, m2Label }) {
   const [search, setSearch] = useState('');
   const [showImport, setShowImport] = useState(false);
+  const [showImportSkus, setShowImportSkus] = useState(false);
   const filtered = search
     ? skus.filter(s => norm(s.name+' '+s.code).includes(norm(search)))
     : skus;
@@ -1622,6 +1869,7 @@ function SupplyEntryTab({ skus, onUpdateSkus, onExtract, m1Label, m2Label }) {
       <div className="toolbar">
         <input className="search-input" placeholder="Search SKUs…" value={search} onChange={e=>setSearch(e.target.value)} />
         <div className="spacer"/>
+        <button className="btn btn-secondary" onClick={()=>setShowImportSkus(true)}>📋 Import SKU List</button>
         <button className="btn btn-secondary" onClick={()=>setShowImport(true)}>📥 Import Supply Numbers</button>
         <button
           className="btn btn-primary"
@@ -1631,6 +1879,14 @@ function SupplyEntryTab({ skus, onUpdateSkus, onExtract, m1Label, m2Label }) {
           ⚡ Extract Required Quantities
         </button>
       </div>
+
+      {showImportSkus && (
+        <ImportSkuListModal
+          existingSkus={skus}
+          onApply={updated => { onImportSkus(updated); setShowImportSkus(false); }}
+          onClose={()=>setShowImportSkus(false)}
+        />
+      )}
 
       {showImport && (
         <SkuImportModal
@@ -1683,7 +1939,7 @@ function SupplyEntryTab({ skus, onUpdateSkus, onExtract, m1Label, m2Label }) {
 // ─────────────────────────────────────────────
 // CONSOLIDATED TAB (RM or PM)
 // ─────────────────────────────────────────────
-function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Label }) {
+function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Label, factoryName }) {
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState('');
   const [highlight, setHighlight] = useState('all'); // 'all'|'ordered'|'excess'
@@ -1748,6 +2004,7 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
         <button className="btn btn-secondary" onClick={()=>setModal({type:'moq'})}>📥 Import MOQ</button>
         <button className="btn btn-secondary" onClick={clearReq} title="Reset all required quantities to 0">🗑 Clear Req</button>
         <button className="btn btn-secondary" onClick={()=>setModal({type:'vendorMap'})}>🔗 Vendor Codes</button>
+        <button className="btn btn-secondary" onClick={()=>setModal({type:'factorymap'})} style={{background:'#7c3aed',color:'#fff',border:'none'}}>🔗 {factoryName} Code Mapping</button>
       </div>
 
       <div className="tbl-wrap">
@@ -1781,9 +2038,9 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
           <thead>
             <tr>
               <th rowSpan={2} style={{textAlign:'center',minWidth:'44px'}}>#</th>
-              {kind==='pm' && <th rowSpan={2} style={{background:'#2d3748',color:'#fbbf24'}}>Sprivil Code</th>}
+              {kind==='pm' && <th rowSpan={2} style={{background:'#2d3748',color:'#fbbf24'}}>{factoryName} Code</th>}
               {kind==='pm' && <th rowSpan={2} style={{background:'#2d3748',color:'#86efac'}}>Mosaic PM Code</th>}
-              {kind==='rm' && <th rowSpan={2} style={{background:'#2d3748',color:'#fbbf24'}}>Sprivil Code</th>}
+              {kind==='rm' && <th rowSpan={2} style={{background:'#2d3748',color:'#fbbf24'}}>{factoryName} Code</th>}
               {kind==='rm' && <th rowSpan={2} style={{background:'#2d3748',color:'#86efac'}}>Mosaic RM Code</th>}
               <th rowSpan={2}>Name</th>
               <th rowSpan={2}>MOQ ({unit})</th>
@@ -1935,6 +2192,16 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
           onClose={()=>setModal(null)}
         />
       )}
+
+      {modal?.type==='factorymap' && (
+        <FactoryCodeMapModal
+          kind={kind}
+          materials={materials}
+          factoryName={factoryName}
+          onApply={updated => { onUpdate(kind, updated); setModal(null); }}
+          onClose={()=>setModal(null)}
+        />
+      )}
     </div>
   );
 }
@@ -2008,171 +2275,256 @@ function GlobalVendorMapModal({ vendorMap, rmMaterials, pmMaterials, onSave, onC
 }
 
 // ─────────────────────────────────────────────
+// ADD FACTORY MODAL
+// ─────────────────────────────────────────────
+function AddFactoryModal({ onAdd, onClose }) {
+  const [name, setName] = useState('');
+  const [hasRM, setHasRM] = useState(true);
+  const [hasPM, setHasPM] = useState(true);
+  return (
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:'420px'}}>
+        <div className="modal-hdr"><h2>🏭 Add Factory</h2><button className="btn btn-secondary btn-sm" onClick={onClose}>✕ Close</button></div>
+        <div className="modal-body">
+          <div style={{marginBottom:'16px'}}>
+            <label style={{display:'block',fontWeight:600,marginBottom:'6px'}}>Factory Name</label>
+            <input className="search-input" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. ABC Manufacturing" style={{width:'100%'}} autoFocus />
+          </div>
+          <div style={{display:'flex',gap:'20px'}}>
+            <label style={{display:'flex',alignItems:'center',gap:'6px',cursor:'pointer'}}><input type="checkbox" checked={hasRM} onChange={e=>setHasRM(e.target.checked)} /> Track Raw Materials (RM)</label>
+            <label style={{display:'flex',alignItems:'center',gap:'6px',cursor:'pointer'}}><input type="checkbox" checked={hasPM} onChange={e=>setHasPM(e.target.checked)} /> Track Packaging (PM)</label>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={()=>{if(name.trim()){onAdd(name.trim(),hasRM,hasPM);onClose();}}} disabled={!name.trim()}>Add Factory</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// IMPORT SKU LIST MODAL
+// ─────────────────────────────────────────────
+function ImportSkuListModal({ existingSkus, onApply, onClose }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  const fileRef = useRef();
+  async function handleFile(file) {
+    try {
+      const { headers, rows } = await parseUpload(file);
+      const hi = kw => headers.findIndex(h => h.toLowerCase().includes(kw));
+      const codeIdx = hi('code') >= 0 ? hi('code') : 0;
+      const nameIdx = hi('name') >= 0 ? hi('name') : 1;
+      const skus = rows.filter(r => r[headers[codeIdx]]).map(r => mkSKU(String(r[headers[codeIdx]]).trim(), String(r[headers[nameIdx]]||'').trim()));
+      if (!skus.length) { setError('No SKU rows found'); return; }
+      setData(skus); setError('');
+    } catch(e) { setError(String(e)); }
+  }
+  function apply() {
+    if (!data) return;
+    const existCodes = new Set(existingSkus.map(s => s.code));
+    const merged = [...existingSkus];
+    for (const s of data) { if (!existCodes.has(s.code)) merged.push(s); }
+    onApply(merged);
+  }
+  return (
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:'480px'}}>
+        <div className="modal-hdr"><h2>📋 Import SKU List</h2><button className="btn btn-secondary btn-sm" onClick={onClose}>✕ Close</button></div>
+        <div className="modal-body">
+          <p style={{fontSize:'13px',color:'#64748b',marginBottom:'12px'}}>Upload Excel/CSV with <strong>SKU Code</strong> and <strong>SKU Name</strong> columns. Existing SKUs are preserved (supply quantities kept).</p>
+          {error && <div className="warn-box">⚠️ {error}</div>}
+          <div className="upload-zone" onClick={()=>fileRef.current?.click()} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleFile(e.dataTransfer.files[0]);}}>
+            <input ref={fileRef} type="file" accept=".xlsx,.csv" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])} />
+            {data ? <span style={{color:'#16a34a'}}>✓ {data.length} SKUs ready to import</span> : <span>Click or drag Excel / CSV file here</span>}
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={()=>{apply();onClose();}} disabled={!data}>Import {data?.length||''} SKUs</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// FACTORY CODE MAP MODAL
+// ─────────────────────────────────────────────
+function FactoryCodeMapModal({ kind, materials, factoryName, onApply, onClose }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  const fileRef = useRef();
+  async function handleFile(file) {
+    try {
+      const { headers, rows } = await parseUpload(file);
+      const hi = kw => headers.findIndex(h => h.toLowerCase().includes(kw));
+      const fcIdx = hi('factory') >= 0 ? hi('factory') : 0;
+      const mcIdx = hi('mosaic') >= 0 ? hi('mosaic') : 1;
+      const mnIdx = hi('name') >= 0 ? hi('name') : 2;
+      const mapped = rows.filter(r => r[headers[fcIdx]] && r[headers[mcIdx]]).map(r => ({ factoryCode: String(r[headers[fcIdx]]).trim(), mosaicCode: String(r[headers[mcIdx]]).trim(), mosaicName: String(r[headers[mnIdx]]||'').trim() }));
+      if (!mapped.length) { setError('No mapping rows found'); return; }
+      setData(mapped); setError('');
+    } catch(e) { setError(String(e)); }
+  }
+  const matchCount = useMemo(() => {
+    if (!data) return 0;
+    const idMap = Object.fromEntries(materials.map(m => [m.id.toUpperCase(), true]));
+    const nmMap = Object.fromEntries(materials.map(m => [norm(m.name), true]));
+    return data.filter(r => idMap[r.mosaicCode.toUpperCase()] || nmMap[norm(r.mosaicName)]).length;
+  }, [data, materials]);
+  function apply() {
+    if (!data) return;
+    const idMap = Object.fromEntries(materials.map(m => [m.id.toUpperCase(), m.id]));
+    const nmMap = Object.fromEntries(materials.map(m => [norm(m.name), m.id]));
+    const updates = {};
+    for (const r of data) { const id = idMap[r.mosaicCode.toUpperCase()] || nmMap[norm(r.mosaicName)]; if (id) updates[id] = r.factoryCode; }
+    onApply(materials.map(m => updates[m.id] ? { ...m, sprivilCode: updates[m.id] } : m));
+  }
+  return (
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:'520px'}}>
+        <div className="modal-hdr"><h2>🔗 {factoryName} Code Mapping — {kind.toUpperCase()}</h2><button className="btn btn-secondary btn-sm" onClick={onClose}>✕ Close</button></div>
+        <div className="modal-body">
+          <p style={{fontSize:'13px',color:'#64748b',marginBottom:'12px'}}>Upload Excel/CSV with three columns: <strong>{factoryName} Code</strong> | <strong>Mosaic Code</strong> | <strong>Material Name</strong>.<br/>One-time import that maps {factoryName} codes to Mosaic codes for stock/PO imports.</p>
+          {error && <div className="warn-box">⚠️ {error}</div>}
+          <div className="upload-zone" onClick={()=>fileRef.current?.click()} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleFile(e.dataTransfer.files[0]);}}>
+            <input ref={fileRef} type="file" accept=".xlsx,.csv" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])} />
+            {data ? <span style={{color:'#16a34a'}}>✓ {data.length} rows loaded — {matchCount} matched to materials</span> : <span>Click or drag Excel / CSV file here</span>}
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={()=>{apply();onClose();}} disabled={!data||matchCount===0}>Apply {matchCount} Mappings</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // APP
 // ─────────────────────────────────────────────
 function App() {
-  const init = loadState();
-  const [rmMaterials, setRm] = useState(() => {
-    const saved = init?.rm || SEED_RM;
-    // If saved IDs use old RM001 format, fall back to fresh seed
-    const isStale = saved.length > 0 && saved[0].id.startsWith('RM0');
-    const base = isStale ? SEED_RM : saved;
-    const seedRmMap = Object.fromEntries(SEED_RM.map(m => [m.id, m]));
-    return base.map(m => ({
-      ...m,
-      openPO: m.openPO ?? 0,
-      sprivilCode: m.sprivilCode || seedRmMap[m.id]?.sprivilCode || '',
-    }));
-  });
-  const [pmMaterials, setPm] = useState(() => {
-    const saved = init?.pm || SEED_PM;
-    // If saved IDs use old short Sprivil format (e.g. PGBBB10), fall back to fresh seed
-    const isPmStale = saved.length > 0 && saved[0].id.length < 12;
-    const pmBase = isPmStale ? SEED_PM : saved;
-    // Merge sprivilCode / mosaicCodes / aliases from SEED_PM in case localStorage is stale
-    const seedMap = Object.fromEntries(SEED_PM.map(m => [m.id, m]));
-    return pmBase.map(m => ({
-      ...m,
-      openPO:      m.openPO ?? 0,
-      sprivilCode: seedMap[m.id]?.sprivilCode || m.sprivilCode || '',
-      mosaicCodes: seedMap[m.id]?.mosaicCodes ?? m.mosaicCodes ?? [],
-      aliases:     seedMap[m.id]?.aliases     ?? m.aliases     ?? [],
-    }));
-  });
-  const [skus, setSkus] = useState(() => loadSkus() || SEED_SKUS);
-  const [vendorMap, setVendorMap] = useState(() => init?.vendorMap || {});
-  const [m1Label, setM1Label] = useState(() => init?.m1Label || 'M1');
-  const [m2Label, setM2Label] = useState(() => init?.m2Label || 'M2');
+  const [factories, setFactories] = useState(() => loadFactories() || [initSprivilFactory()]);
+  const [activeFactoryId, setActiveFactoryId] = useState(() => loadActiveFactoryId());
   const [activeTab, setActiveTab] = useState('supply');
-  const [modal, setModal] = useState(null); // 'help' | 'vendorMap'
+  const [modal, setModal] = useState(null);
 
-  // Persist on every change
-  useEffect(() => {
-    saveState({ rm: rmMaterials, pm: pmMaterials, vendorMap, m1Label, m2Label });
-  }, [rmMaterials, pmMaterials, vendorMap, m1Label, m2Label]);
+  useEffect(() => { saveFactories(factories); }, [factories]);
+  useEffect(() => { saveActiveFactoryId(activeFactoryId); }, [activeFactoryId]);
 
-  useEffect(() => { saveSkus(skus); }, [skus]);
+  const factory = factories.find(f => f.id === activeFactoryId) || factories[0];
 
-  function handleUpdate(kind, updated) {
-    if (kind === 'rm') setRm(updated);
-    else setPm(updated);
+  function updateFactory(updates) {
+    setFactories(prev => prev.map(f => f.id === factory.id ? { ...f, ...updates } : f));
   }
 
-  const ordersRM = useMemo(() => {
-    return rmMaterials.filter(m => {
-      const m1 = calcM1(m);
-      const m2 = calcM2(m, m1);
-      return m1.actual > 0 || m2.actual > 0;
-    }).length;
-  }, [rmMaterials]);
+  const { skus, rm: rmMaterials, pm: pmMaterials, vendorMap, m1Label, m2Label, hasRM, hasPM, name: factoryName } = factory;
 
-  const ordersPM = useMemo(() => {
-    return pmMaterials.filter(m => {
-      const m1 = calcM1(m);
-      const m2 = calcM2(m, m1);
-      return m1.actual > 0 || m2.actual > 0;
-    }).length;
-  }, [pmMaterials]);
+  function handleUpdate(kind, updated) {
+    if (kind === 'rm') updateFactory({ rm: updated });
+    else updateFactory({ pm: updated });
+  }
+
+  const ordersRM = useMemo(() => hasRM ? rmMaterials.filter(m => { const m1=calcM1(m); const m2=calcM2(m,m1); return m1.actual>0||m2.actual>0; }).length : 0, [rmMaterials, hasRM]);
+  const ordersPM = useMemo(() => hasPM ? pmMaterials.filter(m => { const m1=calcM1(m); const m2=calcM2(m,m1); return m1.actual>0||m2.actual>0; }).length : 0, [pmMaterials, hasPM]);
 
   function handleExtractBom() {
     const { rmM1, rmM2, pmM1, pmM2 } = extractBomQty(skus, rmMaterials, pmMaterials, vendorMap);
-    setRm(rmMaterials.map(m => ({
-      ...m,
-      reqM1: rmM1[m.id] != null ? Math.round(rmM1[m.id] * 1000) / 1000 : m.reqM1,
-      reqM2: rmM2[m.id] != null ? Math.round(rmM2[m.id] * 1000) / 1000 : m.reqM2,
-    })));
-    setPm(pmMaterials.map(m => ({
-      ...m,
-      reqM1: pmM1[m.id] != null ? Math.round(pmM1[m.id]) : m.reqM1,
-      reqM2: pmM2[m.id] != null ? Math.round(pmM2[m.id]) : m.reqM2,
-    })));
+    updateFactory({
+      rm: rmMaterials.map(m => ({ ...m, reqM1: rmM1[m.id]!=null ? Math.round(rmM1[m.id]*1000)/1000 : m.reqM1, reqM2: rmM2[m.id]!=null ? Math.round(rmM2[m.id]*1000)/1000 : m.reqM2 })),
+      pm: pmMaterials.map(m => ({ ...m, reqM1: pmM1[m.id]!=null ? Math.round(pmM1[m.id]) : m.reqM1, reqM2: pmM2[m.id]!=null ? Math.round(pmM2[m.id]) : m.reqM2 })),
+    });
     alert('✅ Required quantities updated in Consolidated RM & PM tabs!');
   }
 
-  function resetAll() {
-    if (!window.confirm('Reset ALL data to defaults? This cannot be undone.')) return;
-    setRm(SEED_RM);
-    setPm(SEED_PM);
-    setSkus(SEED_SKUS);
-    setVendorMap({});
-    setM1Label('M1');
-    setM2Label('M2');
+  function resetFactory() {
+    if (!window.confirm(`Reset ${factoryName}'s data to defaults? This cannot be undone.`)) return;
+    updateFactory({ rm: SEED_RM, pm: SEED_PM, skus: factory.id==='sprivil' ? SEED_SKUS : [], vendorMap: {}, m1Label: 'M1', m2Label: 'M2' });
+  }
+
+  function addFactory(name, hasRM, hasPM) {
+    const f = initNewFactory(name, hasRM, hasPM);
+    setFactories(prev => [...prev, f]);
+    setActiveFactoryId(f.id);
+    setActiveTab('supply');
   }
 
   return (
     <div>
-      {/* Header */}
       <div className="app-header">
         <span style={{fontSize:'22px'}}>📦</span>
         <h1>Supply Planner</h1>
         <span className="badge">Mosaic Wellness</span>
         <div className="month-labels">
-          <label>M1 label:</label>
-          <input className="month-input" value={m1Label} onChange={e=>setM1Label(e.target.value)} />
-          <label style={{marginLeft:'8px'}}>M2 label:</label>
-          <input className="month-input" value={m2Label} onChange={e=>setM2Label(e.target.value)} />
+          <label style={{fontWeight:600,color:'#1e293b'}}>Factory:</label>
+          <select
+            value={activeFactoryId}
+            onChange={e=>{setActiveFactoryId(e.target.value);setActiveTab('supply');}}
+            style={{padding:'4px 10px',borderRadius:'6px',border:'1px solid #cbd5e1',fontSize:'13px',fontWeight:600,marginLeft:'4px'}}
+          >
+            {factories.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+          </select>
+          <button className="btn btn-secondary btn-sm" style={{marginLeft:'4px'}} onClick={()=>setModal('addFactory')}>+ Add</button>
+          <span style={{margin:'0 8px',color:'#cbd5e1'}}>|</span>
+          <label>M1:</label>
+          <input className="month-input" value={m1Label} onChange={e=>updateFactory({m1Label:e.target.value})} />
+          <label style={{marginLeft:'8px'}}>M2:</label>
+          <input className="month-input" value={m2Label} onChange={e=>updateFactory({m2Label:e.target.value})} />
           <button className="btn btn-secondary btn-sm" style={{marginLeft:'12px'}} onClick={()=>setModal('vendorMap')}>🔗 Vendor Map</button>
           <button className="btn btn-secondary btn-sm" onClick={()=>setModal('help')}>? Help</button>
-          <button className="btn btn-secondary btn-sm" style={{color:'#ef4444',borderColor:'#fecaca'}} onClick={resetAll}>↺ Reset</button>
+          <button className="btn btn-secondary btn-sm" style={{color:'#ef4444',borderColor:'#fecaca'}} onClick={resetFactory}>↺ Reset</button>
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="tabs">
-        <button className={`tab-btn${activeTab==='supply'?' active':''}`} onClick={()=>setActiveTab('supply')}>
-          Supply Entry
-        </button>
-        <button className={`tab-btn${activeTab==='rm'?' active':''}`} onClick={()=>setActiveTab('rm')}>
-          Consolidated RM
-          {ordersRM > 0 && <span className="badge-cnt">{ordersRM}</span>}
-        </button>
-        <button className={`tab-btn${activeTab==='pm'?' active':''}`} onClick={()=>setActiveTab('pm')}>
-          Consolidated PM
-          {ordersPM > 0 && <span className="badge-cnt">{ordersPM}</span>}
-        </button>
+        <button className={`tab-btn${activeTab==='supply'?' active':''}`} onClick={()=>setActiveTab('supply')}>Supply Entry</button>
+        {hasRM && (
+          <button className={`tab-btn${activeTab==='rm'?' active':''}`} onClick={()=>setActiveTab('rm')}>
+            Consolidated RM{ordersRM>0&&<span className="badge-cnt">{ordersRM}</span>}
+          </button>
+        )}
+        {hasPM && (
+          <button className={`tab-btn${activeTab==='pm'?' active':''}`} onClick={()=>setActiveTab('pm')}>
+            Consolidated PM{ordersPM>0&&<span className="badge-cnt">{ordersPM}</span>}
+          </button>
+        )}
+        <button className={`tab-btn${activeTab==='skudoc'?' active':''}`} onClick={()=>setActiveTab('skudoc')}>SKU Doc</button>
       </div>
 
-      {/* Content */}
       <div className="content">
-        {activeTab === 'supply' && (
+        {activeTab==='supply' && (
           <SupplyEntryTab
             skus={skus}
-            onUpdateSkus={setSkus}
+            onUpdateSkus={s=>updateFactory({skus:s})}
+            onImportSkus={s=>updateFactory({skus:s})}
             onExtract={handleExtractBom}
             m1Label={m1Label}
             m2Label={m2Label}
           />
         )}
-        {activeTab === 'rm' && (
-          <ConsolidatedTab
-            kind="rm"
-            materials={rmMaterials}
-            vendorMap={vendorMap}
-            onUpdate={handleUpdate}
-            m1Label={m1Label}
-            m2Label={m2Label}
-          />
+        {activeTab==='rm' && hasRM && (
+          <ConsolidatedTab kind="rm" materials={rmMaterials} vendorMap={vendorMap} onUpdate={handleUpdate} m1Label={m1Label} m2Label={m2Label} factoryName={factoryName} />
         )}
-        {activeTab === 'pm' && (
-          <ConsolidatedTab
-            kind="pm"
-            materials={pmMaterials}
-            vendorMap={vendorMap}
-            onUpdate={handleUpdate}
-            m1Label={m1Label}
-            m2Label={m2Label}
-          />
+        {activeTab==='pm' && hasPM && (
+          <ConsolidatedTab kind="pm" materials={pmMaterials} vendorMap={vendorMap} onUpdate={handleUpdate} m1Label={m1Label} m2Label={m2Label} factoryName={factoryName} />
+        )}
+        {activeTab==='skudoc' && (
+          <SkuDocTab skus={skus} rmMaterials={rmMaterials} pmMaterials={pmMaterials} vendorMap={vendorMap} m1Label={m1Label} m2Label={m2Label} />
         )}
       </div>
 
-      {/* Global modals */}
-      {modal === 'help' && <HelpModal onClose={()=>setModal(null)} />}
-      {modal === 'vendorMap' && (
+      {modal==='help' && <HelpModal onClose={()=>setModal(null)} />}
+      {modal==='addFactory' && <AddFactoryModal onAdd={addFactory} onClose={()=>setModal(null)} />}
+      {modal==='vendorMap' && (
         <GlobalVendorMapModal
           vendorMap={vendorMap}
           rmMaterials={rmMaterials}
           pmMaterials={pmMaterials}
-          onSave={map => { setVendorMap(map); }}
+          onSave={vm=>updateFactory({vendorMap:vm})}
           onClose={()=>setModal(null)}
         />
       )}
