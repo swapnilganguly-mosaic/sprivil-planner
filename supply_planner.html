@@ -3893,18 +3893,28 @@ function App() {
       }
     }
 
-    // Build material index for RM
+    // Build material index for RM (also include vendorMap keys)
     const rmByKey = {};
     for (const m of currentRM) {
       const keys = [m.id, m.code, m.name, m.sprivilCode, ...(m.aliases||[]), ...(m.mosaicCodes||[])];
       for (const k of keys) { if (k) rmByKey[norm(k)] = m.id; }
     }
+    // Add vendorMap entries for RM
+    for (const [vc, ids] of Object.entries(vendorMap||{})) {
+      const arr = Array.isArray(ids) ? ids : [ids];
+      for (const id of arr) { if (id) rmByKey[norm(vc)] = id; }
+    }
 
-    // Build material index for PM
+    // Build material index for PM (also include vendorMap keys)
     const pmByKey = {};
     for (const m of currentPM) {
       const keys = [m.id, m.code, m.name, m.sprivilCode, ...(m.aliases||[]), ...(m.mosaicCodes||[])];
       for (const k of keys) { if (k) pmByKey[norm(k)] = m.id; }
+    }
+    // Add vendorMap entries for PM
+    for (const [vc, ids] of Object.entries(vendorMap||{})) {
+      const arr = Array.isArray(ids) ? ids : [ids];
+      for (const id of arr) { if (id) pmByKey[norm(vc)] = id; }
     }
 
     // Calculate reqM1/reqM2 for RM
@@ -3938,8 +3948,7 @@ function App() {
         req1[matId] = (req1[matId] || 0) + (sku.supplyM1 || 0) * entry.value;
         req2[matId] = (req2[matId] || 0) + (sku.supplyM2 || 0) * entry.value;
       }
-      console.log('[BOM PM] currentPM.length='+currentPM.length+' hits='+hits+' skuMiss='+skuMiss+' matMiss='+matMiss+' bom_pm.length='+bom_pm.length);
-      alert('PM BOM debug:\ncurrentPM='+currentPM.length+' hits='+hits+' skuMiss='+skuMiss+' matMiss='+matMiss+'\nFirst BOM entry: '+JSON.stringify(bom_pm[0])+'\nFirst SKU: '+JSON.stringify(skus[0]));
+      console.log('[BOM PM] currentPM='+currentPM.length+' hits='+hits+' skuMiss='+skuMiss+' matMiss='+matMiss);
       updateFactory({ pm: currentPM.map(m =>
         req1[m.id] != null ? { ...m, reqM1: Math.round(req1[m.id]), reqM2: Math.round(req2[m.id]||0) } : m
       )});
