@@ -3833,8 +3833,14 @@ function App() {
     setFactories(prev => prev.map(f => f.id === factory.id ? { ...f, ...updates } : f));
   }
 
-  const { skus, rm: rmMaterials, pm: pmMaterials, vendorMap, m1Label, m2Label, hasRM, hasPM, name: factoryName,
-          bom_rm = [], bom_pm = [] } = factory;
+  const { skus, rm: rmMaterials, pm: pmMaterials, vendorMap, m1Label, m2Label, hasRM, hasPM, name: factoryName } = factory;
+  // Always resolve BOM from hardcoded constants for known factories (state may not have them populated)
+  const bom_rm = factory.id === 'sprivil' ? SPRIVIL_BOM_RM
+               : factory.id === 'ng_electro' ? NG_ELECTRO_BOM_RM
+               : (factory.bom_rm || []);
+  const bom_pm = factory.id === 'sprivil' ? SPRIVIL_BOM_PM
+               : factory.id === 'ng_electro' ? NG_ELECTRO_BOM_PM
+               : (factory.bom_pm || []);
 
   function handleUpdate(kind, updated) {
     if (kind === 'rm') updateFactory({ rm: updated });
