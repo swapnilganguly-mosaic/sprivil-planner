@@ -8,6 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; font-size: 13px; background: #f1f5f9; color: #1e293b; }
@@ -282,10 +283,9 @@ function norm(s) {
 
 const NG_ELECTRO_SEED_SKUS = [{"id": "MWBBSKP.00804.BO_N", "code": "MWBBSKP.00804.BO_N", "name": "BB Detan DH Sunscreen 100ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 100.0}, {"id": "MWBBSKP.00806.BO_N", "code": "MWBBSKP.00806.BO_N", "name": "BB 6% AHA+BHA Rollon Oudh", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBBSKP.00807.BO_N", "code": "MWBBSKP.00807.BO_N", "name": "BB AHA+BHA Rollon Watermelon", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBBSKP.00808.BO_N", "code": "MWBBSKP.00808.BO_N", "name": "BB 6% AHA+BHA Rollon FF", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWBCP.00167.B0_N", "code": "MWBWBCP.00167.B0_N", "name": "BB 5% AHA+BHA Bodywash", "supplyM1": 0, "supplyM2": 0, "packSizeG": 700.0}, {"id": "MWBWBCP.00168.B0_N", "code": "MWBWBCP.00168.B0_N", "name": "BB Sal+Cera Bodywash 250ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 250.0}, {"id": "MWBWHFP.0018.B0_N", "code": "MWBWHFP.0018.B0_N", "name": "BB Keratin Shampoo", "supplyM1": 0, "supplyM2": 0, "packSizeG": 250.0}, {"id": "MWBWHFP.00626.B0_N", "code": "MWBWHFP.00626.B0_N", "name": "BB 5% Niac Bodywash 700ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 700.0}, {"id": "MWBWSKK.00821.BO_N", "code": "MWBWSKK.00821.BO_N", "name": "BB 5% AHABHA BW Flora 700ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 700.0}, {"id": "MWBWSKK.00822.BO_N", "code": "MWBWSKK.00822.BO_N", "name": "BB AHA+BHA Bodywash Flora 250ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 250.0}, {"id": "MWBWSKP.00328.B0_N", "code": "MWBWSKP.00328.B0_N", "name": "BB 5% Niac Bodywash", "supplyM1": 0, "supplyM2": 0, "packSizeG": 250.0}, {"id": "MWBWSKP.00401.B0_N", "code": "MWBWSKP.00401.B0_N", "name": "BB 2% AHA Bodywash 250ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 250.0}, {"id": "MWBWSKP.00418.B0_N", "code": "MWBWSKP.00418.B0_N", "name": "BB 4% AHA+BHA Rollon Flora", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWSKP.00428.B0_N", "code": "MWBWSKP.00428.B0_N", "name": "BB 10% AHA Scrub 200g", "supplyM1": 0, "supplyM2": 0, "packSizeG": 200.0}, {"id": "MWBWSKP.00525.B0_N", "code": "MWBWSKP.00525.B0_N", "name": "BB 4% AHA+BHA Rollon Watermelon", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWSKP.00526.B0_N", "code": "MWBWSKP.00526.B0_N", "name": "BB 4% AHA+BHA Rollon FF", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWSKP.00533.B0_N", "code": "MWBWSKP.00533.B0_N", "name": "BB 1% Peptide+Cera Moist 50g", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWSKP.00584.B0_N", "code": "MWBWSKP.00584.B0_N", "name": "BB SS Spray 100ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 100.0}, {"id": "MWBWSKP.00589.B0_N", "code": "MWBWSKP.00589.B0_N", "name": "BB 4% AHA+BHA Rollon Flora 75ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 75.0}, {"id": "MWBWSKP.00646.B0_N", "code": "MWBWSKP.00646.B0_N", "name": "BB 4% AHA+BHA Rollon FF 75ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 75.0}, {"id": "MWBWSKP.00676.B0_N", "code": "MWBWSKP.00676.B0_N", "name": "BB 10% AHA Scrub", "supplyM1": 0, "supplyM2": 0, "packSizeG": 300.0}, {"id": "MWBWSKP.00680.B0_N", "code": "MWBWSKP.00680.B0_N", "name": "BB 4% AHA+BHA Rollon Oudh", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWSKP.00681.B0_N", "code": "MWBWSKP.00681.B0_N", "name": "BB 4% AHA+BHA Rollon Aqua", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWSKP.00684.B0_N", "code": "MWBWSKP.00684.B0_N", "name": "BB 6% AHA+BHA Rollon Flora", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWSKP.00697.B0_N", "code": "MWBWSKP.00697.B0_N", "name": "BB 12% AHA Scrub", "supplyM1": 0, "supplyM2": 0, "packSizeG": 300.0}, {"id": "MWBWSKP.00703.B0_N", "code": "MWBWSKP.00703.B0_N", "name": "BB 5% AHA+BHA Bodywash~2", "supplyM1": 0, "supplyM2": 0, "packSizeG": 250.0}, {"id": "MWBWSKP.00787.B0_N", "code": "MWBWSKP.00787.B0_N", "name": "BB 6% AHA+BHA Rollon Aqua", "supplyM1": 0, "supplyM2": 0, "packSizeG": 75.0}, {"id": "MWBWSKP.00788.B0_N", "code": "MWBWSKP.00788.B0_N", "name": "BB 6% AHA+BHA Rollon Aqua~2", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWUAEBCP.0001B0_N", "code": "MWBWUAEBCP.0001B0_N", "name": "BB 4% AHA+BHA Rollon Flora~2", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWUAEBCP.0002B0_N", "code": "MWBWUAEBCP.0002B0_N", "name": "BB 4% AHA+BHA Rollon Flora UAE", "supplyM1": 0, "supplyM2": 0, "packSizeG": 75.0}, {"id": "MWBWUAEBCP.0003B0_N", "code": "MWBWUAEBCP.0003B0_N", "name": "BB 4% AHA+BHA Rollon FF UAE", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWUAEBCP.0004B0_N", "code": "MWBWUAEBCP.0004B0_N", "name": "BB 4% AHA+BHA Rollon FF UAE~2", "supplyM1": 0, "supplyM2": 0, "packSizeG": 75.0}, {"id": "MWBWUAEBCP.0005B0_N", "code": "MWBWUAEBCP.0005B0_N", "name": "BB 4% AHA+BHA Rollon Aqua UAE", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWUAEBCP.0006B0_N", "code": "MWBWUAEBCP.0006B0_N", "name": "BB 4% AHABHA RO Oudh 50ml UAE", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWBWUAESKP.0003B0_N", "code": "MWBWUAESKP.0003B0_N", "name": "BB Gluta+Niac Serum", "supplyM1": 0, "supplyM2": 0, "packSizeG": 30.0}, {"id": "MWMMHRP.0001.AAAA.B0_N", "code": "MWMMHRP.0001.AAAA.B0_N", "name": "MM DHT Shampoo 200ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 200.0}, {"id": "MWMMHRP.0014.AAAA.B0_N", "code": "MWMMHRP.0014.AAAA.B0_N", "name": "MM DHT Shampoo 300ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 300.0}, {"id": "MWMMHRP.6198.AAAA.B0_N", "code": "MWMMHRP.6198.AAAA.B0_N", "name": "MM Anti Dandruff Shampoo 200ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 200.0}, {"id": "MWMMHTP.0127.AAAA.B0_N", "code": "MWMMHTP.0127.AAAA.B0_N", "name": "MM Charcoal Bodywash", "supplyM1": 0, "supplyM2": 0, "packSizeG": 250.0}, {"id": "MWMMSKP.5065.AAAA.B0_N", "code": "MWMMSKP.5065.AAAA.B0_N", "name": "MM Matte SPF50 Sunscreen 50g", "supplyM1": 0, "supplyM2": 0, "packSizeG": 50.0}, {"id": "MWMMSKP.5066.AAAA.B0_N", "code": "MWMMSKP.5066.AAAA.B0_N", "name": "MM Anti Pig Serum 30ml", "supplyM1": 0, "supplyM2": 0, "packSizeG": 30.0}];
 // ─────────────────────────────────────────────
-// FACTORY PERSISTENCE
+// FACTORY INIT HELPERS
 // ─────────────────────────────────────────────
-const FACTORY_KEY = 'sprivil_factories_v1';
-const ACTIVE_KEY  = 'sprivil_active_factory';
+const ACTIVE_KEY = 'sprivil_active_factory';
 
 function initSprivilFactory() {
   return {
@@ -319,26 +319,6 @@ function initNewFactory(name, hasRM, hasPM) {
     vendorMap: {},
     m1Label: 'M1', m2Label: 'M2',
   };
-}
-
-function loadFactories() {
-  try {
-    const raw = localStorage.getItem(FACTORY_KEY);
-    if (!raw) return null;
-    const factories = JSON.parse(raw);
-    const result = factories.map(f => ({ ...f }));
-    // Migration: add NG Electro if not present
-    if (!result.find(f => f.id === 'ng_electro')) {
-      result.push(initNgElectroFactory());
-    }
-    return result;
-  } catch(e) { return null; }
-}
-
-function saveFactories(factories) {
-  try {
-    localStorage.setItem(FACTORY_KEY, JSON.stringify(factories));
-  } catch(e) {}
 }
 
 function loadActiveFactoryId() {
@@ -2341,21 +2321,177 @@ function FactoryCodeMapModal({ kind, materials, factoryName, onApply, onClose })
 }
 
 // ─────────────────────────────────────────────
+// LOGIN SCREEN
+// ─────────────────────────────────────────────
+function LoginScreen({ onLogin }) {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [mode, setMode] = React.useState('login'); // 'login' | 'signup'
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [info, setInfo] = React.useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError(''); setInfo('');
+    setLoading(true);
+    try {
+      const result = await onLogin(mode, email, password);
+      if (result.error) setError(result.error.message || 'Error');
+      else if (mode === 'signup') setInfo('Check your email to confirm your account, then log in.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <div style={{background:'white',borderRadius:'12px',padding:'40px',width:'360px',boxShadow:'0 4px 24px rgba(0,0,0,.1)'}}>
+        <div style={{textAlign:'center',marginBottom:'28px'}}>
+          <div style={{fontSize:'36px'}}>📦</div>
+          <h2 style={{fontSize:'20px',fontWeight:'700',color:'#1e293b',marginTop:'8px'}}>Supply Planner</h2>
+          <p style={{color:'#64748b',fontSize:'13px',marginTop:'4px'}}>Mosaic Wellness</p>
+        </div>
+        <div style={{display:'flex',background:'#f1f5f9',borderRadius:'8px',padding:'2px',marginBottom:'24px'}}>
+          <button onClick={()=>{setMode('login');setError('');setInfo('');}}
+            style={{flex:1,padding:'7px',border:'none',borderRadius:'6px',cursor:'pointer',fontWeight:'600',fontSize:'13px',
+              background:mode==='login'?'white':'transparent',color:mode==='login'?'#4f46e5':'#64748b',
+              boxShadow:mode==='login'?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
+            Log In
+          </button>
+          <button onClick={()=>{setMode('signup');setError('');setInfo('');}}
+            style={{flex:1,padding:'7px',border:'none',borderRadius:'6px',cursor:'pointer',fontWeight:'600',fontSize:'13px',
+              background:mode==='signup'?'white':'transparent',color:mode==='signup'?'#4f46e5':'#64748b',
+              boxShadow:mode==='signup'?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
+            Sign Up
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:'14px'}}>
+          <div>
+            <label style={{fontSize:'12px',fontWeight:'600',color:'#374151',display:'block',marginBottom:'5px'}}>Email</label>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required
+              style={{width:'100%',padding:'9px 12px',border:'1px solid #d1d5db',borderRadius:'6px',fontSize:'13px'}}
+              placeholder="you@mosaicwellness.in" />
+          </div>
+          <div>
+            <label style={{fontSize:'12px',fontWeight:'600',color:'#374151',display:'block',marginBottom:'5px'}}>Password</label>
+            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}
+              style={{width:'100%',padding:'9px 12px',border:'1px solid #d1d5db',borderRadius:'6px',fontSize:'13px'}}
+              placeholder="••••••••" />
+          </div>
+          {error && <div style={{color:'#dc2626',fontSize:'12px',background:'#fee2e2',padding:'8px 12px',borderRadius:'6px'}}>{error}</div>}
+          {info  && <div style={{color:'#065f46',fontSize:'12px',background:'#d1fae5',padding:'8px 12px',borderRadius:'6px'}}>{info}</div>}
+          <button type="submit" disabled={loading}
+            style={{background:'#4f46e5',color:'white',border:'none',borderRadius:'6px',padding:'10px',fontSize:'13px',fontWeight:'600',cursor:'pointer',opacity:loading?0.7:1}}>
+            {loading ? '...' : mode==='login' ? 'Log In' : 'Create Account'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // APP
 // ─────────────────────────────────────────────
 function App() {
-  const [factories, setFactories] = useState(() => loadFactories() || [initSprivilFactory(), initNgElectroFactory()]);
+  const [authState, setAuthState] = useState('loading'); // 'loading' | 'login' | 'app'
+  const [factories, setFactories] = useState([]);
   const [activeFactoryId, setActiveFactoryId] = useState(() => loadActiveFactoryId());
   const [activeTab, setActiveTab] = useState('supply');
   const [modal, setModal] = useState(null);
+  const [dbLoading, setDbLoading] = useState(false);
+  const sbRef = useRef(null);
+  const userRef = useRef(null);
 
-  useEffect(() => { saveFactories(factories); }, [factories]);
   useEffect(() => { saveActiveFactoryId(activeFactoryId); }, [activeFactoryId]);
+
+  // Init Supabase + auth on mount
+  useEffect(() => {
+    async function init() {
+      try {
+        const res = await fetch('/api/config');
+        const { supabaseUrl, supabaseKey } = await res.json();
+        if (!supabaseUrl || !supabaseKey) { setAuthState('login'); return; }
+        const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
+        sbRef.current = sb;
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) {
+          userRef.current = session.user;
+          await loadFromDB(sb, session.user.id);
+          setAuthState('app');
+        } else {
+          setAuthState('login');
+        }
+        sb.auth.onAuthStateChange(async (_event, session) => {
+          if (session) {
+            userRef.current = session.user;
+            await loadFromDB(sb, session.user.id);
+            setAuthState('app');
+          } else {
+            userRef.current = null;
+            setFactories([]);
+            setAuthState('login');
+          }
+        });
+      } catch(e) { setAuthState('login'); }
+    }
+    init();
+  }, []);
+
+  async function loadFromDB(sb, userId) {
+    setDbLoading(true);
+    try {
+      const { data } = await sb.from('factories').select('*').eq('user_id', userId).order('created_at');
+      if (data && data.length > 0) {
+        const loaded = data.map(row => ({ ...row.data, id: row.factory_key, name: row.name }));
+        if (!loaded.find(f => f.id === 'ng_electro')) loaded.push(initNgElectroFactory());
+        setFactories(loaded);
+        const saved = loadActiveFactoryId();
+        if (loaded.find(f => f.id === saved)) setActiveFactoryId(saved);
+        else setActiveFactoryId(loaded[0].id);
+      } else {
+        const defaults = [initSprivilFactory(), initNgElectroFactory()];
+        setFactories(defaults);
+        setActiveFactoryId('sprivil');
+        for (const f of defaults) await persistToDB(sb, userId, f);
+      }
+    } finally { setDbLoading(false); }
+  }
+
+  async function persistToDB(sb, userId, factory) {
+    if (!sb || !userId) return;
+    const { id, name, ...data } = factory;
+    await sb.from('factories').upsert({
+      user_id: userId,
+      factory_key: id,
+      name,
+      data,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,factory_key' });
+  }
+
+  async function handleLogin(mode, email, password) {
+    const sb = sbRef.current;
+    if (!sb) return { error: { message: 'Not initialized' } };
+    if (mode === 'login') return sb.auth.signInWithPassword({ email, password });
+    return sb.auth.signUp({ email, password });
+  }
+
+  async function handleLogout() {
+    if (sbRef.current) await sbRef.current.auth.signOut();
+  }
 
   const factory = factories.find(f => f.id === activeFactoryId) || factories[0];
 
   function updateFactory(updates) {
-    setFactories(prev => prev.map(f => f.id === factory.id ? { ...f, ...updates } : f));
+    if (!factory) return;
+    setFactories(prev => {
+      const next = prev.map(f => f.id === factory.id ? { ...f, ...updates } : f);
+      const changed = next.find(f => f.id === factory.id);
+      if (changed) persistToDB(sbRef.current, userRef.current?.id, changed);
+      return next;
+    });
   }
 
   const { skus, rm: rmMaterials, pm: pmMaterials, vendorMap, m1Label, m2Label, hasRM, hasPM, name: factoryName } = factory;
@@ -2374,18 +2510,23 @@ function App() {
     updateFactory({ rm: SEED_RM, pm: SEED_PM, skus: factory.id==='sprivil' ? SEED_SKUS : [], vendorMap: {}, m1Label: 'M1', m2Label: 'M2' });
   }
 
-  function removeFactory() {
+  async function removeFactory() {
     if (!window.confirm(`Remove "${factoryName}" factory? All its data will be deleted. This cannot be undone.`)) return;
     const remaining = factories.filter(f => f.id !== factory.id);
     setFactories(remaining);
     setActiveFactoryId(remaining[0].id);
+    if (sbRef.current && userRef.current) {
+      await sbRef.current.from('factories').delete()
+        .eq('user_id', userRef.current.id).eq('factory_key', factory.id);
+    }
   }
 
-  function addFactory(name, hasRM, hasPM) {
+  async function addFactory(name, hasRM, hasPM) {
     const f = initNewFactory(name, hasRM, hasPM);
     setFactories(prev => [...prev, f]);
     setActiveFactoryId(f.id);
     setActiveTab('supply');
+    await persistToDB(sbRef.current, userRef.current?.id, f);
   }
 
   const [fetchReqStatus, setFetchReqStatus] = useState('idle');
@@ -2501,6 +2642,18 @@ function App() {
     }
   }
 
+  if (authState === 'loading') return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f1f5f9',color:'#64748b',fontSize:'14px'}}>
+      Loading…
+    </div>
+  );
+  if (authState === 'login') return <LoginScreen onLogin={handleLogin} />;
+  if (!factory) return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f1f5f9',color:'#64748b',fontSize:'14px'}}>
+      {dbLoading ? 'Loading your data…' : 'No factories found.'}
+    </div>
+  );
+
   return (
     <div>
       <div className="app-header">
@@ -2528,6 +2681,9 @@ function App() {
           <button className="btn btn-secondary btn-sm" style={{marginLeft:'12px'}} onClick={()=>setModal('vendorMap')}>🔗 Vendor Map</button>
           <button className="btn btn-secondary btn-sm" onClick={()=>setModal('help')}>? Help</button>
           <button className="btn btn-secondary btn-sm" style={{color:'#ef4444',borderColor:'#fecaca'}} onClick={resetFactory}>↺ Reset</button>
+          <span style={{margin:'0 8px',color:'#cbd5e1'}}>|</span>
+          <span style={{fontSize:'11px',color:'#94a3b8'}}>{userRef.current?.email}</span>
+          <button className="btn btn-secondary btn-sm" onClick={handleLogout}>Log out</button>
         </div>
       </div>
 
