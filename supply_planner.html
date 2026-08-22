@@ -2414,8 +2414,8 @@ function App() {
         if (!src) return;
         if (Array.isArray(src)) {
           for (const r of src) {
-            const code = norm(String(r.materialCode || r.code || r.rmCode || r.pmCode || r.material || ''));
-            const qty = parseFloat(r.quantity || r.qty || r.required || r.reqQty || 0);
+            const code = norm(String(r.mosaicRmCode || r.mosaicPmCode || r.materialCode || r.code || r.rmCode || r.pmCode || r.material || ''));
+            const qty = parseFloat(r.kgRequired || r.unitsRequired || r.quantity || r.qty || r.required || r.reqQty || 0);
             if (code) agg[code] = (agg[code] || 0) + qty;
           }
         } else if (typeof src === 'object') {
