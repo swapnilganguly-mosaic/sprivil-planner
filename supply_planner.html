@@ -2446,13 +2446,39 @@ function App() {
         return { updated, applied };
       }
 
+      // Auto-create RM materials from API response if none exist yet
+      let currentRM = rmMaterials;
+      if (rmMaterials.length === 0 && Object.keys(rmAgg).length > 0) {
+        const rmSrc = data.rm || data.RM || data.rawMaterials || [];
+        if (Array.isArray(rmSrc)) {
+          currentRM = rmSrc.map(r => {
+            const code = r.mosaicRmCode || r.materialCode || r.code || '';
+            const name = r.ingredientName || r.materialName || r.name || code;
+            return { id: code, code, name, stock: 0, openPO: 0, supplyM1: 0, supplyM2: 0, reqM1: 0, reqM2: 0, moq: 0, aliases: [], mosaicCodes: [] };
+          }).filter(m => m.id);
+        }
+      }
+
+      // Auto-create PM materials from API response if none exist yet
+      let currentPM = pmMaterials;
+      if (pmMaterials.length === 0 && Object.keys(pmAgg).length > 0) {
+        const pmSrc = data.pm || data.PM || data.packagingMaterials || [];
+        if (Array.isArray(pmSrc)) {
+          currentPM = pmSrc.map(r => {
+            const code = r.mosaicPmCode || r.materialCode || r.code || '';
+            const name = r.componentName || r.materialName || r.name || code;
+            return { id: code, code, name, stock: 0, openPO: 0, supplyM1: 0, supplyM2: 0, reqM1: 0, reqM2: 0, moq: 0, aliases: [], mosaicCodes: [] };
+          }).filter(m => m.id);
+        }
+      }
+
       let totalApplied = 0;
       if (Object.keys(rmAgg).length > 0) {
-        const r = applyLookup(rmMaterials, rmAgg);
+        const r = applyLookup(currentRM, rmAgg);
         if (r.applied > 0) { updateFactory({ rm: r.updated }); totalApplied += r.applied; }
       }
       if (Object.keys(pmAgg).length > 0) {
-        const r = applyLookup(pmMaterials, pmAgg);
+        const r = applyLookup(currentPM, pmAgg);
         if (r.applied > 0) { updateFactory({ pm: r.updated }); totalApplied += r.applied; }
       }
 
