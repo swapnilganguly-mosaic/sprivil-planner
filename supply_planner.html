@@ -2442,8 +2442,9 @@ function App() {
   async function loadFromDB(sb, userId) {
     setDbLoading(true);
     try {
-      const { data } = await sb.from('factories').select('*').eq('user_id', userId).order('created_at');
-      console.log('loadFromDB result:', data?.map(r => r.factory_key));
+      const { data, error } = await sb.from('factories').select('*').order('created_at');
+      console.log('loadFromDB result:', data?.map(r => r.factory_key), 'error:', error?.message);
+      if (error) { console.error('loadFromDB error:', error); return; }
       if (data && data.length > 0) {
         const loaded = data.map(row => ({ ...row.data, id: row.factory_key, name: row.name }));
         setFactories(loaded);
@@ -2451,6 +2452,7 @@ function App() {
         if (loaded.find(f => f.id === saved)) setActiveFactoryId(saved);
         else setActiveFactoryId(loaded[0].id);
       } else {
+        // First time user — create defaults
         const defaults = [initSprivilFactory(), initNgElectroFactory()];
         setFactories(defaults);
         setActiveFactoryId('sprivil');
