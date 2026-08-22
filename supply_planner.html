@@ -2443,6 +2443,7 @@ function App() {
     setDbLoading(true);
     try {
       const { data } = await sb.from('factories').select('*').eq('user_id', userId).order('created_at');
+      console.log('loadFromDB result:', data?.map(r => r.factory_key));
       if (data && data.length > 0) {
         const loaded = data.map(row => ({ ...row.data, id: row.factory_key, name: row.name }));
         setFactories(loaded);
@@ -2460,6 +2461,7 @@ function App() {
 
   async function persistToDB(sb, userId, factory) {
     if (!sb || !userId) return;
+    console.log('persistToDB called for:', factory.id);
     const { id, name, ...data } = factory;
     await sb.from('factories').upsert({
       user_id: userId,
@@ -2515,10 +2517,11 @@ function App() {
     setFactories(remaining);
     setActiveFactoryId(remaining[0].id);
     if (sbRef.current && userRef.current) {
-      const { error } = await sbRef.current.from('factories').delete()
+      console.log('Deleting - user:', userRef.current.id, 'factory:', factory.id);
+      const { error, count } = await sbRef.current.from('factories').delete({ count: 'exact' })
         .eq('user_id', userRef.current.id).eq('factory_key', factory.id);
       if (error) { console.error('Delete factory error:', error); alert('Failed to delete from database: ' + error.message); }
-      else console.log('Deleted factory from DB:', factory.id);
+      else console.log('Deleted factory from DB:', factory.id, '| rows affected:', count);
     }
   }
 
