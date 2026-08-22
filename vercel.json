@@ -1,5 +1,6 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/supply_planner.html" }
+    { "source": "/supply-planner", "destination": "/supply_planner.html" },
+    { "source": "/", "destination": "/index.html" }
   ]
 }

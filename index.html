@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOSAIC OPS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; color: white; min-height: 100vh; }
+
+    /* ── Header ── */
+    .header {
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+    .header-logo { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: white; }
+    .header-logo span { color: #6366f1; }
+    .header-sub { font-size: 12px; color: #64748b; margin-top: 2px; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* ── Main ── */
+    .main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px 40px;
+    }
+    .main-title {
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #475569;
+      margin-bottom: 12px;
+    }
+    .main-heading {
+      font-size: 36px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .main-desc {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 52px;
+      text-align: center;
+    }
+
+    /* ── Division Cards ── */
+    .divisions {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .division-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 36px 32px;
+      width: 380px;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .division-card:hover {
+      border-color: #6366f1;
+      background: #1e293b;
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(99,102,241,.2);
+    }
+    .division-card.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .division-card.locked:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: #334155;
+    }
+    .division-accent {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    }
+    .division-accent.green {
+      background: linear-gradient(90deg, #10b981, #059669);
+    }
+    .division-icon {
+      font-size: 36px;
+      margin-bottom: 16px;
+    }
+    .division-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(99,102,241,.15);
+      color: #818cf8;
+      margin-bottom: 14px;
+    }
+    .division-tag.green {
+      background: rgba(16,185,129,.12);
+      color: #34d399;
+    }
+    .division-name {
+      font-size: 22px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 8px;
+    }
+    .division-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .division-tools {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .tool-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .tool-chip .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #334155;
+      flex-shrink: 0;
+    }
+    .tool-chip .dot.active { background: #6366f1; }
+    .tool-chip .dot.soon { background: #f59e0b; }
+    .locked-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: #475569;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 4px 10px;
+      margin-top: 16px;
+    }
+    .arrow {
+      position: absolute;
+      bottom: 28px; right: 28px;
+      font-size: 20px;
+      color: #6366f1;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .division-card:not(.locked):hover .arrow { opacity: 1; }
+
+    /* ── Tools View ── */
+    .tools-view { display: none; width: 100%; max-width: 900px; }
+    .tools-view.active { display: block; }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #64748b;
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 32px;
+      padding: 0;
+    }
+    .back-btn:hover { color: white; }
+
+    .tools-header { margin-bottom: 32px; }
+    .tools-header h2 { font-size: 26px; font-weight: 700; }
+    .tools-header p { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .tool-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 24px;
+      transition: all .2s;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      position: relative;
+      overflow: hidden;
+    }
+    .tool-card:not(.coming-soon):hover {
+      border-color: #6366f1;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(99,102,241,.15);
+    }
+    .tool-card.coming-soon { opacity: 0.5; cursor: default; }
+    .tool-card-accent {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    }
+    .tool-card.coming-soon .tool-card-accent {
+      background: #334155;
+    }
+    .tool-icon { font-size: 28px; margin-bottom: 12px; }
+    .tool-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .tool-desc { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+    .tool-status {
+      margin-top: 14px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .5px;
+    }
+    .tool-status.live { color: #34d399; }
+    .tool-status.soon { color: #f59e0b; }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 40px 20px;
+      font-size: 11px;
+      color: #334155;
+      letter-spacing: .5px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-logo">MOSAIC <span>OPS</span></div>
+    <div class="header-sub">Operations Platform</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="main-title">Select Division</div>
+  <h1 class="main-heading">Operations Hub</h1>
+  <p class="main-desc">Choose your division to access tools and workflows.</p>
+
+  <!-- Division Cards -->
+  <div class="divisions" id="divisions-view">
+
+    <div class="division-card locked" onclick="return false;">
+      <div class="division-accent green"></div>
+      <div class="division-icon">🏭</div>
+      <div class="division-tag green">Own Brand</div>
+      <div class="division-name">Only What's Needed</div>
+      <div class="division-desc">Internal operations tools for own-brand manufacturing and supply chain.</div>
+      <div class="locked-badge">🔒 Coming Soon</div>
+      <div class="arrow">→</div>
+    </div>
+
+    <div class="division-card" onclick="showTools()">
+      <div class="division-accent"></div>
+      <div class="division-icon">🧴</div>
+      <div class="division-tag">Contract Manufacturing</div>
+      <div class="division-name">BB / LJ / MM</div>
+      <div class="division-desc">Supply planning, production scheduling, and vendor management for contract manufacturing factories.</div>
+      <div class="division-tools">
+        <div class="tool-chip"><span class="dot active"></span> Supply Planner — Live</div>
+        <div class="tool-chip"><span class="dot soon"></span> Production Scheduler — Coming Soon</div>
+        <div class="tool-chip"><span class="dot soon"></span> Vendor Scorecard — Coming Soon</div>
+      </div>
+      <div class="arrow">→</div>
+    </div>
+
+  </div>
+
+  <!-- Tools View -->
+  <div class="tools-view" id="tools-view">
+    <button class="back-btn" onclick="showDivisions()">← Back to Divisions</button>
+
+    <div class="tools-header">
+      <h2>BB / LJ / MM Tools</h2>
+      <p>Contract manufacturing operations — supply, production, and vendor intelligence.</p>
+    </div>
+
+    <div class="tools-grid">
+
+      <a class="tool-card" href="/supply-planner">
+        <div class="tool-card-accent"></div>
+        <div class="tool-icon">📦</div>
+        <div class="tool-name">Supply Planner</div>
+        <div class="tool-desc">Multi-factory RM & PM planning, SKU supply entry, and API-driven requirement forecasting.</div>
+        <div class="tool-status live">● Live</div>
+      </a>
+
+      <div class="tool-card coming-soon">
+        <div class="tool-card-accent"></div>
+        <div class="tool-icon">🗓️</div>
+        <div class="tool-name">Production Scheduler</div>
+        <div class="tool-desc">Factory-wise production scheduling, capacity planning, and batch sequencing.</div>
+        <div class="tool-status soon">⏳ Coming Soon</div>
+      </div>
+
+      <div class="tool-card coming-soon">
+        <div class="tool-card-accent"></div>
+        <div class="tool-icon">⭐</div>
+        <div class="tool-name">Vendor Scorecard</div>
+        <div class="tool-desc">Track vendor performance, on-time delivery rates, quality scores, and compliance.</div>
+        <div class="tool-status soon">⏳ Coming Soon</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">MOSAIC OPS · Mosaic Wellness · Internal Use Only</div>
+
+<script>
+  function showTools() {
+    document.getElementById('divisions-view').style.display = 'none';
+    document.getElementById('tools-view').classList.add('active');
+  }
+  function showDivisions() {
+    document.getElementById('divisions-view').style.display = 'flex';
+    document.getElementById('tools-view').classList.remove('active');
+  }
+</script>
+
+</body>
+</html>
