@@ -2445,7 +2445,6 @@ function App() {
       const { data } = await sb.from('factories').select('*').eq('user_id', userId).order('created_at');
       if (data && data.length > 0) {
         const loaded = data.map(row => ({ ...row.data, id: row.factory_key, name: row.name }));
-        if (!loaded.find(f => f.id === 'ng_electro')) loaded.push(initNgElectroFactory());
         setFactories(loaded);
         const saved = loadActiveFactoryId();
         if (loaded.find(f => f.id === saved)) setActiveFactoryId(saved);
