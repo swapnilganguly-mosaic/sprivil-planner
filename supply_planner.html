@@ -2374,6 +2374,13 @@ function App() {
     updateFactory({ rm: SEED_RM, pm: SEED_PM, skus: factory.id==='sprivil' ? SEED_SKUS : [], vendorMap: {}, m1Label: 'M1', m2Label: 'M2' });
   }
 
+  function removeFactory() {
+    if (!window.confirm(`Remove "${factoryName}" factory? All its data will be deleted. This cannot be undone.`)) return;
+    const remaining = factories.filter(f => f.id !== factory.id);
+    setFactories(remaining);
+    setActiveFactoryId(remaining[0].id);
+  }
+
   function addFactory(name, hasRM, hasPM) {
     const f = initNewFactory(name, hasRM, hasPM);
     setFactories(prev => [...prev, f]);
@@ -2510,6 +2517,9 @@ function App() {
             {factories.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
           <button className="btn btn-secondary btn-sm" style={{marginLeft:'4px'}} onClick={()=>setModal('addFactory')}>+ Add</button>
+          {factories.length > 1 && (
+            <button className="btn btn-secondary btn-sm" style={{marginLeft:'4px',color:'#ef4444',borderColor:'#fecaca'}} onClick={removeFactory}>− Remove</button>
+          )}
           <span style={{margin:'0 8px',color:'#cbd5e1'}}>|</span>
           <label>M1:</label>
           <input className="month-input" value={m1Label} onChange={e=>updateFactory({m1Label:e.target.value})} />
