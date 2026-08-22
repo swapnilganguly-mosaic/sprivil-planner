@@ -2407,15 +2407,34 @@ function App() {
         return;
       }
 
-      // Apply to RM
-      const rmTarget = data.rm || data.RM || data.rawMaterials || (data.items ? null : data);
-      // Apply to PM
-      const pmTarget = data.pm || data.PM || data.packagingMaterials || null;
+      // Build aggregated rm/pm lookup from various response shapes
+      const rmAgg = {}, pmAgg = {};
 
-      function applyToMaterials(mats, target) {
-        if (!target || typeof target !== 'object' || Array.isArray(target)) return null;
-        const lookup = {};
-        Object.entries(target).forEach(([k, v]) => { lookup[norm(k)] = parseFloat(v) || 0; });
+      function addToAgg(agg, src) {
+        if (!src) return;
+        if (Array.isArray(src)) {
+          for (const r of src) {
+            const code = norm(String(r.materialCode || r.code || r.rmCode || r.pmCode || r.material || ''));
+            const qty = parseFloat(r.quantity || r.qty || r.required || r.reqQty || 0);
+            if (code) agg[code] = (agg[code] || 0) + qty;
+          }
+        } else if (typeof src === 'object') {
+          Object.entries(src).forEach(([k, v]) => { agg[norm(k)] = (agg[norm(k)] || 0) + (parseFloat(v) || 0); });
+        }
+      }
+
+      if (data.products && Array.isArray(data.products)) {
+        // Per-product format: aggregate across all products
+        for (const p of data.products) {
+          addToAgg(rmAgg, p.rm || p.RM || p.rawMaterials || p.rmRequirements);
+          addToAgg(pmAgg, p.pm || p.PM || p.packagingMaterials || p.pmRequirements);
+        }
+      } else {
+        addToAgg(rmAgg, data.rm || data.RM || data.rawMaterials);
+        addToAgg(pmAgg, data.pm || data.PM || data.packagingMaterials);
+      }
+
+      function applyLookup(mats, lookup) {
         let applied = 0;
         const updated = mats.map(m => {
           const candidates = [m.id, m.code, m.sprivilCode, ...(m.mosaicCodes||[])].map(c => norm(String(c||'')));
@@ -2424,23 +2443,25 @@ function App() {
           }
           return m;
         });
-        return applied > 0 ? { updated, applied } : null;
+        return { updated, applied };
       }
 
       let totalApplied = 0;
-      if (rmTarget) {
-        const r = applyToMaterials(rmMaterials, rmTarget);
-        if (r) { updateFactory({ rm: r.updated }); totalApplied += r.applied; }
+      if (Object.keys(rmAgg).length > 0) {
+        const r = applyLookup(rmMaterials, rmAgg);
+        if (r.applied > 0) { updateFactory({ rm: r.updated }); totalApplied += r.applied; }
       }
-      if (pmTarget) {
-        const r = applyToMaterials(pmMaterials, pmTarget);
-        if (r) { updateFactory({ pm: r.updated }); totalApplied += r.applied; }
+      if (Object.keys(pmAgg).length > 0) {
+        const r = applyLookup(pmMaterials, pmAgg);
+        if (r.applied > 0) { updateFactory({ pm: r.updated }); totalApplied += r.applied; }
       }
 
       if (totalApplied > 0) {
         setFetchReqStatus(`✓ ${totalApplied} materials updated`);
       } else {
-        setFetchReqStatus('⚠️ Got response but could not match materials — check raw: ' + JSON.stringify(data).slice(0, 80));
+        // Store raw for inspection
+        window._lastApiResponse = data;
+        setFetchReqStatus('⚠️ No match — open console and run: console.log(JSON.stringify(window._lastApiResponse, null, 2))');
       }
     } catch (err) {
       setFetchReqStatus('❌ ' + err.message);
