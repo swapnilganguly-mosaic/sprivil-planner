@@ -2494,7 +2494,7 @@ function App() {
     });
   }
 
-  const { skus, rm: rmMaterials, pm: pmMaterials, vendorMap, m1Label, m2Label, hasRM, hasPM, name: factoryName } = factory;
+  const { skus=[], rm: rmMaterials=[], pm: pmMaterials=[], vendorMap={}, m1Label='M1', m2Label='M2', hasRM=false, hasPM=false, name: factoryName='' } = factory || {};
 
   function handleUpdate(kind, updated) {
     if (kind === 'rm') updateFactory({ rm: updated });
