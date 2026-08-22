@@ -2442,7 +2442,7 @@ function App() {
   async function loadFromDB(sb, userId) {
     setDbLoading(true);
     try {
-      const { data, error } = await sb.from('factories').select('*').order('created_at');
+      const { data, error } = await sb.from('factories').select('*');
       console.log('loadFromDB result:', data?.map(r => r.factory_key), 'error:', error?.message);
       if (error) { console.error('loadFromDB error:', error); return; }
       if (data && data.length > 0) {
