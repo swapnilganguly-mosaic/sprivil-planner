@@ -2515,8 +2515,10 @@ function App() {
     setFactories(remaining);
     setActiveFactoryId(remaining[0].id);
     if (sbRef.current && userRef.current) {
-      await sbRef.current.from('factories').delete()
+      const { error } = await sbRef.current.from('factories').delete()
         .eq('user_id', userRef.current.id).eq('factory_key', factory.id);
+      if (error) { console.error('Delete factory error:', error); alert('Failed to delete from database: ' + error.message); }
+      else console.log('Deleted factory from DB:', factory.id);
     }
   }
 
