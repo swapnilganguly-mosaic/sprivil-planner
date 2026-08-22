@@ -1800,10 +1800,8 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
         </select>
         <div className="spacer"/>
         <button className="btn btn-secondary" onClick={()=>setModal({type:'stockpo'})} style={{background:'#1e40af',color:'#fff',border:'none'}}>📦 Import Stock / Open PO</button>
-        <button className="btn btn-secondary" onClick={()=>setModal({type:'req'})}>📥 Import Req Qty</button>
         <button className="btn btn-secondary" onClick={()=>setModal({type:'moq'})}>📥 Import MOQ</button>
         <button className="btn btn-secondary" onClick={clearReq} title="Reset all required quantities to 0">🗑 Clear Req</button>
-        <button className="btn btn-secondary" onClick={()=>setModal({type:'vendorMap'})}>🔗 Vendor Codes</button>
         <button className="btn btn-secondary" onClick={()=>setModal({type:'factorymap'})} style={{background:'#7c3aed',color:'#fff',border:'none'}}>🔗 {factoryName} Code Mapping</button>
       </div>
 
@@ -2680,8 +2678,6 @@ function App() {
           <input className="month-input" value={m1Label} onChange={e=>updateFactory({m1Label:e.target.value})} />
           <label style={{marginLeft:'8px'}}>M2:</label>
           <input className="month-input" value={m2Label} onChange={e=>updateFactory({m2Label:e.target.value})} />
-          <button className="btn btn-secondary btn-sm" style={{marginLeft:'12px'}} onClick={()=>setModal('vendorMap')}>🔗 Vendor Map</button>
-          <button className="btn btn-secondary btn-sm" onClick={()=>setModal('help')}>? Help</button>
           <button className="btn btn-secondary btn-sm" style={{color:'#ef4444',borderColor:'#fecaca'}} onClick={resetFactory}>↺ Reset</button>
           <span style={{margin:'0 8px',color:'#cbd5e1'}}>|</span>
           <span style={{fontSize:'11px',color:'#94a3b8'}}>{userRef.current?.email}</span>
