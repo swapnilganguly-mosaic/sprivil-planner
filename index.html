@@ -10,11 +10,18 @@
 
     /* ── Header ── */
     .header {
-      padding: 20px 40px;
+      padding: 16px 40px;
       display: flex;
       align-items: center;
       gap: 14px;
       border-bottom: 1px solid rgba(255,255,255,.07);
+      justify-content: space-between;
+    }
+    .header-logo-img {
+      height: 40px;
+      width: auto;
+      filter: brightness(0) invert(1);
+      opacity: 0.85;
     }
     .header-logo { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: white; }
     .header-logo span { color: #6366f1; }
@@ -253,6 +260,7 @@
     <div class="header-logo">MOSAIC <span>OPS</span></div>
     <div class="header-sub">Operations Platform</div>
   </div>
+  <img src="/mosaic_logo.png" alt="Mosaic Wellness" class="header-logo-img" />
 </div>
 
 <div class="main">
