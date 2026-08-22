@@ -2423,15 +2423,15 @@ function App() {
         }
       }
 
+      // Always check top-level rm/pm arrays
+      addToAgg(rmAgg, data.rm || data.RM || data.rawMaterials);
+      addToAgg(pmAgg, data.pm || data.PM || data.packagingMaterials);
+      // Also check per-product nested rm/pm (in case some entries are nested)
       if (data.products && Array.isArray(data.products)) {
-        // Per-product format: aggregate across all products
         for (const p of data.products) {
           addToAgg(rmAgg, p.rm || p.RM || p.rawMaterials || p.rmRequirements);
           addToAgg(pmAgg, p.pm || p.PM || p.packagingMaterials || p.pmRequirements);
         }
-      } else {
-        addToAgg(rmAgg, data.rm || data.RM || data.rawMaterials);
-        addToAgg(pmAgg, data.pm || data.PM || data.packagingMaterials);
       }
 
       function applyLookup(mats, lookup) {
