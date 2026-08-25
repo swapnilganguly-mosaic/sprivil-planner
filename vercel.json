@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/supply-planner", "destination": "/supply_planner.html" },
+    { "source": "/production-scheduler", "destination": "/production_scheduler.html" },
     { "source": "/", "destination": "/index.html" }
   ]
 }
