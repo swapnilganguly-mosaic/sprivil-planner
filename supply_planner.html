@@ -141,13 +141,13 @@ const { useState, useCallback, useMemo, useRef, useEffect } = React;
 // ─────────────────────────────────────────────
 function mkRM(id, name, aliases = [], sprivilCode = '') {
   return { id, code: id, name, aliases, sprivilCode, active: true,
-    stock: 0, openPO: 0, supplyM1: 0, supplyM2: 0, reqM1: 0, reqM2: 0, moq: 0 };
+    stock: 0, openPO: 0, supplyM1: 0, supplyM2: 0, reqM1: 0, reqM2: 0, reqM3: 0, reqM4: 0, moq: 0, lt: 0, minDoc: 0 };
 }
 function mkPM(id, code, name, aliases = [], sprivilCode = '', mosaicCodes = []) {
   return { id, code, name,
     aliases: [...aliases, ...mosaicCodes.filter(c => c !== 'Discontinued')],
     sprivilCode, mosaicCodes: mosaicCodes.filter(c => c !== 'Discontinued'),
-    active: true, stock: 0, openPO: 0, supplyM1: 0, supplyM2: 0, reqM1: 0, reqM2: 0, moq: 0 };
+    active: true, stock: 0, openPO: 0, supplyM1: 0, supplyM2: 0, reqM1: 0, reqM2: 0, reqM3: 0, reqM4: 0, moq: 0, lt: 0, minDoc: 0 };
 }
 
 const SEED_RM = [
@@ -294,7 +294,8 @@ function initSprivilFactory() {
     rm: SEED_RM, pm: SEED_PM,
     skus: SEED_SKUS,
     vendorMap: {},
-    m1Label: 'M1', m2Label: 'M2',
+    m1Label: 'M1', m2Label: 'M2', m3Label: 'M3', m4Label: 'M4',
+    m1StartDate: '',
   };
 }
 
@@ -305,7 +306,8 @@ function initNgElectroFactory() {
     rm: [], pm: [],
     skus: NG_ELECTRO_SEED_SKUS,
     vendorMap: {},
-    m1Label: 'M1', m2Label: 'M2',
+    m1Label: 'M1', m2Label: 'M2', m3Label: 'M3', m4Label: 'M4',
+    m1StartDate: '',
   };
 }
 
@@ -317,7 +319,8 @@ function initNewFactory(name, hasRM, hasPM) {
     rm: [], pm: [],
     skus: [],
     vendorMap: {},
-    m1Label: 'M1', m2Label: 'M2',
+    m1Label: 'M1', m2Label: 'M2', m3Label: 'M3', m4Label: 'M4',
+    m1StartDate: '',
   };
 }
 
@@ -1848,6 +1851,8 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
               {kind==='rm' && <th rowSpan={2} style={{background:'#2d3748',color:'#fbbf24'}}>{factoryName} Code</th>}
               {kind==='rm' && <th rowSpan={2} style={{background:'#2d3748',color:'#86efac'}}>Mosaic RM Code</th>}
               <th rowSpan={2}>Name</th>
+              <th rowSpan={2} style={{background:'#0c4a6e',color:'#bae6fd'}}>LT (d)</th>
+              <th rowSpan={2} style={{background:'#0c4a6e',color:'#bae6fd'}}>Min DOC (d)</th>
               <th rowSpan={2}>MOQ ({unit})</th>
               <th rowSpan={2}>Stock ({unit})</th>
               <th rowSpan={2}>Open PO ({unit})</th>
@@ -1903,6 +1908,18 @@ function ConsolidatedTab({ kind, materials, vendorMap, onUpdate, m1Label, m2Labe
                     </td>
                   )}
                   <td>{m.name}</td>
+                  {/* LT */}
+                  <td className="center" style={{background:'#f0f9ff'}}>
+                    <input type="number" className="num-input" style={{width:'60px',background:'transparent',textAlign:'center'}} value={m.lt||0} min={0}
+                      onChange={e=>{const v=parseFloat(e.target.value)||0; onUpdate(kind,materials.map(x=>x.id===m.id?{...x,lt:v}:x));}}
+                    />
+                  </td>
+                  {/* Min DOC */}
+                  <td className="center" style={{background:'#f0f9ff'}}>
+                    <input type="number" className="num-input" style={{width:'60px',background:'transparent',textAlign:'center'}} value={m.minDoc||0} min={0}
+                      onChange={e=>{const v=parseFloat(e.target.value)||0; onUpdate(kind,materials.map(x=>x.id===m.id?{...x,minDoc:v}:x));}}
+                    />
+                  </td>
                   {/* MOQ editable */}
                   <td className="right">
                     <input type="number" className="num-input" value={m.moq||0} min={0}
@@ -2390,6 +2407,388 @@ function LoginScreen({ onLogin }) {
 }
 
 // ─────────────────────────────────────────────
+// ORDER SCHEDULE ENGINE
+// ─────────────────────────────────────────────
+function parseISODate(str) {
+  if (!str) { const n = new Date(); n.setDate(1); n.setHours(0,0,0,0); return n; }
+  const parts = str.split('-').map(Number);
+  return new Date(parts[0], parts[1]-1, parts[2]||1);
+}
+function addDays(date, n) { const r = new Date(date); r.setDate(r.getDate()+n); return r; }
+function fmtDate(d) { return d instanceof Date ? d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '—'; }
+function daysBetween(a,b) { return Math.floor((b-a)/86400000); }
+
+function buildOrderSchedule(mat, monthPlans, m1Start) {
+  const lt = mat.lt || 0;
+  const minDoc = mat.minDoc || 0;
+  if (!lt || !minDoc) return { tranches:[], rop:0, drrs:[], daily:[], totalDays:0 };
+
+  const totalDays = monthPlans.reduce((s,m)=>s+m.days,0);
+  const daily = [];
+  const drrs = monthPlans.map(m => m.days>0 ? m.req/m.days : 0);
+  monthPlans.forEach((m,mi) => { for(let d=0;d<m.days;d++) daily.push(drrs[mi]); });
+
+  const drr0 = drrs[0] || 0;
+  const rop = Math.round(minDoc * drr0);
+  const stock = mat.stock || 0;
+  const openPO = mat.openPO || 0;
+  const moq = mat.moq || 0;
+  const effectiveCovDays = drr0>0 ? Math.max(0,(stock-rop)/drr0) : 9999;
+
+  // build LT-day tranches
+  const tranches = [];
+  let ts = 0;
+  while (ts < totalDays) {
+    const te = Math.min(ts+lt, totalDays);
+    const qty = Math.round(daily.slice(ts,te).reduce((a,b)=>a+b,0));
+    tranches.push({
+      ts, te, qty,
+      startDate: addDays(m1Start, ts),
+      endDate:   addDays(m1Start, te-1),
+      orderByDate: addDays(m1Start, ts-lt),
+    });
+    ts = te;
+  }
+
+  let remPO = openPO;
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const result = tranches.map(t => {
+    if (t.ts < effectiveCovDays) return {...t, orderQty:0, coveredBy:'stock', status:'covered'};
+    if (remPO >= t.qty) { remPO-=t.qty; return {...t, orderQty:0, coveredBy:'po', status:'covered-po'}; }
+    const shortfall = t.qty - remPO; remPO=0;
+    const orderQty = moq>0 ? Math.max(Math.round(shortfall),moq) : Math.round(shortfall);
+    const ob = new Date(t.orderByDate); ob.setHours(0,0,0,0);
+    const diff = daysBetween(today,ob);
+    const status = diff<0 ? 'overdue' : diff<=7 ? 'soon' : 'upcoming';
+    return {...t, orderQty, coveredBy:null, status};
+  });
+
+  return { tranches:result, rop, drrs, daily, totalDays };
+}
+
+// ─────────────────────────────────────────────
+// INVENTORY CHART (SVG sawtooth)
+// ─────────────────────────────────────────────
+function InventoryChart({ mat, monthPlans, schedule }) {
+  const W=680, H=200, PL=56, PR=12, PT=12, PB=30;
+  const cw=W-PL-PR, ch=H-PT-PB;
+  const { daily=[], totalDays=0, rop=0, tranches=[] } = schedule;
+  if (!totalDays) return null;
+
+  // simulate inventory from M1 day 0
+  const receipts = {};
+  for(const t of tranches) if(t.orderQty>0) receipts[t.ts]=(receipts[t.ts]||0)+t.orderQty;
+  let inv = mat.stock || 0;
+  const pts = [];
+  for(let d=0;d<=totalDays;d++) {
+    if(receipts[d]) inv+=receipts[d];
+    pts.push(Math.max(0, inv));
+    if(daily[d]!=null) inv-=daily[d];
+  }
+  const maxInv = Math.max(rop*1.6, ...pts, 1);
+  const xs = d => PL+(d/totalDays)*cw;
+  const ys = v => PT+ch-(v/maxInv)*ch;
+  const pathD = pts.map((v,i)=>`${i===0?'M':'L'}${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
+
+  // month separator days
+  const sepDays=[], cumDays=[]; let cum=0;
+  monthPlans.forEach((m,i)=>{ cumDays.push(cum); cum+=m.days; if(i<monthPlans.length-1) sepDays.push(cum); });
+
+  const ropY = ys(rop);
+  const yTicks = [0, Math.round(maxInv*0.5), Math.round(maxInv)];
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{display:'block',background:'#f8fafc',borderRadius:'8px',border:'1px solid #d1fae5'}}>
+      {/* month separators */}
+      {sepDays.map(d=><line key={d} x1={xs(d)} y1={PT} x2={xs(d)} y2={PT+ch} stroke="#e2e8f0" strokeDasharray="4 2"/>)}
+      {/* month labels */}
+      {monthPlans.map((m,mi)=>(
+        <text key={mi} x={xs(cumDays[mi]+m.days/2)} y={H-6} textAnchor="middle" fontSize="10" fill="#94a3b8">{m.label}</text>
+      ))}
+      {/* receipt lines */}
+      {tranches.filter(t=>t.orderQty>0).map((t,i)=>(
+        <line key={i} x1={xs(t.ts)} y1={PT} x2={xs(t.ts)} y2={PT+ch} stroke="#059669" strokeWidth="1.5" opacity="0.4"/>
+      ))}
+      {/* ROP line */}
+      <line x1={PL} y1={ropY} x2={PL+cw} y2={ropY} stroke="#ef4444" strokeDasharray="6 3" strokeWidth="1.5"/>
+      <text x={PL-4} y={ropY+4} textAnchor="end" fontSize="9" fill="#ef4444" fontWeight="600">ROP</text>
+      {/* inventory line */}
+      <path d={pathD} fill="none" stroke="#059669" strokeWidth="2"/>
+      {/* fill below line */}
+      <path d={pathD+` L${xs(totalDays).toFixed(1)},${PT+ch} L${PL},${PT+ch} Z`} fill="#059669" opacity="0.07"/>
+      {/* y-axis */}
+      <line x1={PL} y1={PT} x2={PL} y2={PT+ch} stroke="#d1fae5"/>
+      {yTicks.map(v=>(
+        <text key={v} x={PL-5} y={ys(v)+4} textAnchor="end" fontSize="9" fill="#94a3b8">
+          {v.toLocaleString('en-IN')}
+        </text>
+      ))}
+      {/* x-axis */}
+      <line x1={PL} y1={PT+ch} x2={PL+cw} y2={PT+ch} stroke="#d1fae5"/>
+      {/* legend */}
+      <line x1={PL+10} y1={PT+6} x2={PL+26} y2={PT+6} stroke="#059669" strokeWidth="2"/>
+      <text x={PL+30} y={PT+10} fontSize="9" fill="#059669">Inventory</text>
+      <line x1={PL+90} y1={PT+6} x2={PL+106} y2={PT+6} stroke="#ef4444" strokeDasharray="4 2" strokeWidth="1.5"/>
+      <text x={PL+110} y={PT+10} fontSize="9" fill="#ef4444">Reorder Point</text>
+      <line x1={PL+190} y1={PT+6} x2={PL+206} y2={PT+6} stroke="#059669" strokeWidth="1.5" opacity="0.5"/>
+      <text x={PL+210} y={PT+10} fontSize="9" fill="#059669" opacity="0.7">Receipt</text>
+    </svg>
+  );
+}
+
+// ─────────────────────────────────────────────
+// ACTION BANNER
+// ─────────────────────────────────────────────
+const STATUS_META = {
+  overdue:    { label:'🔴 Overdue',      bg:'#fee2e2', color:'#991b1b' },
+  soon:       { label:'🟠 Due soon',     bg:'#fef3c7', color:'#92400e' },
+  upcoming:   { label:'🟢 Upcoming',     bg:'#ecfdf5', color:'#059669' },
+  covered:    { label:'✅ Covered',      bg:'#d1fae5', color:'#065f46' },
+  'covered-po':{ label:'✅ PO covers',  bg:'#d1fae5', color:'#065f46' },
+};
+function StatusBadge({ status }) {
+  const m = STATUS_META[status] || STATUS_META.covered;
+  return <span style={{display:'inline-block',padding:'2px 8px',borderRadius:'10px',fontSize:'10px',fontWeight:700,background:m.bg,color:m.color,letterSpacing:'.3px'}}>{m.label}</span>;
+}
+
+function ActionBanner({ allSchedules }) {
+  const urgent=[], soon=[];
+  for(const {mat,schedule} of allSchedules) {
+    for(const t of (schedule.tranches||[])) {
+      if(t.orderQty<=0) continue;
+      if(t.status==='overdue') urgent.push({mat,t});
+      else if(t.status==='soon') soon.push({mat,t});
+    }
+  }
+  if(!urgent.length && !soon.length) return (
+    <div style={{background:'#d1fae5',border:'1px solid #a7f3d0',borderRadius:'8px',padding:'10px 16px',marginBottom:'14px',display:'flex',alignItems:'center',gap:'8px',color:'#065f46',fontSize:'12px',fontWeight:600}}>
+      ✅ All orders on track — no urgent actions today
+    </div>
+  );
+  return (
+    <div style={{marginBottom:'14px',display:'flex',flexDirection:'column',gap:'8px'}}>
+      {urgent.length>0 && (
+        <div style={{background:'#fee2e2',border:'1px solid #fca5a5',borderRadius:'8px',padding:'10px 16px',color:'#991b1b',fontSize:'12px'}}>
+          <strong>🔴 {urgent.length} OVERDUE order{urgent.length>1?'s':''} — place immediately:</strong>
+          <div style={{marginTop:'4px',display:'flex',flexWrap:'wrap',gap:'6px'}}>
+            {urgent.map((u,i)=>(
+              <span key={i} style={{background:'#fecaca',padding:'2px 8px',borderRadius:'6px',fontSize:'11px',fontWeight:600}}>
+                {u.mat.name} · {fmt(u.t.orderQty)} units · was due {fmtDate(u.t.orderByDate)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {soon.length>0 && (
+        <div style={{background:'#fef3c7',border:'1px solid #fde68a',borderRadius:'8px',padding:'10px 16px',color:'#92400e',fontSize:'12px'}}>
+          <strong>🟠 {soon.length} order{soon.length>1?'s':''} due within 7 days:</strong>
+          <div style={{marginTop:'4px',display:'flex',flexWrap:'wrap',gap:'6px'}}>
+            {soon.map((u,i)=>(
+              <span key={i} style={{background:'#fde68a',padding:'2px 8px',borderRadius:'6px',fontSize:'11px',fontWeight:600}}>
+                {u.mat.name} · {fmt(u.t.orderQty)} units · by {fmtDate(u.t.orderByDate)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// ORDER SCHEDULE TAB
+// ─────────────────────────────────────────────
+function OrderScheduleTab({ rmMaterials, pmMaterials, onUpdate, m1Label, m2Label, m3Label, m4Label, m1StartDate, onUpdateFactory }) {
+  const [kind, setKind] = useState('rm');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [expandedKey, setExpandedKey] = useState(null);
+
+  const m1Start = useMemo(()=>parseISODate(m1StartDate),[m1StartDate]);
+
+  const getMonthPlans = useCallback((mat)=>[
+    { label:m1Label, days:30, req:mat.reqM1||0 },
+    { label:m2Label, days:31, req:mat.reqM2||0 },
+    { label:m3Label, days:30, req:mat.reqM3||0 },
+    { label:m4Label, days:31, req:mat.reqM4||0 },
+  ],[m1Label,m2Label,m3Label,m4Label]);
+
+  const materials = kind==='rm' ? rmMaterials : pmMaterials;
+
+  const allSchedules = useMemo(()=>
+    materials.map(mat=>({ mat, schedule: buildOrderSchedule(mat, getMonthPlans(mat), m1Start) })),
+    [materials, getMonthPlans, m1Start]
+  );
+
+  const allRows = useMemo(()=>{
+    const rows=[];
+    for(const {mat,schedule} of allSchedules) {
+      for(const t of schedule.tranches) rows.push({mat,t,schedule});
+    }
+    rows.sort((a,b)=>a.t.orderByDate-b.t.orderByDate);
+    return rows;
+  },[allSchedules]);
+
+  const filtered = useMemo(()=>{
+    if(filterStatus==='all') return allRows;
+    if(filterStatus==='action') return allRows.filter(r=>['overdue','soon','upcoming'].includes(r.t.status));
+    return allRows.filter(r=>r.t.status===filterStatus);
+  },[allRows,filterStatus]);
+
+  const missingConfig = materials.filter(m=>(!m.lt||!m.minDoc)&&(m.reqM1||m.reqM2||m.reqM3||m.reqM4));
+  const urgentCount = allRows.filter(r=>r.t.status==='overdue'&&r.t.orderQty>0).length;
+  const soonCount   = allRows.filter(r=>r.t.status==='soon'&&r.t.orderQty>0).length;
+
+  return (
+    <div>
+      <ActionBanner allSchedules={allSchedules} />
+
+      {missingConfig.length>0 && (
+        <div className="warn-box" style={{marginBottom:'12px',fontSize:'12px'}}>
+          ⚠️ {missingConfig.length} material{missingConfig.length>1?'s':''} have no Lead Time / Min DOC set. Go to the RM or PM tab to fill these in.
+        </div>
+      )}
+
+      <div className="toolbar" style={{marginBottom:'12px'}}>
+        <div className="sub-tabs">
+          <button className={`sub-tab ${kind==='rm'?'active':''}`} onClick={()=>setKind('rm')}>
+            RM {urgentCount>0&&kind==='rm'&&<span className="badge-cnt" style={{background:'#ef4444'}}>{urgentCount}</span>}
+          </button>
+          <button className={`sub-tab ${kind==='pm'?'active':''}`} onClick={()=>setKind('pm')}>PM</button>
+        </div>
+
+        <select style={{padding:'5px 8px',border:'1px solid #d1d5db',borderRadius:'6px',fontSize:'12px'}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
+          <option value="all">All tranches</option>
+          <option value="action">⚡ Action needed</option>
+          <option value="overdue">🔴 Overdue</option>
+          <option value="soon">🟠 Due this week</option>
+          <option value="upcoming">🟢 Upcoming</option>
+          <option value="covered">✅ Covered</option>
+          <option value="covered-po">✅ PO covers</option>
+        </select>
+
+        <div style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px',color:'#64748b'}}>
+          <span>M1 starts:</span>
+          <input type="date" value={m1StartDate||''} onChange={e=>onUpdateFactory({m1StartDate:e.target.value})}
+            style={{padding:'4px 8px',border:'1px solid #d1d5db',borderRadius:'6px',fontSize:'12px'}} />
+        </div>
+
+        <div className="spacer"/>
+        <span style={{fontSize:'11px',color:'#94a3b8'}}>{filtered.length} rows</span>
+      </div>
+
+      <div className="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style={{minWidth:180}}>Material</th>
+              <th style={{minWidth:60,textAlign:'center'}}>LT (d)</th>
+              <th style={{minWidth:70,textAlign:'center'}}>Min DOC (d)</th>
+              <th style={{minWidth:110,textAlign:'center'}}>Covers</th>
+              <th style={{minWidth:100,textAlign:'right'}}>Order Qty</th>
+              <th style={{minWidth:100,textAlign:'center'}}>Order By</th>
+              <th style={{minWidth:130,textAlign:'center'}}>Status</th>
+              <th style={{minWidth:44,textAlign:'center'}}>📈</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length===0 && (
+              <tr><td colSpan={8}>
+                <div className="empty-state">
+                  <div className="icon">📊</div>
+                  <div>No orders found. Set Lead Time + Min DOC in the RM/PM tabs.</div>
+                </div>
+              </td></tr>
+            )}
+            {filtered.map(({mat,t,schedule},idx)=>{
+              const rowKey = `${mat.id}-${t.ts}`;
+              const isExp = expandedKey===rowKey;
+              const mp = getMonthPlans(mat);
+              return (
+                <React.Fragment key={rowKey}>
+                  <tr style={{background:idx%2===0?'white':'#f0faf4',cursor:'pointer'}} onClick={()=>setExpandedKey(isExp?null:rowKey)}>
+                    <td style={{fontWeight:600,fontSize:'12px'}}>
+                      <span style={{marginRight:'6px',fontSize:'10px',color:'#94a3b8'}}>{isExp?'▼':'▶'}</span>
+                      {mat.name}
+                    </td>
+                    <td style={{textAlign:'center',color:'#0369a1',fontWeight:700}}>{mat.lt||<span style={{color:'#cbd5e1'}}>—</span>}</td>
+                    <td style={{textAlign:'center',color:'#0369a1',fontWeight:700}}>{mat.minDoc||<span style={{color:'#cbd5e1'}}>—</span>}</td>
+                    <td style={{textAlign:'center',fontSize:'11px',color:'#64748b'}}>
+                      {fmtDate(t.startDate)} → {fmtDate(t.endDate)}
+                    </td>
+                    <td style={{textAlign:'right',fontWeight:t.orderQty>0?700:400,fontSize:'13px',color:t.orderQty>0?'#1e293b':'#94a3b8'}}>
+                      {t.orderQty>0 ? fmt(t.orderQty) : '—'}
+                    </td>
+                    <td style={{textAlign:'center',fontSize:'12px',fontWeight:t.orderQty>0?600:400,
+                      color:t.status==='overdue'?'#991b1b':t.status==='soon'?'#92400e':'#374151'}}>
+                      {t.orderQty>0 ? fmtDate(t.orderByDate) : '—'}
+                    </td>
+                    <td style={{textAlign:'center'}}><StatusBadge status={t.status}/></td>
+                    <td style={{textAlign:'center',color:'#94a3b8',fontSize:'14px'}}>{isExp?'▲':'↕'}</td>
+                  </tr>
+                  {isExp && (
+                    <tr>
+                      <td colSpan={8} style={{padding:'20px',background:'#f8fafc',borderBottom:'2px solid #d1fae5'}}>
+                        {/* Key metrics */}
+                        <div style={{display:'flex',gap:'20px',flexWrap:'wrap',marginBottom:'14px'}}>
+                          {[
+                            ['📦 Stock', fmt(mat.stock||0)],
+                            ['📋 Open PO', fmt(mat.openPO||0)],
+                            ['🎯 ROP', fmt(schedule.rop)],
+                            ['📏 Lead Time', (mat.lt||0)+'d'],
+                            ['🛡 Min DOC', (mat.minDoc||0)+'d'],
+                            ...schedule.drrs.map((drr,i)=>[`📅 ${mp[i].label} DRR`, drr.toFixed(1)+'/d']),
+                          ].map(([k,v])=>(
+                            <div key={k} style={{background:'white',border:'1px solid #d1fae5',borderRadius:'8px',padding:'8px 14px',minWidth:'90px'}}>
+                              <div style={{fontSize:'10px',color:'#64748b',marginBottom:'2px'}}>{k}</div>
+                              <div style={{fontSize:'14px',fontWeight:700,color:'#1e293b'}}>{v}</div>
+                            </div>
+                          ))}
+                        </div>
+                        {/* M1–M4 req inputs */}
+                        <div style={{marginBottom:'14px'}}>
+                          <div style={{fontSize:'11px',fontWeight:700,color:'#374151',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:'8px'}}>
+                            Required Qty (edit per month)
+                          </div>
+                          <div style={{display:'flex',gap:'10px',flexWrap:'wrap'}}>
+                            {['reqM1','reqM2','reqM3','reqM4'].map((f,i)=>(
+                              <div key={f} style={{display:'flex',flexDirection:'column',gap:'3px'}}>
+                                <label style={{fontSize:'10px',color:'#64748b',fontWeight:600}}>{mp[i].label}</label>
+                                <input type="number" className="num-input" style={{width:'100px'}} value={mat[f]||0} min={0}
+                                  onClick={e=>e.stopPropagation()}
+                                  onChange={e=>{
+                                    const v=parseFloat(e.target.value)||0;
+                                    const updated=materials.map(x=>x.id===mat.id?{...x,[f]:v}:x);
+                                    onUpdate(kind,updated);
+                                  }} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {/* Chart */}
+                        <div style={{fontSize:'11px',fontWeight:700,color:'#374151',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:'6px'}}>
+                          Inventory Projection
+                        </div>
+                        <InventoryChart mat={mat} monthPlans={mp} schedule={schedule}/>
+                        <div style={{marginTop:'6px',fontSize:'10px',color:'#94a3b8',display:'flex',gap:'16px'}}>
+                          <span>🟢 Green line = projected inventory</span>
+                          <span>🔴 Dashed = Reorder Point (ROP = Min DOC × DRR)</span>
+                          <span>↕ Green verticals = scheduled receipts</span>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // APP
 // ─────────────────────────────────────────────
 function App() {
@@ -2493,7 +2892,7 @@ function App() {
     });
   }
 
-  const { skus=[], rm: rmMaterials=[], pm: pmMaterials=[], vendorMap={}, m1Label='M1', m2Label='M2', hasRM=false, hasPM=false, name: factoryName='' } = factory || {};
+  const { skus=[], rm: rmMaterials=[], pm: pmMaterials=[], vendorMap={}, m1Label='M1', m2Label='M2', m3Label='M3', m4Label='M4', m1StartDate='', hasRM=false, hasPM=false, name: factoryName='' } = factory || {};
 
   function handleUpdate(kind, updated) {
     if (kind === 'rm') updateFactory({ rm: updated });
@@ -2602,7 +3001,7 @@ function App() {
           currentRM = rmSrc.map(r => {
             const code = r.mosaicRmCode || r.materialCode || r.code || '';
             const name = r.ingredientName || r.materialName || r.name || code;
-            return { id: code, code, name, stock: 0, openPO: 0, supplyM1: 0, supplyM2: 0, reqM1: 0, reqM2: 0, moq: 0, aliases: [], mosaicCodes: [] };
+            return { id: code, code, name, stock: 0, openPO: 0, supplyM1: 0, supplyM2: 0, reqM1: 0, reqM2: 0, reqM3: 0, reqM4: 0, moq: 0, lt: 0, minDoc: 0, aliases: [], mosaicCodes: [] };
           }).filter(m => m.id);
         }
       }
@@ -2615,7 +3014,7 @@ function App() {
           currentPM = pmSrc.map(r => {
             const code = r.mosaicPmCode || r.materialCode || r.code || '';
             const name = r.componentName || r.materialName || r.name || code;
-            return { id: code, code, name, stock: 0, openPO: 0, supplyM1: 0, supplyM2: 0, reqM1: 0, reqM2: 0, moq: 0, aliases: [], mosaicCodes: [] };
+            return { id: code, code, name, stock: 0, openPO: 0, supplyM1: 0, supplyM2: 0, reqM1: 0, reqM2: 0, reqM3: 0, reqM4: 0, moq: 0, lt: 0, minDoc: 0, aliases: [], mosaicCodes: [] };
           }).filter(m => m.id);
         }
       }
@@ -2676,8 +3075,12 @@ function App() {
           <span style={{margin:'0 8px',color:'#cbd5e1'}}>|</span>
           <label>M1:</label>
           <input className="month-input" value={m1Label} onChange={e=>updateFactory({m1Label:e.target.value})} />
-          <label style={{marginLeft:'8px'}}>M2:</label>
+          <label style={{marginLeft:'4px'}}>M2:</label>
           <input className="month-input" value={m2Label} onChange={e=>updateFactory({m2Label:e.target.value})} />
+          <label style={{marginLeft:'4px'}}>M3:</label>
+          <input className="month-input" value={m3Label} onChange={e=>updateFactory({m3Label:e.target.value})} />
+          <label style={{marginLeft:'4px'}}>M4:</label>
+          <input className="month-input" value={m4Label} onChange={e=>updateFactory({m4Label:e.target.value})} />
           <button className="btn btn-secondary btn-sm" style={{color:'#ef4444',borderColor:'#fecaca'}} onClick={resetFactory}>↺ Reset</button>
           <span style={{margin:'0 8px',color:'#cbd5e1'}}>|</span>
           <span style={{fontSize:'11px',color:'#94a3b8'}}>{userRef.current?.email}</span>
@@ -2698,6 +3101,9 @@ function App() {
           </button>
         )}
         <button className={`tab-btn${activeTab==='skudoc'?' active':''}`} onClick={()=>setActiveTab('skudoc')}>SKU Doc</button>
+        <button className={`tab-btn${activeTab==='orderschedule'?' active':''}`} onClick={()=>setActiveTab('orderschedule')} style={{color: activeTab==='orderschedule'?'#059669':'#64748b'}}>
+          📊 Order Schedule
+        </button>
       </div>
 
       <div className="content">
@@ -2720,6 +3126,16 @@ function App() {
         )}
         {activeTab==='skudoc' && (
           <SkuDocTab skus={skus} rmMaterials={rmMaterials} pmMaterials={pmMaterials} vendorMap={vendorMap} m1Label={m1Label} m2Label={m2Label} />
+        )}
+        {activeTab==='orderschedule' && (
+          <OrderScheduleTab
+            rmMaterials={rmMaterials}
+            pmMaterials={pmMaterials}
+            onUpdate={handleUpdate}
+            m1Label={m1Label} m2Label={m2Label} m3Label={m3Label} m4Label={m4Label}
+            m1StartDate={m1StartDate}
+            onUpdateFactory={updateFactory}
+          />
         )}
       </div>
 
