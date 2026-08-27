@@ -2595,69 +2595,179 @@ function buildOrderSchedule(mat, monthPlans, m1Start) {
 // INVENTORY CHART (SVG sawtooth)
 // ─────────────────────────────────────────────
 function InventoryChart({ mat, monthPlans, schedule }) {
-  const W=680, H=200, PL=56, PR=12, PT=12, PB=30;
+  const [tooltip, setTooltip] = React.useState(null);
+  const svgRef = React.useRef(null);
+  const W=720, H=240, PL=68, PR=16, PT=20, PB=44;
   const cw=W-PL-PR, ch=H-PT-PB;
   const { daily=[], totalDays=0, rop=0, tranches=[] } = schedule;
   if (!totalDays) return null;
 
-  // simulate inventory from M1 day 0
+  // build date array for x-axis
+  const m1Start = parseISODate(mat._m1Start || '');
+
+  // simulate inventory
   const receipts = {};
   for(const t of tranches) if(t.orderQty>0) receipts[t.ts]=(receipts[t.ts]||0)+t.orderQty;
   let inv = mat.stock || 0;
   const pts = [];
+  const invAtDay = [];
   for(let d=0;d<=totalDays;d++) {
     if(receipts[d]) inv+=receipts[d];
-    pts.push(Math.max(0, inv));
+    const v = Math.max(0, inv);
+    pts.push(v);
+    invAtDay.push(v);
     if(daily[d]!=null) inv-=daily[d];
   }
-  const maxInv = Math.max(rop*1.6, ...pts, 1);
+  const maxInv = Math.max(rop*1.5, ...pts, 1);
   const xs = d => PL+(d/totalDays)*cw;
   const ys = v => PT+ch-(v/maxInv)*ch;
   const pathD = pts.map((v,i)=>`${i===0?'M':'L'}${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
 
-  // month separator days
+  // month separators + cumulative day offsets
   const sepDays=[], cumDays=[]; let cum=0;
   monthPlans.forEach((m,i)=>{ cumDays.push(cum); cum+=m.days; if(i<monthPlans.length-1) sepDays.push(cum); });
 
   const ropY = ys(rop);
-  const yTicks = [0, Math.round(maxInv*0.5), Math.round(maxInv)];
+  const yTicks = [0, Math.round(maxInv*0.25), Math.round(maxInv*0.5), Math.round(maxInv*0.75), Math.round(maxInv)];
+
+  // x-axis date ticks: ~every 14 days
+  const xTicks = [];
+  for(let d=0; d<=totalDays; d+=14) xTicks.push(d);
+  if(xTicks[xTicks.length-1] !== totalDays) xTicks.push(totalDays);
+
+  // tooltip handler
+  const handleMouseMove = (e) => {
+    const rect = svgRef.current.getBoundingClientRect();
+    const svgX = (e.clientX - rect.left) * (W / rect.width);
+    const chartX = svgX - PL;
+    if(chartX < 0 || chartX > cw) { setTooltip(null); return; }
+    const day = Math.round((chartX / cw) * totalDays);
+    const clampedDay = Math.min(day, totalDays);
+    const date = addDays(m1Start, clampedDay);
+    const stock = invAtDay[clampedDay] || 0;
+    const hasReceipt = receipts[clampedDay];
+    const tranche = tranches.find(t => t.ts === clampedDay && t.orderQty > 0);
+    setTooltip({ x: xs(clampedDay), y: ys(stock), day: clampedDay, date, stock, hasReceipt, orderQty: tranche?.orderQty });
+  };
+
+  const fmtNum = v => Math.round(v).toLocaleString('en-IN');
 
   return (
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{display:'block',background:'#f8fafc',borderRadius:'8px',border:'1px solid #d1fae5'}}>
-      {/* month separators */}
-      {sepDays.map(d=><line key={d} x1={xs(d)} y1={PT} x2={xs(d)} y2={PT+ch} stroke="#e2e8f0" strokeDasharray="4 2"/>)}
-      {/* month labels */}
-      {monthPlans.map((m,mi)=>(
-        <text key={mi} x={xs(cumDays[mi]+m.days/2)} y={H-6} textAnchor="middle" fontSize="10" fill="#94a3b8">{m.label}</text>
-      ))}
-      {/* receipt lines */}
-      {tranches.filter(t=>t.orderQty>0).map((t,i)=>(
-        <line key={i} x1={xs(t.ts)} y1={PT} x2={xs(t.ts)} y2={PT+ch} stroke="#059669" strokeWidth="1.5" opacity="0.4"/>
-      ))}
-      {/* ROP line */}
-      <line x1={PL} y1={ropY} x2={PL+cw} y2={ropY} stroke="#ef4444" strokeDasharray="6 3" strokeWidth="1.5"/>
-      <text x={PL-4} y={ropY+4} textAnchor="end" fontSize="9" fill="#ef4444" fontWeight="600">ROP</text>
-      {/* inventory line */}
-      <path d={pathD} fill="none" stroke="#059669" strokeWidth="2"/>
-      {/* fill below line */}
-      <path d={pathD+` L${xs(totalDays).toFixed(1)},${PT+ch} L${PL},${PT+ch} Z`} fill="#059669" opacity="0.07"/>
-      {/* y-axis */}
-      <line x1={PL} y1={PT} x2={PL} y2={PT+ch} stroke="#d1fae5"/>
-      {yTicks.map(v=>(
-        <text key={v} x={PL-5} y={ys(v)+4} textAnchor="end" fontSize="9" fill="#94a3b8">
-          {v.toLocaleString('en-IN')}
-        </text>
-      ))}
-      {/* x-axis */}
-      <line x1={PL} y1={PT+ch} x2={PL+cw} y2={PT+ch} stroke="#d1fae5"/>
-      {/* legend */}
-      <line x1={PL+10} y1={PT+6} x2={PL+26} y2={PT+6} stroke="#059669" strokeWidth="2"/>
-      <text x={PL+30} y={PT+10} fontSize="9" fill="#059669">Inventory</text>
-      <line x1={PL+90} y1={PT+6} x2={PL+106} y2={PT+6} stroke="#ef4444" strokeDasharray="4 2" strokeWidth="1.5"/>
-      <text x={PL+110} y={PT+10} fontSize="9" fill="#ef4444">Reorder Point</text>
-      <line x1={PL+190} y1={PT+6} x2={PL+206} y2={PT+6} stroke="#059669" strokeWidth="1.5" opacity="0.5"/>
-      <text x={PL+210} y={PT+10} fontSize="9" fill="#059669" opacity="0.7">Receipt</text>
-    </svg>
+    <div style={{position:'relative'}}>
+      <svg ref={svgRef} width="100%" viewBox={`0 0 ${W} ${H}`}
+        style={{display:'block',background:'#f8fafc',borderRadius:'10px',border:'1px solid #d1fae5',cursor:'crosshair'}}
+        onMouseMove={handleMouseMove} onMouseLeave={()=>setTooltip(null)}>
+
+        {/* grid lines */}
+        {yTicks.map(v=>(
+          <line key={v} x1={PL} y1={ys(v)} x2={PL+cw} y2={ys(v)} stroke="#e2e8f0" strokeWidth="0.8"/>
+        ))}
+
+        {/* month shading (alternating) */}
+        {monthPlans.map((m,mi)=>(
+          <rect key={mi} x={xs(cumDays[mi])} y={PT} width={(m.days/totalDays)*cw} height={ch}
+            fill={mi%2===0?'#f0fdf4':'#f8fafc'} opacity="0.5"/>
+        ))}
+
+        {/* month separators */}
+        {sepDays.map(d=>(
+          <line key={d} x1={xs(d)} y1={PT} x2={xs(d)} y2={PT+ch} stroke="#cbd5e1" strokeDasharray="5 3" strokeWidth="1"/>
+        ))}
+
+        {/* receipt event lines */}
+        {tranches.filter(t=>t.orderQty>0).map((t,i)=>(
+          <g key={i}>
+            <line x1={xs(t.ts)} y1={PT} x2={xs(t.ts)} y2={PT+ch} stroke="#0891b2" strokeWidth="1.5" opacity="0.5" strokeDasharray="3 2"/>
+            <polygon points={`${xs(t.ts)},${PT+ch} ${xs(t.ts)-5},${PT+ch+8} ${xs(t.ts)+5},${PT+ch+8}`} fill="#0891b2" opacity="0.7"/>
+          </g>
+        ))}
+
+        {/* fill under inventory curve */}
+        <path d={pathD+` L${xs(totalDays).toFixed(1)},${PT+ch} L${PL},${PT+ch} Z`} fill="url(#invGrad)" opacity="0.5"/>
+        <defs>
+          <linearGradient id="invGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#059669" stopOpacity="0.3"/>
+            <stop offset="100%" stopColor="#059669" stopOpacity="0.02"/>
+          </linearGradient>
+        </defs>
+
+        {/* ROP shaded zone (below ROP) */}
+        <rect x={PL} y={ropY} width={cw} height={PT+ch-ropY} fill="#fee2e2" opacity="0.25"/>
+
+        {/* ROP line */}
+        <line x1={PL} y1={ropY} x2={PL+cw} y2={ropY} stroke="#ef4444" strokeDasharray="7 3" strokeWidth="1.8"/>
+        <rect x={PL-38} y={ropY-9} width={36} height={14} rx="3" fill="#ef4444"/>
+        <text x={PL-20} y={ropY+1} textAnchor="middle" fontSize="9" fill="white" fontWeight="700">ROP</text>
+
+        {/* inventory line */}
+        <path d={pathD} fill="none" stroke="#059669" strokeWidth="2.5" strokeLinejoin="round"/>
+
+        {/* y-axis */}
+        <line x1={PL} y1={PT} x2={PL} y2={PT+ch} stroke="#94a3b8" strokeWidth="1"/>
+        {yTicks.map(v=>(
+          <text key={v} x={PL-6} y={ys(v)+4} textAnchor="end" fontSize="9" fill="#64748b">
+            {fmtNum(v)}
+          </text>
+        ))}
+
+        {/* x-axis */}
+        <line x1={PL} y1={PT+ch} x2={PL+cw} y2={PT+ch} stroke="#94a3b8" strokeWidth="1"/>
+        {xTicks.map(d=>{
+          const date = addDays(m1Start, d);
+          const label = date.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+          return (
+            <g key={d}>
+              <line x1={xs(d)} y1={PT+ch} x2={xs(d)} y2={PT+ch+4} stroke="#94a3b8" strokeWidth="1"/>
+              <text x={xs(d)} y={PT+ch+13} textAnchor="middle" fontSize="8.5" fill="#64748b">{label}</text>
+            </g>
+          );
+        })}
+
+        {/* month labels */}
+        {monthPlans.map((m,mi)=>(
+          <text key={mi} x={xs(cumDays[mi]+m.days/2)} y={PT+ch+28} textAnchor="middle" fontSize="10" fontWeight="700" fill="#0f172a" opacity="0.5">{m.label}</text>
+        ))}
+
+        {/* legend */}
+        <g>
+          <line x1={PL+4} y1={PT+8} x2={PL+18} y2={PT+8} stroke="#059669" strokeWidth="2.5"/>
+          <text x={PL+22} y={PT+12} fontSize="9" fill="#059669" fontWeight="600">Inventory</text>
+          <line x1={PL+86} y1={PT+8} x2={PL+100} y2={PT+8} stroke="#ef4444" strokeDasharray="5 2" strokeWidth="1.8"/>
+          <text x={PL+104} y={PT+12} fontSize="9" fill="#ef4444" fontWeight="600">ROP</text>
+          <line x1={PL+140} y1={PT+8} x2={PL+154} y2={PT+8} stroke="#0891b2" strokeDasharray="3 2" strokeWidth="1.5"/>
+          <text x={PL+158} y={PT+12} fontSize="9" fill="#0891b2" fontWeight="600">Order receipt</text>
+        </g>
+
+        {/* tooltip crosshair */}
+        {tooltip && (
+          <g>
+            <line x1={tooltip.x} y1={PT} x2={tooltip.x} y2={PT+ch} stroke="#475569" strokeWidth="1" strokeDasharray="3 2" opacity="0.7"/>
+            <circle cx={tooltip.x} cy={tooltip.y} r="4" fill="#059669" stroke="white" strokeWidth="1.5"/>
+          </g>
+        )}
+      </svg>
+
+      {/* HTML tooltip overlay */}
+      {tooltip && (
+        <div style={{
+          position:'absolute', pointerEvents:'none',
+          left: `${(tooltip.x/W)*100}%`, top:`${(tooltip.y/H)*100}%`,
+          transform:'translate(-50%,-110%)',
+          background:'#1e293b', color:'white', borderRadius:'8px',
+          padding:'8px 12px', fontSize:'11px', whiteSpace:'nowrap',
+          boxShadow:'0 4px 12px rgba(0,0,0,0.3)', zIndex:10,
+        }}>
+          <div style={{fontWeight:700,marginBottom:'4px',color:'#94a3b8'}}>
+            {tooltip.date.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})} · Day {tooltip.day}
+          </div>
+          <div>📦 Stock: <strong style={{color:'#4ade80'}}>{fmtNum(tooltip.stock)}</strong></div>
+          {tooltip.orderQty && <div>🚚 Order arriving: <strong style={{color:'#38bdf8'}}>{fmtNum(tooltip.orderQty)}</strong></div>}
+          <div style={{fontSize:'9px',marginTop:'3px',color:tooltip.stock<=rop?'#f87171':'#94a3b8'}}>
+            ROP = {fmtNum(rop)} {tooltip.stock<=rop?'⚠️ At/below ROP':''}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -2740,8 +2850,8 @@ function OrderScheduleTab({ rmMaterials, pmMaterials, onUpdate, m1Label, m2Label
   const materials = kind==='rm' ? rmMaterials : pmMaterials;
 
   const allSchedules = useMemo(()=>
-    materials.map(mat=>({ mat, schedule: buildOrderSchedule(mat, getMonthPlans(mat), m1Start) })),
-    [materials, getMonthPlans, m1Start]
+    materials.map(mat=>({ mat: {...mat, _m1Start: m1StartDate}, schedule: buildOrderSchedule(mat, getMonthPlans(mat), m1Start) })),
+    [materials, getMonthPlans, m1Start, m1StartDate]
   );
 
   const allRows = useMemo(()=>{
