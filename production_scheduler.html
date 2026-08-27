@@ -594,13 +594,16 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
               </table>
             </div>
 
-            {/* Group summary */}
-            <div style={{marginBottom:8}}>
-              {r.groups.map((g,i) => (
-                <span key={g.flavour} style={{marginRight:8,fontSize:11,color:'#374151'}}>
-                  <b>G{i+1} {g.flavour}</b>: {fmtH(g.tHrs)} · ₹{fmt(g.rph,0)}/hr
-                </span>
-              ))}
+            {/* Group summary — deduplicate by index */}
+            <div style={{marginBottom:8,display:'flex',flexWrap:'wrap',gap:'6px'}}>
+              {r.groups.map((g,i) => {
+                const label = g.pack_type && g.pack_type !== g.flavour ? `${g.flavour} · ${g.pack_type}` : g.flavour;
+                return (
+                  <span key={i} style={{fontSize:11,color:'#374151',background:'#f1f5f9',borderRadius:'6px',padding:'2px 8px'}}>
+                    <b>G{i+1} {label}</b>: {fmtH(g.tHrs)} · ₹{fmt(g.rph,0)}/hr
+                  </span>
+                );
+              })}
             </div>
           </div>
         );
