@@ -241,11 +241,35 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A') {
     let groups;
 
     if (scenario === 'B') {
-      // ── Min Changeover: group by flavour, rank groups by total revenue desc ──
-      const gMap = {};
-      for (const r of rows) { (gMap[r.flavour] = gMap[r.flavour] || []).push(r); }
-      groups = Object.entries(gMap).map(([fl, sk]) => makeGroup(fl, sk))
-               .sort((a,b) => b.tRev - a.tRev);
+      // ── Min Changeover: 3-level sort ──
+      // Level 1: Flavour cluster (never break unnecessarily) — ranked by total cluster revenue desc
+      // Level 2: Pack type within flavour — ranked by Rev/hr desc
+      // Level 3: SKU within flavour+pack — ranked by absolute revenue desc
+
+      // Step 1: group by flavour
+      const flMap = {};
+      for (const r of rows) { (flMap[r.flavour] = flMap[r.flavour] || []).push(r); }
+
+      // Step 2: for each flavour cluster, sub-group by pack_type, rank sub-groups by Rev/hr
+      const flGroups = Object.entries(flMap).map(([fl, flSkus]) => {
+        const ptMap = {};
+        for (const r of flSkus) { (ptMap[r.pack_type] = ptMap[r.pack_type] || []).push(r); }
+        const subGroups = Object.entries(ptMap).map(([pt, sk]) => {
+          const tRev = sk.reduce((s,r)=>s+r.rev,0);
+          const tHrs = sk.reduce((s,r)=>s+r.hrs,0);
+          return { flavour: fl, pack_type: pt, skus: [...sk].sort((a,b)=>b.rev-a.rev), tRev, tHrs, rph: tHrs>0?tRev/tHrs:0 };
+        }).sort((a,b) => b.rph - a.rph); // rank pack types by Rev/hr within flavour
+        const flTRev = flSkus.reduce((s,r)=>s+r.rev,0);
+        return { flavour: fl, subGroups, flTRev };
+      }).sort((a,b) => b.flTRev - a.flTRev); // rank flavour clusters by total revenue
+
+      // Flatten into groups array — each sub-group becomes one "group" in the sequence
+      groups = [];
+      for (const fg of flGroups) {
+        for (const sg of fg.subGroups) {
+          groups.push({ flavour: sg.flavour, pack_type: sg.pack_type, skus: sg.skus, tRev: sg.tRev, tHrs: sg.tHrs, rph: sg.rph });
+        }
+      }
     } else {
       // ── Revenue Max (A) ──
       if (line === 'L2') {
@@ -262,17 +286,25 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A') {
 
     // Build sequence
     const seq = [];
-    let prevFl = null, gRank = 0;
+    let prevFl = null, prevPt = null, gRank = 0;
     for (const g of groups) {
       gRank++;
       for (let i = 0; i < g.skus.length; i++) {
         const s = g.skus[i];
         if (prevFl !== null) {
-          const coH = prevFl !== g.flavour ? changeoverDiff : changeoverSame;
-          seq.push({ type:'co', hours:coH, label: prevFl !== g.flavour ? `Flavour change → ${g.flavour}` : `SKU change (${g.flavour})` });
+          const flavourChange = prevFl !== g.flavour;
+          const packChange    = !flavourChange && prevPt !== (g.pack_type || g.flavour);
+          const coH = flavourChange ? changeoverDiff : changeoverSame;
+          const label = flavourChange
+            ? `Flavour change → ${g.flavour}`
+            : packChange
+              ? `Pack size change → ${g.pack_type || g.flavour}`
+              : `SKU change (${g.flavour})`;
+          seq.push({ type:'co', hours:coH, label });
         }
         seq.push({ type:'run', ...s, gRank, skuRank:i+1 });
         prevFl = g.flavour;
+        prevPt = g.pack_type || g.flavour;
       }
     }
 
@@ -496,7 +528,7 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
 
   const scenarioMeta = scenario === 'A'
     ? { label: 'A — Revenue Max', desc: 'L1/L3: absolute revenue · L2: Rev/hr by pack type', color: '#059669', bg: '#d1fae5' }
-    : { label: 'B — Min Changeover', desc: 'All lines: flavour groups ranked by total revenue', color: '#7c3aed', bg: '#ede9fe' };
+    : { label: 'B — Min Changeover', desc: 'Flavour clusters by revenue → pack type by Rev/hr → SKUs by revenue', color: '#7c3aed', bg: '#ede9fe' };
 
   return (
     <div>
