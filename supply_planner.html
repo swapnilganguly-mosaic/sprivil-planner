@@ -2569,11 +2569,19 @@ function buildOrderSchedule(mat, monthPlans, m1Start) {
   let remPO = openPO;
   const today = new Date(); today.setHours(0,0,0,0);
 
-  const result = tranches.map(t => {
+  // If stock < ROP, compute how much extra we need on the first order to top up to ROP.
+  // Open PO is checked first — it may already cover the gap.
+  let ropTopUp = stock < rop ? Math.max(0, rop - stock - remPO) : 0;
+  if (stock < rop) remPO = Math.max(0, remPO - (rop - stock)); // PO absorbs ROP gap first
+
+  const result = tranches.map((t, ti) => {
     if (t.ts < effectiveCovDays) return {...t, orderQty:0, coveredBy:'stock', status:'covered'};
     if (remPO >= t.qty) { remPO-=t.qty; return {...t, orderQty:0, coveredBy:'po', status:'covered-po'}; }
     const shortfall = t.qty - remPO; remPO=0;
-    const orderQty = moq>0 ? Math.max(Math.round(shortfall),moq) : Math.round(shortfall);
+    // First uncovered tranche: add ROP top-up so stock never goes below ROP
+    const extra = ti===0 ? ropTopUp : 0; ropTopUp=0;
+    const rawQty = Math.round(shortfall) + extra;
+    const orderQty = moq>0 ? Math.max(rawQty, moq) : rawQty;
     const ob = new Date(t.orderByDate); ob.setHours(0,0,0,0);
     const diff = daysBetween(today,ob);
     const status = diff<0 ? 'overdue' : diff<=7 ? 'soon' : 'upcoming';
