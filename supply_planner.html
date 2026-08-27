@@ -2606,8 +2606,19 @@ function InventoryChart({ mat, monthPlans, schedule }) {
   const m1Start = parseISODate(mat._m1Start || '');
 
   // simulate inventory
+  // For overdue orders: receipt arrives at today+LT (not ts), since order hasn't been placed yet.
+  // For on-time orders: receipt arrives at ts as planned.
+  const todayForChart = new Date(); todayForChart.setHours(0,0,0,0);
+  const todayOffsetFromM1 = daysBetween(m1Start, todayForChart); // negative if m1 is in future
+  const lt = mat.lt || 0;
   const receipts = {};
-  for(const t of tranches) if(t.orderQty>0) receipts[t.ts]=(receipts[t.ts]||0)+t.orderQty;
+  for(const t of tranches) {
+    if(t.orderQty<=0) continue;
+    const receiptDay = t.status==='overdue'
+      ? Math.max(t.ts, todayOffsetFromM1 + lt)  // if ordered today, arrives today+LT
+      : t.ts;
+    receipts[receiptDay] = (receipts[receiptDay]||0) + t.orderQty;
+  }
   let inv = mat.stock || 0;
   const pts = [];
   const invAtDay = [];
