@@ -211,7 +211,8 @@ const clsPill = c => <span className={`cls-${(c||'').toLowerCase()}`}>{c}</span>
 const flvPill = f => <span className="flavour-pill" style={{background:FLAVOUR_COLORS[f]?`${FLAVOUR_COLORS[f]}22`:undefined, color:FLAVOUR_COLORS[f]||'#374151'}}>{f}</span>;
 
 // ─── ENGINE ──────────────────────────────────────────────────────────────────
-function runEngine(supplyPlan, skus, config, workingDays) {
+// scenario: 'A' = Revenue Max | 'B' = Min Changeover
+function runEngine(supplyPlan, skus, config, workingDays, scenario='A') {
   const { shiftHours, changeoverSame, changeoverDiff, rateBasis } = config;
 
   // Enrich
@@ -226,19 +227,38 @@ function runEngine(supplyPlan, skus, config, workingDays) {
     planRows.push({ ...sku, qty, line, rph, hrs, rev, rph_rev: hrs > 0 ? rev / hrs : 0 });
   }
 
+  function makeGroup(key, sk) {
+    const tRev = sk.reduce((s,r)=>s+r.rev,0);
+    const tHrs = sk.reduce((s,r)=>s+r.hrs,0);
+    return { flavour: key, skus: [...sk].sort((a,b)=>b.rev-a.rev), tRev, tHrs, rph: tHrs>0?tRev/tHrs:0 };
+  }
+
   const results = {};
   for (const line of ALL_LINES) {
     const rows = planRows.filter(r => r.line === line);
     if (!rows.length) { results[line] = null; continue; }
 
-    // Flavour groups → rank by group rev/hr
-    const gMap = {};
-    for (const r of rows) { (gMap[r.flavour] = gMap[r.flavour] || []).push(r); }
-    const groups = Object.entries(gMap).map(([flavour, sk]) => {
-      const tRev = sk.reduce((s,r)=>s+r.rev,0);
-      const tHrs = sk.reduce((s,r)=>s+r.hrs,0);
-      return { flavour, skus: sk.sort((a,b)=>b.rev-a.rev), tRev, tHrs, rph: tHrs>0?tRev/tHrs:0 };
-    }).sort((a,b) => b.rph - a.rph);
+    let groups;
+
+    if (scenario === 'B') {
+      // ── Min Changeover: group by flavour, rank groups by total revenue desc ──
+      const gMap = {};
+      for (const r of rows) { (gMap[r.flavour] = gMap[r.flavour] || []).push(r); }
+      groups = Object.entries(gMap).map(([fl, sk]) => makeGroup(fl, sk))
+               .sort((a,b) => b.tRev - a.tRev);
+    } else {
+      // ── Revenue Max (A) ──
+      if (line === 'L2') {
+        // Group by pack_type → rank groups by Rev/hr → SKUs within by absolute revenue
+        const gMap = {};
+        for (const r of rows) { (gMap[r.pack_type] = gMap[r.pack_type] || []).push(r); }
+        groups = Object.entries(gMap).map(([pt, sk]) => makeGroup(pt, sk))
+                 .sort((a,b) => b.rph - a.rph);
+      } else {
+        // L1 & L3: no grouping — all SKUs sorted by absolute revenue desc
+        groups = [makeGroup('all', rows)];
+      }
+    }
 
     // Build sequence
     const seq = [];
@@ -468,14 +488,23 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
 }
 
 // ─── QUEUE TAB ───────────────────────────────────────────────────────────────
-function QueueTab({ results, workingDays, config }) {
+function QueueTab({ results, workingDays, config, scenario='A' }) {
   const anyResult = results && ALL_LINES.some(l=>results[l]);
   if (!anyResult) return (
     <div className="empty"><div className="icon">📋</div><p>Run the scheduler to see the priority queue.</p></div>
   );
 
+  const scenarioMeta = scenario === 'A'
+    ? { label: 'A — Revenue Max', desc: 'L1/L3: absolute revenue · L2: Rev/hr by pack type', color: '#059669', bg: '#d1fae5' }
+    : { label: 'B — Min Changeover', desc: 'All lines: flavour groups ranked by total revenue', color: '#7c3aed', bg: '#ede9fe' };
+
   return (
     <div>
+      <div style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 14px',borderRadius:'8px',background:scenarioMeta.bg,border:`1px solid ${scenarioMeta.color}33`,marginBottom:'12px',fontSize:'12px'}}>
+        <span style={{fontWeight:700,color:scenarioMeta.color}}>Scenario {scenarioMeta.label}</span>
+        <span style={{color:'#64748b'}}>—</span>
+        <span style={{color:'#374151'}}>{scenarioMeta.desc}</span>
+      </div>
       {ALL_LINES.map(line => {
         const r = results[line];
         if (!r) return null;
@@ -729,6 +758,7 @@ function App() {
   const [plan, setPlan]           = useState({});
   const [stockData, setStockData] = useState({});
   const [results, setResults]     = useState(null);
+  const [scenario, setScenario]   = useState('A'); // 'A' = Revenue Max | 'B' = Min Changeover
   const [saveStatus, setSaveStatus] = useState('');
 
   // ── init supabase ──
@@ -790,8 +820,8 @@ function App() {
   const setSkusSaving     = v => { setSkus(v);        triggerSave({ skus: v }); };
   const setWDSaving       = v => { setWorkingDays(v); triggerSave({ workingDays: typeof v==='function' ? v(workingDays) : v }); };
 
-  function handleRun() {
-    const r = runEngine(plan, skus, config, workingDays);
+  function handleRun(sc) {
+    const r = runEngine(plan, skus, config, workingDays, sc || scenario);
     setResults(r);
     setTab('queue');
   }
@@ -817,6 +847,25 @@ function App() {
         <h1>Production Scheduler</h1>
         <span className="badge">Sapiens · LJ</span>
         <div className="header-right">
+          {/* Scenario toggle */}
+          <div style={{display:'flex',alignItems:'center',gap:0,border:'1px solid #d1d5db',borderRadius:8,overflow:'hidden',fontSize:12}}>
+            <button
+              onClick={()=>{ setScenario('A'); if(results) handleRun('A'); }}
+              style={{padding:'5px 12px',border:'none',cursor:'pointer',fontWeight:600,
+                background: scenario==='A' ? '#059669' : '#fff',
+                color:      scenario==='A' ? '#fff'    : '#374151',
+                transition:'all .15s'}}>
+              A — Revenue Max
+            </button>
+            <button
+              onClick={()=>{ setScenario('B'); if(results) handleRun('B'); }}
+              style={{padding:'5px 12px',border:'none',borderLeft:'1px solid #d1d5db',cursor:'pointer',fontWeight:600,
+                background: scenario==='B' ? '#7c3aed' : '#fff',
+                color:      scenario==='B' ? '#fff'    : '#374151',
+                transition:'all .15s'}}>
+              B — Min Changeover
+            </button>
+          </div>
           {saveStatus && <span style={{fontSize:11,color:'#059669'}}>{saveStatus}</span>}
           <span>{userRef.current?.email}</span>
           <button className="btn btn-secondary btn-sm" onClick={logout}>Logout</button>
@@ -834,7 +883,7 @@ function App() {
 
       <div className="content">
         {tab === 'plan'     && <SupplyPlanTab skus={skus} plan={plan} setPlan={setPlanSaving} stockData={stockData} setStockData={setStockSaving} onRun={handleRun} results={results}/>}
-        {tab === 'queue'    && <QueueTab results={results} workingDays={workingDays} config={config}/>}
+        {tab === 'queue'    && <QueueTab results={results} workingDays={workingDays} config={config} scenario={scenario}/>}
         {tab === 'schedule' && <ScheduleTab results={results} workingDays={workingDays} setWorkingDays={setWDSaving} config={config}/>}
         {tab === 'settings' && <SettingsTab config={config} setConfig={setConfigSaving} skus={skus} setSkus={setSkusSaving}/>}
       </div>
