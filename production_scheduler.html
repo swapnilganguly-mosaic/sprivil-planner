@@ -313,7 +313,7 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
 
     buildSeq(groups1, groups1.length ? '🔴 Tier 1 — Demand Coverage (Urgent)' : null);
     buildSeq(groups2, groups2.length ? '🟡 Tier 2 — Cover Build (DOI Top-up)' : null);
-    if (t3rows.length) seq.push({ type:'tier', label: `⏭ ${t3rows.length} SKU(s) skipped — closing stock ≥ target` });
+    if (t3rows.length) seq.push({ type:'tier', label: `⏭ ${t3rows.length} SKU(s) not produced — closing stock ≥ target stock` });
 
     // Budget
     const budget = (workingDays[line] || 0) * shiftHours;
@@ -333,7 +333,7 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
     });
 
     results[line] = { groups, seq, daySeq, budget, runH, coH, total, over: total > budget,
-                      skuCount: allRows.length, skippedCount: t3rows.length, t1Count: t1rows.length, t2Count: t2rows.length };
+                      skuCount: allRows.length, t1Count: t1rows.length, t2Count: t2rows.length, t3Count: t3rows.length };
   }
   return results;
 }
@@ -679,6 +679,74 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
 // ─── LINE SCHEDULE TAB ───────────────────────────────────────────────────────
 function ScheduleTab({ results, workingDays, setWorkingDays, config }) {
   const anyResult = results && ALL_LINES.some(l=>results[l]);
+  const [startDate, setStartDate] = React.useState(() => {
+    const d = new Date(); d.setDate(1);
+    return d.toISOString().slice(0,10);
+  });
+
+  function exportDailyPlan() {
+    const wb = XLSX.utils.book_new();
+    const sd = new Date(startDate + 'T00:00:00');
+    const sh = config.shiftHours;
+    const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    // Build 25 working days (skip Sundays)
+    const workDates = []; // { date, label }
+    let cal = 0;
+    while (workDates.length < 25) {
+      const d = new Date(sd); d.setDate(sd.getDate() + cal++);
+      if (d.getDay() !== 0) workDates.push({ date: d, label: `${d.getDate()} ${MONTHS[d.getMonth()]}`, day: DAYS[d.getDay()] });
+    }
+
+    // For each line, compute which SKU runs on each working day and how many units
+    // daySeq startDay/endDay are in working-day units (1-indexed)
+    function getLineDayPlan(line) {
+      const r = results && results[line];
+      if (!r) return workDates.map(() => []);
+      // For each working day index (0-based), collect {name, units} segments
+      const dayPlan = workDates.map(() => []); // array of arrays
+      for (const item of r.daySeq) {
+        if (item.type !== 'run') continue;
+        const accStart = item.startDay - 1; // 0-based working days
+        const accEnd   = item.endDay - 1;
+        for (let d = Math.floor(accStart); d < Math.ceil(accEnd) && d < 25; d++) {
+          const overlap = Math.min(accEnd, d+1) - Math.max(accStart, d);
+          const units = Math.round(overlap * sh * item.rph);
+          if (units > 0) dayPlan[d].push({ name: item.name, units });
+        }
+      }
+      return dayPlan;
+    }
+
+    const planL1  = getLineDayPlan('L1');
+    const planL2  = getLineDayPlan('L2');
+    const planL3  = getLineDayPlan('L3');
+    const planSmp = getLineDayPlan('Sampler');
+
+    // Build rows — one row per working day, split if multiple SKUs on same day/line
+    const header = ['Date','Day','L1 — Product','L1 Units','L2 — Product','L2 Units','L3 — Product','L3 Units','Sampler — Product','Sampler Units'];
+    const aoa = [header];
+
+    for (let d = 0; d < 25; d++) {
+      const { label, day } = workDates[d];
+      const segs = [planL1[d], planL2[d], planL3[d], planSmp[d]];
+      const maxSeg = Math.max(1, ...segs.map(s=>s.length));
+      for (let s = 0; s < maxSeg; s++) {
+        const row = [s===0?label:'', s===0?day:''];
+        segs.forEach(seg => {
+          if (seg[s]) { row.push(seg[s].name); row.push(seg[s].units); }
+          else { row.push(''); row.push(''); }
+        });
+        aoa.push(row);
+      }
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{wch:10},{wch:5},{wch:36},{wch:10},{wch:36},{wch:10},{wch:36},{wch:10},{wch:36},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws, 'Daily Plan');
+    XLSX.writeFile(wb, 'Daily_Production_Plan.xlsx');
+  }
 
   return (
     <div>
@@ -692,11 +760,16 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config }) {
               <input type="number" min="1" max="31" value={workingDays[line]||''} onChange={e=>setWorkingDays(d=>({...d,[line]:Number(e.target.value)}))}/>
             </div>
           ))}
+          <div className="field-group">
+            <label>Month Start Date</label>
+            <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/>
+          </div>
           <div className="field-group" style={{justifyContent:'flex-end'}}>
             <label>&nbsp;</label>
             <span style={{fontSize:11,color:'#64748b',paddingBottom:6}}>{config.shiftHours}h shift · budget = days × {config.shiftHours}h</span>
           </div>
         </div>
+        {anyResult && <button className="btn btn-secondary" style={{marginTop:8}} onClick={exportDailyPlan}>📅 Export Daily Plan (Excel)</button>}
       </div>
 
       {!anyResult && <div className="empty"><div className="icon">📅</div><p>Run the scheduler to see the line schedule.</p></div>}
