@@ -212,19 +212,29 @@ const flvPill = f => <span className="flavour-pill" style={{background:FLAVOUR_C
 
 // ─── ENGINE ──────────────────────────────────────────────────────────────────
 // scenario: 'A' = Revenue Max | 'B' = Min Changeover
-function runEngine(supplyPlan, skus, config, workingDays, scenario='A') {
+function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockData={}) {
   const { shiftHours, changeoverSame, changeoverDiff, rateBasis } = config;
 
-  // Enrich
+  // Enrich with DOI tiering
   const planRows = [];
   for (const sku of skus) {
     const qty = Number(supplyPlan[sku.code]) || 0;
     if (qty <= 0) continue;
-    const line = getLine(sku.pack_type);
-    const rph  = getRph(sku.pack_type, sku.pack_size, rateBasis);
-    const hrs  = rph > 0 ? qty / rph : 0;
-    const rev  = qty * sku.asp;
-    planRows.push({ ...sku, qty, line, rph, hrs, rev, rph_rev: hrs > 0 ? rev / hrs : 0 });
+    const line         = getLine(sku.pack_type);
+    const rph          = getRph(sku.pack_type, sku.pack_size, rateBasis);
+    const hrs          = rph > 0 ? qty / rph : 0;
+    const rev          = qty * sku.asp;
+    const stock        = Number(stockData[sku.code]?.stock) || 0;
+    const drr          = Number(stockData[sku.code]?.drr) || 0;
+    const tDoi         = sku.targetDoi || 60;
+    const targetStock  = tDoi * drr;
+    const closingStock = Math.max(0, stock - qty);
+    // Tier 1: stock can't cover demand (urgent)
+    // Tier 2: stock covers demand but closing < target (cover build)
+    // Tier 3: closing >= target (skip — already fine)
+    const tier = stock < qty ? 1 : closingStock < targetStock ? 2 : 3;
+    planRows.push({ ...sku, qty, line, rph, hrs, rev, rph_rev: hrs > 0 ? rev / hrs : 0,
+                    stock, drr, targetStock, closingStock, tier });
   }
 
   function makeGroup(key, sk) {
@@ -233,24 +243,11 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A') {
     return { flavour: key, skus: [...sk].sort((a,b)=>b.rev-a.rev), tRev, tHrs, rph: tHrs>0?tRev/tHrs:0 };
   }
 
-  const results = {};
-  for (const line of ALL_LINES) {
-    const rows = planRows.filter(r => r.line === line);
-    if (!rows.length) { results[line] = null; continue; }
-
-    let groups;
-
-    if (scenario === 'B') {
-      // ── Min Changeover: 3-level sort ──
-      // Level 1: Flavour cluster (never break unnecessarily) — ranked by total cluster revenue desc
-      // Level 2: Pack type within flavour — ranked by Rev/hr desc
-      // Level 3: SKU within flavour+pack — ranked by absolute revenue desc
-
-      // Step 1: group by flavour
+  function buildGroups(rows, line, sc) {
+    if (!rows.length) return [];
+    if (sc === 'B') {
       const flMap = {};
       for (const r of rows) { (flMap[r.flavour] = flMap[r.flavour] || []).push(r); }
-
-      // Step 2: for each flavour cluster, sub-group by pack_type, rank sub-groups by Rev/hr
       const flGroups = Object.entries(flMap).map(([fl, flSkus]) => {
         const ptMap = {};
         for (const r of flSkus) { (ptMap[r.pack_type] = ptMap[r.pack_type] || []).push(r); }
@@ -258,55 +255,65 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A') {
           const tRev = sk.reduce((s,r)=>s+r.rev,0);
           const tHrs = sk.reduce((s,r)=>s+r.hrs,0);
           return { flavour: fl, pack_type: pt, skus: [...sk].sort((a,b)=>b.rev-a.rev), tRev, tHrs, rph: tHrs>0?tRev/tHrs:0 };
-        }).sort((a,b) => b.rph - a.rph); // rank pack types by Rev/hr within flavour
-        const flTRev = flSkus.reduce((s,r)=>s+r.rev,0);
-        return { flavour: fl, subGroups, flTRev };
-      }).sort((a,b) => b.flTRev - a.flTRev); // rank flavour clusters by total revenue
-
-      // Flatten into groups array — each sub-group becomes one "group" in the sequence
-      groups = [];
-      for (const fg of flGroups) {
-        for (const sg of fg.subGroups) {
-          groups.push({ flavour: sg.flavour, pack_type: sg.pack_type, skus: sg.skus, tRev: sg.tRev, tHrs: sg.tHrs, rph: sg.rph });
-        }
-      }
+        }).sort((a,b) => b.rph - a.rph);
+        return { flavour: fl, subGroups, flTRev: flSkus.reduce((s,r)=>s+r.rev,0) };
+      }).sort((a,b) => b.flTRev - a.flTRev);
+      const groups = [];
+      for (const fg of flGroups) for (const sg of fg.subGroups)
+        groups.push({ flavour: sg.flavour, pack_type: sg.pack_type, skus: sg.skus, tRev: sg.tRev, tHrs: sg.tHrs, rph: sg.rph });
+      return groups;
     } else {
-      // ── Revenue Max (A) ──
       if (line === 'L2') {
-        // Group by pack_type → rank groups by Rev/hr → SKUs within by absolute revenue
         const gMap = {};
         for (const r of rows) { (gMap[r.pack_type] = gMap[r.pack_type] || []).push(r); }
-        groups = Object.entries(gMap).map(([pt, sk]) => makeGroup(pt, sk))
-                 .sort((a,b) => b.rph - a.rph);
-      } else {
-        // L1 & L3: no grouping — all SKUs sorted by absolute revenue desc
-        groups = [makeGroup('all', rows)];
+        return Object.entries(gMap).map(([pt, sk]) => makeGroup(pt, sk)).sort((a,b) => b.rph - a.rph);
       }
+      return [makeGroup('all', rows)];
     }
+  }
 
-    // Build sequence
+  const results = {};
+  for (const line of ALL_LINES) {
+    const allRows = planRows.filter(r => r.line === line);
+    if (!allRows.length) { results[line] = null; continue; }
+
+    // Split by tier; tier 3 = skipped
+    const t1rows = allRows.filter(r => r.tier === 1);
+    const t2rows = allRows.filter(r => r.tier === 2);
+    const t3rows = allRows.filter(r => r.tier === 3);
+
+    const groups1 = buildGroups(t1rows, line, scenario);
+    const groups2 = buildGroups(t2rows, line, scenario);
+    const groups  = [...groups1, ...groups2];
+
+    // Build sequence — insert tier divider between T1 and T2
     const seq = [];
     let prevFl = null, prevPt = null, gRank = 0;
-    for (const g of groups) {
-      gRank++;
-      for (let i = 0; i < g.skus.length; i++) {
-        const s = g.skus[i];
-        if (prevFl !== null) {
-          const flavourChange = prevFl !== g.flavour;
-          const packChange    = !flavourChange && prevPt !== (g.pack_type || g.flavour);
-          const coH = flavourChange ? changeoverDiff : changeoverSame;
-          const label = flavourChange
-            ? `Flavour change → ${g.flavour}`
-            : packChange
-              ? `Pack size change → ${g.pack_type || g.flavour}`
+    const buildSeq = (grps, tierLabel) => {
+      if (tierLabel) seq.push({ type:'tier', label: tierLabel });
+      for (const g of grps) {
+        gRank++;
+        for (let i = 0; i < g.skus.length; i++) {
+          const s = g.skus[i];
+          if (prevFl !== null) {
+            const flavourChange = prevFl !== g.flavour;
+            const packChange    = !flavourChange && prevPt !== (g.pack_type || g.flavour);
+            const coH = flavourChange ? changeoverDiff : changeoverSame;
+            const label = flavourChange ? `Flavour change → ${g.flavour}`
+              : packChange ? `Pack type change → ${g.pack_type || g.flavour}`
               : `SKU change (${g.flavour})`;
-          seq.push({ type:'co', hours:coH, label });
+            seq.push({ type:'co', hours:coH, label });
+          }
+          seq.push({ type:'run', ...s, gRank, skuRank:i+1 });
+          prevFl = g.flavour;
+          prevPt = g.pack_type || g.flavour;
         }
-        seq.push({ type:'run', ...s, gRank, skuRank:i+1 });
-        prevFl = g.flavour;
-        prevPt = g.pack_type || g.flavour;
       }
-    }
+    };
+
+    buildSeq(groups1, groups1.length ? '🔴 Tier 1 — Demand Coverage (Urgent)' : null);
+    buildSeq(groups2, groups2.length ? '🟡 Tier 2 — Cover Build (DOI Top-up)' : null);
+    if (t3rows.length) seq.push({ type:'tier', label: `⏭ ${t3rows.length} SKU(s) skipped — closing stock ≥ target` });
 
     // Budget
     const budget = (workingDays[line] || 0) * shiftHours;
@@ -314,9 +321,10 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A') {
     const coH    = seq.filter(s=>s.type==='co').reduce((s,r)=>s+r.hours,0);
     const total  = runH + coH;
 
-    // Day schedule
+    // Day schedule (tier rows have no duration)
     let acc = 0;
     const daySeq = seq.map(item => {
+      if (item.type === 'tier') return { ...item, startDay: acc/shiftHours+1, endDay: acc/shiftHours+1, h: 0 };
       const h  = item.type === 'run' ? item.hrs : item.hours;
       const sd = acc / shiftHours + 1;
       acc += h;
@@ -324,7 +332,8 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A') {
       return { ...item, startDay: sd, endDay: ed, h };
     });
 
-    results[line] = { groups, seq, daySeq, budget, runH, coH, total, over: total > budget, skuCount: rows.length };
+    results[line] = { groups, seq, daySeq, budget, runH, coH, total, over: total > budget,
+                      skuCount: allRows.length, skippedCount: t3rows.length, t1Count: t1rows.length, t2Count: t2rows.length };
   }
   return results;
 }
@@ -707,8 +716,16 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config }) {
                 </thead>
                 <tbody>
                   {r.daySeq.map((item, i) => {
-                    const isRun = item.type === 'run';
-                    const barW  = maxDay > 0 ? Math.max(4, (item.endDay - item.startDay) / maxDay * 150) : 4;
+                    const isRun  = item.type === 'run';
+                    const isTier = item.type === 'tier';
+                    const barW   = maxDay > 0 ? Math.max(4, (item.endDay - item.startDay) / maxDay * 150) : 4;
+                    if (isTier) return (
+                      <tr key={i}>
+                        <td colSpan={9} style={{background:'#f8fafc',borderTop:'2px solid #e2e8f0',padding:'6px 12px',fontSize:12,fontWeight:700,color:'#475569'}}>
+                          {item.label}
+                        </td>
+                      </tr>
+                    );
                     return (
                       <tr key={i} className={isRun?'':'co-row'}>
                         <td style={{textAlign:'center',color:'#94a3b8',fontSize:11}}>{i+1}</td>
@@ -900,7 +917,7 @@ function App() {
   const setWDSaving       = v => { setWorkingDays(v); triggerSave({ workingDays: typeof v==='function' ? v(workingDays) : v }); };
 
   function handleRun(sc) {
-    const r = runEngine(plan, skus, config, workingDays, sc || scenario);
+    const r = runEngine(plan, skus, config, workingDays, sc || scenario, stockData);
     setResults(r);
     setTab('queue');
   }
