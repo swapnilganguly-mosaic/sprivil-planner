@@ -656,8 +656,13 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
                 <tbody>
                   {(() => {
                     let rank = 0;
+                    let lastGrp = null;
                     return r.seq.filter(s=>s.type==='run').map(s => {
                       rank++;
+                      const grp = r.groups[s.gRank-1];
+                      const grpRph = grp ? grp.rph : s.rph_rev;
+                      const showGrpRph = s.gRank !== lastGrp;
+                      lastGrp = s.gRank;
                       return (
                         <tr key={s.code+rank}>
                           <td style={{fontWeight:700,color:'#065f46'}}>{rank}</td>
@@ -669,7 +674,9 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
                           <td className="right">{fmt(s.qty)}</td>
                           <td className="right">{fmtH(s.hrs)}</td>
                           <td className="right">₹{fmt(s.rev)}</td>
-                          <td className="right">₹{fmt(s.rph_rev,0)}</td>
+                          <td className="right" style={{color: showGrpRph ? '#065f46' : '#94a3b8', fontWeight: showGrpRph ? 700 : 400}}>
+                            {showGrpRph ? <>₹{fmt(grpRph,0)} <span style={{fontSize:10,fontWeight:400,color:'#94a3b8'}}>(G{s.gRank})</span></> : <span style={{fontSize:11}}>↑</span>}
+                          </td>
                         </tr>
                       );
                     });
