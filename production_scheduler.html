@@ -353,15 +353,68 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
       }
     };
 
-    buildSeq(groups1, lP1.length  ? '🔴 Phase 1 — Deficit Coverage (Must Make)' : null);
-    buildSeq(groups2, lCov.length ? '🟡 Phase 2 — Cover Build (Best Effort)'    : null);
+    // Build Phase 1 fully (mandatory — no cap)
+    buildSeq(groups1, lP1.length ? '🔴 Phase 1 — Deficit Coverage (Must Make)' : null);
+
+    // Calculate remaining budget after Phase 1
+    const budget = (workingDays[line] || 0) * shiftHours;
+    const p1RunH = seq.filter(s=>s.type==='run').reduce((s,r)=>s+r.hrs,0);
+    const p1CoH  = seq.filter(s=>s.type==='co').reduce((s,r)=>s+r.hours,0);
+    let remaining = budget - p1RunH - p1CoH;
+
+    // Build Phase 2 — cap each run to remaining hours
+    if (lCov.length && remaining > 0) {
+      seq.push({ type:'tier', label: '🟡 Phase 2 — Cover Build (Best Effort)' });
+      let skippedCover = 0;
+      for (const g of groups2) {
+        gRank++;
+        for (let i = 0; i < g.skus.length; i++) {
+          const s = g.skus[i];
+          const curFl = g.flavour === 'all' ? s.flavour : g.flavour;
+          const curPt = g.flavour === 'all' ? s.pack_type : (g.pack_type || g.flavour);
+
+          // Reserve changeover hours first
+          let coH = 0;
+          if (prevFl !== null) {
+            const flavourChange = prevFl !== curFl;
+            const packChange    = !flavourChange && prevPt !== curPt;
+            coH = flavourChange ? changeoverDiff : changeoverSame;
+            if (remaining <= coH) { skippedCover++; continue; } // not enough for C/O
+            const label = flavourChange ? `Flavour change → ${curFl}`
+              : packChange ? `Pack type change → ${curPt}`
+              : `SKU change (${curFl})`;
+            seq.push({ type:'co', hours:coH, label });
+            remaining -= coH;
+          }
+
+          // Cap run qty to remaining hours
+          const maxQty  = Math.floor(remaining * s.rph);
+          if (maxQty <= 0) { skippedCover++; break; }
+          const capQty  = Math.min(s.qty, maxQty);
+          const capHrs  = capQty / s.rph;
+          const capRev  = capQty * s.asp;
+          const capped  = capQty < s.qty;
+          seq.push({ type:'run', ...s, qty: capQty, hrs: capHrs, rev: capRev,
+                     rph_rev: capHrs > 0 ? capRev / capHrs : 0,
+                     gRank, skuRank: i+1, capped });
+          remaining -= capHrs;
+          prevFl = curFl;
+          prevPt = curPt;
+          if (remaining <= 0) { skippedCover += g.skus.length - i - 1; break; }
+        }
+        if (remaining <= 0) break;
+      }
+      if (skippedCover > 0)
+        seq.push({ type:'tier', label: `⏭ ${skippedCover} cover run(s) skipped — no remaining capacity` });
+    } else if (lCov.length) {
+      seq.push({ type:'tier', label: `⏭ ${lCov.length} cover run(s) skipped — no remaining capacity after Phase 1` });
+    }
+
     if (lT3.length) seq.push({ type:'tier', label: `⏭ ${lT3.length} SKU(s) not produced — closing stock ≥ target stock` });
 
-    // Budget
-    const budget = (workingDays[line] || 0) * shiftHours;
-    const runH   = seq.filter(s=>s.type==='run').reduce((s,r)=>s+r.hrs,0);
-    const coH    = seq.filter(s=>s.type==='co').reduce((s,r)=>s+r.hours,0);
-    const total  = runH + coH;
+    const runH  = seq.filter(s=>s.type==='run').reduce((s,r)=>s+r.hrs,0);
+    const coH   = seq.filter(s=>s.type==='co').reduce((s,r)=>s+r.hours,0);
+    const total = runH + coH;
 
     // Day schedule
     let acc = 0;
@@ -1043,7 +1096,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                     return (
                       <tr key={i} className={isRun?'':'co-row'}>
                         <td style={{textAlign:'center',color:'#94a3b8',fontSize:11}}>{i+1}</td>
-                        <td>{isRun ? <span className="run-badge">RUN</span> : <span className="co-badge">C/O</span>}</td>
+                        <td>{isRun ? <span className="run-badge">{item.capped ? '✂ RUN' : 'RUN'}</span> : <span className="co-badge">C/O</span>}</td>
                         <td className="mono" style={{fontSize:isRun?11:10,color:isRun?'#1e293b':'#92400e'}}>{isRun?item.code:''}</td>
                         <td style={{maxWidth:180,overflow:'hidden',textOverflow:'ellipsis',fontSize:isRun?12:11}}>{isRun?item.name:item.label}</td>
                         <td>{isRun?flvPill(item.flavour):''}</td>
