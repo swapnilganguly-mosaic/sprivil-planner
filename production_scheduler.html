@@ -697,7 +697,7 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
 }
 
 // ─── LINE SCHEDULE TAB ───────────────────────────────────────────────────────
-function ScheduleTab({ results, workingDays, setWorkingDays, config }) {
+function ScheduleTab({ results, workingDays, setWorkingDays, config, skus }) {
   const anyResult = results && ALL_LINES.some(l=>results[l]);
   const [startDate, setStartDate] = React.useState(() => {
     // Default to 1st of next month
@@ -797,7 +797,12 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config }) {
         if (!map[item.code]) map[item.code] = { line: key, code: item.code, name: item.name, units: 0 };
         map[item.code].units += Math.round(item.h * item.rph);
       });
-      Object.values(map).forEach(v => skuTotals.push(v));
+      Object.values(map).forEach(v => {
+        const skuDef = (skus||[]).find(s=>s.code===v.code);
+        v.packSize = skuDef ? (skuDef.pack_size||0) : 0;
+        v.tons = v.packSize * v.units / 1e6;
+        skuTotals.push(v);
+      });
     });
 
     // Group working days into calendar weeks (Mon=1 .. Sat=6)
@@ -829,9 +834,12 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config }) {
     return (
       <div>
         {/* SKU Totals Summary */}
-        {skuTotals.length > 0 && (
+        {skuTotals.length > 0 && (()=>{
+          const totalUnits = skuTotals.reduce((a,s)=>a+s.units,0);
+          const totalTons  = skuTotals.reduce((a,s)=>a+s.tons,0);
+          return (
           <div className="settings-card" style={{marginBottom:16}}>
-            <h3>Monthly Production Summary — Units per SKU</h3>
+            <h3>Monthly Production Summary — Units &amp; Tons per SKU</h3>
             <div className="tbl-wrap">
               <table>
                 <thead>
@@ -839,7 +847,9 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config }) {
                     <th>Line</th>
                     <th>SKU Code</th>
                     <th>Product</th>
+                    <th className="right">Pack Size (g)</th>
                     <th className="right">Total Units</th>
+                    <th className="right">Tons</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -848,14 +858,22 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config }) {
                       <td><span className={`cal-line-tag ${LINE_CLS[s.line]}`} style={{fontWeight:700,display:'inline-block'}}>{LINE_LABELS[s.line]}</span></td>
                       <td className="mono" style={{fontSize:11}}>{s.code}</td>
                       <td style={{fontSize:12}}>{s.name}</td>
+                      <td className="right">{s.packSize}</td>
                       <td className="right" style={{fontWeight:700}}>{s.units.toLocaleString()}</td>
+                      <td className="right" style={{fontWeight:700}}>{s.tons.toFixed(3)}</td>
                     </tr>
                   ))}
+                  <tr style={{background:'#ecfdf5',fontWeight:700,borderTop:'2px solid #6ee7b7'}}>
+                    <td colSpan={4} style={{fontWeight:700,color:'#065f46'}}>TOTAL</td>
+                    <td className="right">{totalUnits.toLocaleString()}</td>
+                    <td className="right">{totalTons.toFixed(3)} T</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Legend */}
         <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:10,flexWrap:'wrap'}}>
@@ -1231,7 +1249,7 @@ function App() {
       <div className="content">
         {tab === 'plan'     && <SupplyPlanTab skus={skus} plan={plan} setPlan={setPlanSaving} stockData={stockData} setStockData={setStockSaving} onRun={handleRun} results={results}/>}
         {tab === 'queue'    && <QueueTab results={results} workingDays={workingDays} config={config} scenario={scenario}/>}
-        {tab === 'schedule' && <ScheduleTab results={results} workingDays={workingDays} setWorkingDays={setWDSaving} config={config}/>}
+        {tab === 'schedule' && <ScheduleTab results={results} workingDays={workingDays} setWorkingDays={setWDSaving} config={config} skus={skus}/>}
         {tab === 'settings' && <SettingsTab config={config} setConfig={setConfigSaving} skus={skus} setSkus={setSkusSaving}/>}
       </div>
     </div>
