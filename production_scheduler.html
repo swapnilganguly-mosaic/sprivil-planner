@@ -704,7 +704,7 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
 }
 
 // ─── LINE SCHEDULE TAB ───────────────────────────────────────────────────────
-function ScheduleTab({ results, workingDays, setWorkingDays, config, skus }) {
+function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stockData }) {
   const anyResult = results && ALL_LINES.some(l=>results[l]);
   const [startDate, setStartDate] = React.useState(() => {
     // Default to 1st of next month
@@ -985,23 +985,37 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus }) {
                     <th>Product</th>
                     <th>Flavour</th>
                     <th className="right">Hours</th>
-                    <th className="right">Start Day</th>
-                    <th className="right">End Day</th>
-                    <th style={{width:160}}>Timeline</th>
+                    <th className="right">Units</th>
+                    <th>Qty Logic</th>
                   </tr>
                 </thead>
                 <tbody>
                   {r.daySeq.map((item, i) => {
                     const isRun  = item.type === 'run';
                     const isTier = item.type === 'tier';
-                    const barW   = maxDay > 0 ? Math.max(4, (item.endDay - item.startDay) / maxDay * 150) : 4;
                     if (isTier) return (
                       <tr key={i}>
-                        <td colSpan={9} style={{background:'#f8fafc',borderTop:'2px solid #e2e8f0',padding:'6px 12px',fontSize:12,fontWeight:700,color:'#475569'}}>
+                        <td colSpan={8} style={{background:'#f8fafc',borderTop:'2px solid #e2e8f0',padding:'6px 12px',fontSize:12,fontWeight:700,color:'#475569'}}>
                           {item.label}
                         </td>
                       </tr>
                     );
+                    // Build qty math for RUN rows
+                    let qtyMath = null;
+                    if (isRun) {
+                      const sd = (stockData||{})[item.code] || {};
+                      const skuDef = (skus||[]).find(s=>s.code===item.code);
+                      const fg     = Number(sd.stock) || 0;
+                      const drr    = Number(sd.drr)   || 0;
+                      const plan   = Number(sd.plan)  || 0;
+                      const tDoi   = skuDef ? (skuDef.targetDoi||60) : 60;
+                      const targetStock  = Math.round(tDoi * drr);
+                      const closingStock = Math.max(0, fg - plan);
+                      const need         = Math.max(0, targetStock - closingStock);
+                      const seqItem = r.seq && r.seq.find(s=>s.code===item.code);
+                      const units = seqItem ? seqItem.qty : Math.round(item.h * item.rph);
+                      qtyMath = { fg, drr, plan, tDoi, targetStock, closingStock, need, units };
+                    }
                     return (
                       <tr key={i} className={isRun?'':'co-row'}>
                         <td style={{textAlign:'center',color:'#94a3b8',fontSize:11}}>{i+1}</td>
@@ -1010,12 +1024,17 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus }) {
                         <td style={{maxWidth:180,overflow:'hidden',textOverflow:'ellipsis',fontSize:isRun?12:11}}>{isRun?item.name:item.label}</td>
                         <td>{isRun?flvPill(item.flavour):''}</td>
                         <td className="right">{fmtH(item.h)}</td>
-                        <td className="right">{item.startDay.toFixed(2)}</td>
-                        <td className="right">{item.endDay.toFixed(2)}</td>
-                        <td>
-                          <div style={{paddingLeft: `${(item.startDay-1)/maxDay*150}px`}}>
-                            <span className={`day-bar${isRun?'':' co'}`} style={{width:`${barW}px`}}/>
-                          </div>
+                        <td className="right" style={{fontWeight:700}}>{isRun && qtyMath ? fmt(qtyMath.units) : ''}</td>
+                        <td style={{fontSize:11,color:'#374151',whiteSpace:'nowrap'}}>
+                          {isRun && qtyMath && (
+                            <span>
+                              Plan <b>{fmt(qtyMath.plan)}</b>
+                              {' · '}FG <b>{fmt(qtyMath.fg)}</b>
+                              {' → '}Closing <b>{fmt(qtyMath.closingStock)}</b>
+                              {' · '}Target <b>{fmt(qtyMath.targetStock)}</b> ({qtyMath.tDoi}d×{qtyMath.drr})
+                              {' → '}Need <b style={{color:'#059669'}}>{fmt(qtyMath.need)}</b>
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -1256,7 +1275,7 @@ function App() {
       <div className="content">
         {tab === 'plan'     && <SupplyPlanTab skus={skus} plan={plan} setPlan={setPlanSaving} stockData={stockData} setStockData={setStockSaving} onRun={handleRun} results={results}/>}
         {tab === 'queue'    && <QueueTab results={results} workingDays={workingDays} config={config} scenario={scenario}/>}
-        {tab === 'schedule' && <ScheduleTab results={results} workingDays={workingDays} setWorkingDays={setWDSaving} config={config} skus={skus}/>}
+        {tab === 'schedule' && <ScheduleTab results={results} workingDays={workingDays} setWorkingDays={setWDSaving} config={config} skus={skus} stockData={stockData}/>}
         {tab === 'settings' && <SettingsTab config={config} setConfig={setConfigSaving} skus={skus} setSkus={setSkusSaving}/>}
       </div>
     </div>
