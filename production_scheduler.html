@@ -124,6 +124,26 @@
     .empty .icon { font-size: 40px; margin-bottom: 10px; }
     .empty p { font-size: 13px; }
 
+    /* ── calendar view ── */
+    .cal-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 6px; margin-top: 16px; }
+    .cal-day { background: white; border: 1px solid #d1fae5; border-radius: 8px; padding: 8px; min-height: 90px; }
+    .cal-day.sun-skip { display: none; }
+    .cal-day-hdr { font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 5px; display: flex; justify-content: space-between; }
+    .cal-day-hdr .cal-date { font-size: 14px; font-weight: 700; color: #1e293b; }
+    .cal-day-hdr .cal-dow { font-size: 10px; color: #94a3b8; }
+    .cal-line-tag { border-radius: 5px; padding: 3px 6px; font-size: 10px; margin-bottom: 3px; line-height: 1.4; }
+    .cal-line-tag.l1 { background: #d1fae5; color: #065f46; }
+    .cal-line-tag.l2 { background: #dbeafe; color: #1e40af; }
+    .cal-line-tag.l3 { background: #fef3c7; color: #92400e; }
+    .cal-line-tag.smp { background: #f3e8ff; color: #6b21a8; }
+    .cal-line-label { font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: .3px; }
+    .cal-product { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .cal-units { font-weight: 700; font-size: 10px; }
+    .cal-week-row { display: contents; }
+    .cal-hdr-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 6px; margin-top: 16px; margin-bottom: 4px; }
+    .cal-hdr-cell { text-align: center; font-size: 11px; font-weight: 700; color: #065f46; padding: 4px; }
+    .cal-empty-day { background: #f8fafc; border: 1px dashed #e2e8f0; border-radius: 8px; min-height: 90px; }
+
     /* ── summary numbers ── */
     .summary-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
     .summary-card { background: white; border: 1px solid #d1fae5; border-radius: 8px; padding: 12px 16px; min-width: 140px; box-shadow: 0 1px 4px rgba(5,150,105,.05); }
@@ -680,49 +700,54 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
 function ScheduleTab({ results, workingDays, setWorkingDays, config }) {
   const anyResult = results && ALL_LINES.some(l=>results[l]);
   const [startDate, setStartDate] = React.useState(() => {
-    const d = new Date(); d.setDate(1);
+    // Default to 1st of next month
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + 1);
     return d.toISOString().slice(0,10);
   });
+  const [calView, setCalView] = React.useState(true);
+
+  // Shared: build list of 25 working days from startDate
+  function buildWorkDates(sd) {
+    const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const workDates = [];
+    let cal = 0;
+    while (workDates.length < 25) {
+      const d = new Date(sd); d.setDate(sd.getDate() + cal++);
+      if (d.getDay() !== 0) workDates.push({ date: d, label: `${d.getDate()} ${MONTHS[d.getMonth()]}`, day: DAYS[d.getDay()], dateNum: d.getDate(), month: d.getMonth(), year: d.getFullYear(), dow: d.getDay() });
+    }
+    return workDates;
+  }
+
+  function getLineDayPlan(line, workDates) {
+    const r = results && results[line];
+    const sh = config.shiftHours;
+    if (!r) return workDates.map(() => []);
+    const dayPlan = workDates.map(() => []);
+    for (const item of r.daySeq) {
+      if (item.type !== 'run') continue;
+      const accStart = item.startDay - 1;
+      const accEnd   = item.endDay - 1;
+      for (let d = Math.floor(accStart); d < Math.ceil(accEnd) && d < 25; d++) {
+        const overlap = Math.min(accEnd, d+1) - Math.max(accStart, d);
+        const units = Math.round(overlap * sh * item.rph);
+        if (units > 0) dayPlan[d].push({ name: item.name, units });
+      }
+    }
+    return dayPlan;
+  }
 
   function exportDailyPlan() {
     const wb = XLSX.utils.book_new();
     const sd = new Date(startDate + 'T00:00:00');
-    const sh = config.shiftHours;
-    const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const workDates = buildWorkDates(sd);
 
-    // Build 25 working days (skip Sundays)
-    const workDates = []; // { date, label }
-    let cal = 0;
-    while (workDates.length < 25) {
-      const d = new Date(sd); d.setDate(sd.getDate() + cal++);
-      if (d.getDay() !== 0) workDates.push({ date: d, label: `${d.getDate()} ${MONTHS[d.getMonth()]}`, day: DAYS[d.getDay()] });
-    }
-
-    // For each line, compute which SKU runs on each working day and how many units
-    // daySeq startDay/endDay are in working-day units (1-indexed)
-    function getLineDayPlan(line) {
-      const r = results && results[line];
-      if (!r) return workDates.map(() => []);
-      // For each working day index (0-based), collect {name, units} segments
-      const dayPlan = workDates.map(() => []); // array of arrays
-      for (const item of r.daySeq) {
-        if (item.type !== 'run') continue;
-        const accStart = item.startDay - 1; // 0-based working days
-        const accEnd   = item.endDay - 1;
-        for (let d = Math.floor(accStart); d < Math.ceil(accEnd) && d < 25; d++) {
-          const overlap = Math.min(accEnd, d+1) - Math.max(accStart, d);
-          const units = Math.round(overlap * sh * item.rph);
-          if (units > 0) dayPlan[d].push({ name: item.name, units });
-        }
-      }
-      return dayPlan;
-    }
-
-    const planL1  = getLineDayPlan('L1');
-    const planL2  = getLineDayPlan('L2');
-    const planL3  = getLineDayPlan('L3');
-    const planSmp = getLineDayPlan('Sampler');
+    const planL1  = getLineDayPlan('L1', workDates);
+    const planL2  = getLineDayPlan('L2', workDates);
+    const planL3  = getLineDayPlan('L3', workDates);
+    const planSmp = getLineDayPlan('Sampler', workDates);
 
     // Build rows — one row per working day, split if multiple SKUs on same day/line
     const header = ['Date','Day','L1 — Product','L1 Units','L2 — Product','L2 Units','L3 — Product','L3 Units','Sampler — Product','Sampler Units'];
@@ -748,15 +773,91 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config }) {
     XLSX.writeFile(wb, 'Daily_Production_Plan.xlsx');
   }
 
+  // Calendar view renderer
+  function CalendarView() {
+    const sd = new Date(startDate + 'T00:00:00');
+    const workDates = buildWorkDates(sd);
+    const planL1  = getLineDayPlan('L1', workDates);
+    const planL2  = getLineDayPlan('L2', workDates);
+    const planL3  = getLineDayPlan('L3', workDates);
+    const planSmp = getLineDayPlan('Sampler', workDates);
+
+    // Group working days into calendar weeks (Mon=1 .. Sat=6)
+    // We'll lay out a week grid starting from the first day's week
+    const firstDow = workDates[0].dow; // 1=Mon..6=Sat
+    // build a flat array of "slots": null = empty slot, or workDates index
+    const DOW_COLS = [1,2,3,4,5,6]; // Mon..Sat
+    // find starting column offset (0-based index into DOW_COLS)
+    const startCol = DOW_COLS.indexOf(firstDow);
+    const slots = [];
+    for (let i = 0; i < startCol; i++) slots.push(null); // empty before first day
+    workDates.forEach((_,i) => slots.push(i));
+    // pad to fill last week
+    while (slots.length % 6 !== 0) slots.push(null);
+
+    const LINES = [
+      { key: 'L1', plans: planL1, cls: 'l1', label: 'L1' },
+      { key: 'L2', plans: planL2, cls: 'l2', label: 'L2' },
+      { key: 'L3', plans: planL3, cls: 'l3', label: 'L3' },
+      { key: 'Sampler', plans: planSmp, cls: 'smp', label: 'SMP' },
+    ];
+
+    // chunk into weeks of 6
+    const weeks = [];
+    for (let i = 0; i < slots.length; i += 6) weeks.push(slots.slice(i, i+6));
+
+    return (
+      <div>
+        {/* Legend */}
+        <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:10,flexWrap:'wrap'}}>
+          <span style={{fontSize:11,fontWeight:700,color:'#64748b'}}>Lines:</span>
+          {LINES.map(l=><span key={l.key} className={`cal-line-tag ${l.cls}`} style={{fontWeight:700}}>{LINE_LABELS[l.key]}</span>)}
+        </div>
+        {/* Day headers */}
+        <div className="cal-hdr-row">
+          {['Mon','Tue','Wed','Thu','Fri','Sat'].map(d=><div key={d} className="cal-hdr-cell">{d}</div>)}
+        </div>
+        {/* Weeks */}
+        {weeks.map((week, wi) => (
+          <div key={wi} className="cal-grid" style={{marginTop:0}}>
+            {week.map((slot, ci) => {
+              if (slot === null) return <div key={ci} className="cal-empty-day"/>;
+              const wd = workDates[slot];
+              return (
+                <div key={ci} className="cal-day">
+                  <div className="cal-day-hdr">
+                    <span className="cal-date">{wd.dateNum}</span>
+                    <span className="cal-dow">{wd.day}</span>
+                  </div>
+                  {LINES.map(line => {
+                    const segs = line.plans[slot];
+                    if (!segs || segs.length === 0) return null;
+                    return segs.map((seg, si) => (
+                      <div key={line.key+si} className={`cal-line-tag ${line.cls}`}>
+                        <div className="cal-line-label">{line.label}</div>
+                        <div className="cal-product" title={seg.name}>{seg.name.length > 22 ? seg.name.slice(0,21)+'…' : seg.name}</div>
+                        <div className="cal-units">{seg.units.toLocaleString()} units</div>
+                      </div>
+                    ));
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div>
-      {/* Working days input */}
+      {/* Settings */}
       <div className="settings-card" style={{marginBottom:16}}>
-        <h3>Working Days per Line</h3>
+        <h3>Schedule Settings</h3>
         <div className="field-row">
           {ALL_LINES.map(line=>(
             <div className="field-group" key={line}>
-              <label>{LINE_LABELS[line]}</label>
+              <label>{LINE_LABELS[line]} (days)</label>
               <input type="number" min="1" max="31" value={workingDays[line]||''} onChange={e=>setWorkingDays(d=>({...d,[line]:Number(e.target.value)}))}/>
             </div>
           ))}
@@ -766,15 +867,27 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config }) {
           </div>
           <div className="field-group" style={{justifyContent:'flex-end'}}>
             <label>&nbsp;</label>
-            <span style={{fontSize:11,color:'#64748b',paddingBottom:6}}>{config.shiftHours}h shift · budget = days × {config.shiftHours}h</span>
+            <span style={{fontSize:11,color:'#64748b',paddingBottom:6}}>{config.shiftHours}h shift · 25 working days</span>
           </div>
         </div>
-        {anyResult && <button className="btn btn-secondary" style={{marginTop:8}} onClick={exportDailyPlan}>📅 Export Daily Plan (Excel)</button>}
+        <div style={{display:'flex',gap:8,alignItems:'center',marginTop:8,flexWrap:'wrap'}}>
+          {anyResult && <button className="btn btn-secondary" onClick={exportDailyPlan}>📅 Export Daily Plan (Excel)</button>}
+          {anyResult && (
+            <div style={{display:'flex',background:'#f0faf4',borderRadius:8,padding:2,border:'1px solid #a7f3d0'}}>
+              <button className={`btn btn-sm ${calView?'btn-primary':'btn-secondary'}`} style={{borderRadius:6}} onClick={()=>setCalView(true)}>📅 Calendar</button>
+              <button className={`btn btn-sm ${!calView?'btn-primary':'btn-secondary'}`} style={{borderRadius:6}} onClick={()=>setCalView(false)}>📋 Timeline</button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {!anyResult && <div className="empty"><div className="icon">📅</div><p>Run the scheduler to see the line schedule.</p></div>}
+      {!anyResult && <div className="empty"><div className="icon">📅</div><p>Run the scheduler to see the day-wise production calendar.</p></div>}
 
-      {anyResult && ALL_LINES.map(line => {
+      {/* Calendar View */}
+      {anyResult && calView && <CalendarView/>}
+
+      {/* Timeline / Table View */}
+      {anyResult && !calView && ALL_LINES.map(line => {
         const r = results[line];
         if (!r) return null;
         const maxDay = r.budget / config.shiftHours;
