@@ -387,11 +387,12 @@ function LoginScreen({ sb }) {
 
 // ─── SUPPLY PLAN TAB ─────────────────────────────────────────────────────────
 function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, results }) {
-  const fileRef = useRef();
-  const [colPicker, setColPicker] = React.useState(null); // { rows, headers, skuCol }
+  const planRef  = useRef();
+  const stockRef = useRef();
+  const drrRef   = useRef();
+  const [colPicker, setColPicker] = React.useState(null); // { rows, skuCol, numCols, field }
 
-  function handleImport(e) {
-    const file = e.target.files[0]; if (!file) return;
+  function parseFile(file, field) {
     const reader = new FileReader();
     reader.onload = ev => {
       try {
@@ -400,36 +401,46 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
         const rows = XLSX.utils.sheet_to_json(ws, { defval:'' });
         if (!rows.length) { alert('File is empty.'); return; }
         const headers = Object.keys(rows[0]);
-        // Find SKU column (column whose values match known SKU codes)
         let skuCol = null;
         for (const h of headers) {
-          const matches = rows.filter(r => skus.find(s => s.code === String(r[h]).trim())).length;
-          if (matches > 0) { skuCol = h; break; }
+          if (rows.filter(r => skus.find(s => s.code === String(r[h]).trim())).length > 0) { skuCol = h; break; }
         }
-        if (!skuCol) { alert('No SKU codes found in file. Make sure the file has a column with Mosaic SKU codes (e.g. MWLJNTP.0003.B0_N).'); return; }
-        // Numeric columns (excluding skuCol)
+        if (!skuCol) { alert('No SKU codes found in file.'); return; }
         const numCols = headers.filter(h => h !== skuCol && rows.some(r => Number(r[h]) > 0));
         if (numCols.length === 1) {
-          applyImport(rows, skuCol, numCols[0]);
+          applyImport(rows, skuCol, numCols[0], field);
         } else {
-          setColPicker({ rows, headers, skuCol, numCols });
+          setColPicker({ rows, skuCol, numCols, field });
         }
       } catch(err) { alert('Could not read file: ' + err.message); }
-      e.target.value = '';
     };
     reader.readAsArrayBuffer(file);
   }
 
-  function applyImport(rows, skuCol, qtyCol) {
-    const newPlan = { ...plan };
+  function applyImport(rows, skuCol, valCol, field) {
     let matched = 0;
-    for (const row of rows) {
-      const sku = skus.find(s => s.code === String(row[skuCol]).trim());
-      if (sku && Number(row[qtyCol]) > 0) { newPlan[sku.code] = Number(row[qtyCol]); matched++; }
+    if (field === 'plan') {
+      const newPlan = { ...plan };
+      for (const row of rows) {
+        const sku = skus.find(s => s.code === String(row[skuCol]).trim());
+        if (sku && Number(row[valCol]) > 0) { newPlan[sku.code] = Number(row[valCol]); matched++; }
+      }
+      setPlan(newPlan);
+    } else {
+      const key = field; // 'stock' or 'drr'
+      const newStock = { ...stockData };
+      for (const row of rows) {
+        const sku = skus.find(s => s.code === String(row[skuCol]).trim());
+        if (sku && Number(row[valCol]) >= 0) {
+          newStock[sku.code] = { ...(newStock[sku.code]||{}), [key]: Number(row[valCol]) };
+          matched++;
+        }
+      }
+      setStockData(newStock);
     }
-    setPlan(newPlan);
     setColPicker(null);
-    alert(`Imported ${matched} SKUs from "${qtyCol}".`);
+    const label = field === 'plan' ? 'Production Plan' : field === 'stock' ? 'FG Stock' : 'DRR';
+    alert(`Imported ${matched} SKUs into ${label} from "${valCol}".`);
   }
 
   function clearPlan() { if (window.confirm('Clear all quantities?')) setPlan({}); }
@@ -453,8 +464,13 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
   return (
     <div>
       <div className="toolbar">
-        <button className="btn btn-secondary" onClick={()=>fileRef.current.click()}>⬆ Import XLSX / CSV</button>
-        <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={handleImport}/>
+        <button className="btn btn-secondary" onClick={()=>planRef.current.click()}>⬆ Production Plan</button>
+        <input ref={planRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'plan');e.target.value='';}}/>
+        <button className="btn btn-secondary" onClick={()=>stockRef.current.click()}>⬆ FG Stock</button>
+        <input ref={stockRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'stock');e.target.value='';}}/>
+        <button className="btn btn-secondary" onClick={()=>drrRef.current.click()}>⬆ DRR</button>
+        <input ref={drrRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'drr');e.target.value='';}}/>
+
         {hasAny && <button className="btn btn-secondary btn-sm" onClick={clearPlan}>✕ Clear</button>}
         <span className="spacer"/>
         <span style={{fontSize:12,color:'#64748b'}}>{Object.keys(plan).filter(k=>Number(plan[k])>0).length} SKUs · {fmt(totalQty)} units total</span>
@@ -478,11 +494,11 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <div style={{background:'#fff',borderRadius:12,padding:28,minWidth:340,boxShadow:'0 8px 32px rgba(0,0,0,0.18)'}}>
             <div style={{fontWeight:700,fontSize:16,marginBottom:4}}>Select Production Plan Column</div>
-            <div style={{fontSize:13,color:'#64748b',marginBottom:16}}>SKU column detected: <b>{colPicker.skuCol}</b>. Which column has the production quantities?</div>
+            <div style={{fontSize:13,color:'#64748b',marginBottom:16}}>SKU column: <b>{colPicker.skuCol}</b>. Which column has the {colPicker.field==='plan'?'production quantities':colPicker.field==='stock'?'FG stock':'DRR'} values?</div>
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
               {colPicker.numCols.map(col => (
                 <button key={col} className="btn btn-secondary" style={{textAlign:'left',justifyContent:'flex-start'}}
-                  onClick={()=>applyImport(colPicker.rows, colPicker.skuCol, col)}>
+                  onClick={()=>applyImport(colPicker.rows, colPicker.skuCol, col, colPicker.field)}>
                   {col}
                 </button>
               ))}
