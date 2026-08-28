@@ -170,33 +170,33 @@ const FLAVOUR_COLORS = {
 };
 
 const DEFAULT_SKUS = [
-  { code:'MWLJNTK.00367.B0_N', name:'LJ NutriMix Lite 2+ 350g Choc Jar',       flavour:'Chocolate',  pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'A', asp:382.12 },
-  { code:'MWLJNTP.00027.B0_N', name:'LJ NutriMix 2+ 350g Choc Pouch',           flavour:'Chocolate',  pack_type:'Pouch',     pack_size:350,  brand:'LJ', cls:'A', asp:481.42 },
-  { code:'MWLJNTP.0003.B0_N',  name:'LJ NutriMix 2+ 350g Choc Jar',             flavour:'Chocolate',  pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'A', asp:495.78 },
-  { code:'MWLJNTP.00034.B0_N', name:'LJ NutriMix 2+ 350g Strawberry Jar',       flavour:'Strawberry', pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'A', asp:520.31 },
-  { code:'MWLJNTP.000709.B0_N',name:'LJ NutriMix Lite 2+ 1kg Pouch',            flavour:'Chocolate',  pack_type:'1kg',       pack_size:1000, brand:'LJ', cls:'A', asp:803.67 },
-  { code:'MWLJNTP.000836.B0_N',name:'LJ Nutrimix 2+ Vanilla Lite 350g Jar',     flavour:'Vanilla',    pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'B', asp:373.28 },
-  { code:'MWLJNTP.00122.B0_N', name:'LJ NutriMix 2+ 350g Vanilla Jar',          flavour:'Vanilla',    pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'A', asp:509.51 },
-  { code:'MWLJNTP.00126.B0_N', name:'LJ NutriMix 13+ 350g Jar',                 flavour:'Chocolate',  pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'A', asp:624.46 },
-  { code:'MWLJNTP.00339.B0_N', name:'LJ MamaMix 400g Pouch',                    flavour:'Vanilla',    pack_type:'Pouch',     pack_size:400,  brand:'LJ', cls:'A', asp:645.19 },
-  { code:'MWLJNTP.00481.B0_N', name:'LJ Millet Pancake Mix 150g Jar',           flavour:'Millet',     pack_type:'Jar',       pack_size:150,  brand:'LJ', cls:'C', asp:155.32 },
-  { code:'MWLJNTP.00483.B0_N', name:'LJ NutriMix 2+ Belgian Choc 350g Jar',     flavour:'Chocolate',  pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'C', asp:538.61 },
-  { code:'MWLJNTP.00507.B0_N', name:'LJ NutriMix 2+ Choc 1kg',                  flavour:'Chocolate',  pack_type:'1kg',       pack_size:1000, brand:'LJ', cls:'A', asp:1116.69},
-  { code:'MWLJNTP.00527.BO_N', name:'LJ NutriMix Lite Vanilla 1kg',             flavour:'Vanilla',    pack_type:'1kg',       pack_size:1000, brand:'LJ', cls:'C', asp:865.67 },
-  { code:'MWLJNTP.00541.BO_N', name:'LJ Nutrimix 13+ Choc 1kg ×3',              flavour:'Chocolate',  pack_type:'1kg',       pack_size:1000, brand:'LJ', cls:'C', asp:1349.91},
-  { code:'MWLJNTP.00553.BO_N', name:'LJ Proteinmix 250g Jar',                   flavour:'Protein',    pack_type:'Jar',       pack_size:250,  brand:'LJ', cls:'A', asp:439.83 },
-  { code:'MWLJNTP.00584.BO_N', name:'LJ Mothers Mix Vanilla 400g Jar',          flavour:'Vanilla',    pack_type:'Jar',       pack_size:400,  brand:'LJ', cls:'C', asp:654.37 },
-  { code:'MWLJNTP.00615.BO_N', name:'LJ Nutrimix 2+ 200g Choc Jar',             flavour:'Chocolate',  pack_type:'Jar',       pack_size:200,  brand:'LJ', cls:'C', asp:209.04 },
-  { code:'MWLJNTP.00618.BO_N', name:'LJ Nutrimix 2+ Pack of 6 Choc',            flavour:'Chocolate',  pack_type:'Pack of 6', pack_size:120,  brand:'LJ', cls:'C', asp:191.32 },
-  { code:'MWLJNTP.00664.BO_N', name:'LJ Nutrimix 13+ Vanilla 300g Jar',         flavour:'Vanilla',    pack_type:'Jar',       pack_size:300,  brand:'LJ', cls:'C', asp:611.13 },
-  { code:'MWLJNTP.00746.BO_N', name:'LJ Proteinmix 500g Jar',                   flavour:'Protein',    pack_type:'Jar',       pack_size:500,  brand:'LJ', cls:'C', asp:765.81 },
-  { code:'MWLJNTS.0001.B0_N',  name:'LJ NutriMix 2+ 20g Choc Sampler',          flavour:'Chocolate',  pack_type:'Sampler',   pack_size:20,   brand:'LJ', cls:'C', asp:37.97  },
-  { code:'MWLJNTS.00040.B0_N', name:'LJ NutriMix 2+ 20g Vanilla Sampler',       flavour:'Vanilla',    pack_type:'Sampler',   pack_size:20,   brand:'LJ', cls:'C', asp:44.01  },
-  { code:'MWLJNTS.0003.B0_N',  name:'LJ NutriMix 2+ 20g Strawberry Sampler',    flavour:'Strawberry', pack_type:'Sampler',   pack_size:20,   brand:'LJ', cls:'C', asp:42.79  },
-  { code:'MWLJNTP.00694.BO_N', name:'LJ Proteinmix 15g Sampler',                flavour:'Protein',    pack_type:'Sampler',   pack_size:15,   brand:'LJ', cls:'C', asp:42.52  },
-  { code:'MWLJNTP.00699.B0_N', name:'LJ NutriMix 2+ Unsweetened 350g Pouch',    flavour:'Chocolate',  pack_type:'Pouch',     pack_size:350,  brand:'LJ', cls:'C', asp:607.80 },
-  { code:'MWLJNTP.00551.BO_N', name:'LJ Nutrimix Pack of 6 CSV',                flavour:'Chocolate',  pack_type:'Pack of 6', pack_size:120,  brand:'LJ', cls:'C', asp:309.83 },
-  { code:'MWLJNTP.00519.B0_N', name:'LJ NutriMix 2+ Pack of 6',                 flavour:'Chocolate',  pack_type:'Pack of 6', pack_size:120,  brand:'LJ', cls:'C', asp:308.53 },
+  { code:'MWLJNTK.00367.B0_N', name:'LJ NutriMix Lite 2+ 350g Choc Jar',       flavour:'Chocolate',  pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'A', asp:382.12,  targetDoi:60 },
+  { code:'MWLJNTP.00027.B0_N', name:'LJ NutriMix 2+ 350g Choc Pouch',           flavour:'Chocolate',  pack_type:'Pouch',     pack_size:350,  brand:'LJ', cls:'A', asp:481.42,  targetDoi:60 },
+  { code:'MWLJNTP.0003.B0_N',  name:'LJ NutriMix 2+ 350g Choc Jar',             flavour:'Chocolate',  pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'A', asp:495.78,  targetDoi:60 },
+  { code:'MWLJNTP.00034.B0_N', name:'LJ NutriMix 2+ 350g Strawberry Jar',       flavour:'Strawberry', pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'A', asp:520.31,  targetDoi:60 },
+  { code:'MWLJNTP.000709.B0_N',name:'LJ NutriMix Lite 2+ 1kg Pouch',            flavour:'Chocolate',  pack_type:'1kg',       pack_size:1000, brand:'LJ', cls:'A', asp:803.67,  targetDoi:60 },
+  { code:'MWLJNTP.000836.B0_N',name:'LJ Nutrimix 2+ Vanilla Lite 350g Jar',     flavour:'Vanilla',    pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'B', asp:373.28,  targetDoi:45 },
+  { code:'MWLJNTP.00122.B0_N', name:'LJ NutriMix 2+ 350g Vanilla Jar',          flavour:'Vanilla',    pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'A', asp:509.51,  targetDoi:60 },
+  { code:'MWLJNTP.00126.B0_N', name:'LJ NutriMix 13+ 350g Jar',                 flavour:'Chocolate',  pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'A', asp:624.46,  targetDoi:60 },
+  { code:'MWLJNTP.00339.B0_N', name:'LJ MamaMix 400g Pouch',                    flavour:'Vanilla',    pack_type:'Pouch',     pack_size:400,  brand:'LJ', cls:'A', asp:645.19,  targetDoi:60 },
+  { code:'MWLJNTP.00481.B0_N', name:'LJ Millet Pancake Mix 150g Jar',           flavour:'Millet',     pack_type:'Jar',       pack_size:150,  brand:'LJ', cls:'C', asp:155.32,  targetDoi:30 },
+  { code:'MWLJNTP.00483.B0_N', name:'LJ NutriMix 2+ Belgian Choc 350g Jar',     flavour:'Chocolate',  pack_type:'Jar',       pack_size:350,  brand:'LJ', cls:'C', asp:538.61,  targetDoi:60 },
+  { code:'MWLJNTP.00507.B0_N', name:'LJ NutriMix 2+ Choc 1kg',                  flavour:'Chocolate',  pack_type:'1kg',       pack_size:1000, brand:'LJ', cls:'A', asp:1116.69, targetDoi:60 },
+  { code:'MWLJNTP.00527.BO_N', name:'LJ NutriMix Lite Vanilla 1kg',             flavour:'Vanilla',    pack_type:'1kg',       pack_size:1000, brand:'LJ', cls:'C', asp:865.67,  targetDoi:30 },
+  { code:'MWLJNTP.00541.BO_N', name:'LJ Nutrimix 13+ Choc 1kg ×3',              flavour:'Chocolate',  pack_type:'1kg',       pack_size:1000, brand:'LJ', cls:'C', asp:1349.91, targetDoi:30 },
+  { code:'MWLJNTP.00553.BO_N', name:'LJ Proteinmix 250g Jar',                   flavour:'Protein',    pack_type:'Jar',       pack_size:250,  brand:'LJ', cls:'A', asp:439.83,  targetDoi:60 },
+  { code:'MWLJNTP.00584.BO_N', name:'LJ Mothers Mix Vanilla 400g Jar',          flavour:'Vanilla',    pack_type:'Jar',       pack_size:400,  brand:'LJ', cls:'C', asp:654.37,  targetDoi:30 },
+  { code:'MWLJNTP.00615.BO_N', name:'LJ Nutrimix 2+ 200g Choc Jar',             flavour:'Chocolate',  pack_type:'Jar',       pack_size:200,  brand:'LJ', cls:'C', asp:209.04,  targetDoi:30 },
+  { code:'MWLJNTP.00618.BO_N', name:'LJ Nutrimix 2+ Pack of 6 Choc',            flavour:'Chocolate',  pack_type:'Pack of 6', pack_size:120,  brand:'LJ', cls:'C', asp:191.32,  targetDoi:30 },
+  { code:'MWLJNTP.00664.BO_N', name:'LJ Nutrimix 13+ Vanilla 300g Jar',         flavour:'Vanilla',    pack_type:'Jar',       pack_size:300,  brand:'LJ', cls:'C', asp:611.13,  targetDoi:30 },
+  { code:'MWLJNTP.00746.BO_N', name:'LJ Proteinmix 500g Jar',                   flavour:'Protein',    pack_type:'Jar',       pack_size:500,  brand:'LJ', cls:'C', asp:765.81,  targetDoi:30 },
+  { code:'MWLJNTS.0001.B0_N',  name:'LJ NutriMix 2+ 20g Choc Sampler',          flavour:'Chocolate',  pack_type:'Sampler',   pack_size:20,   brand:'LJ', cls:'C', asp:37.97,   targetDoi:30 },
+  { code:'MWLJNTS.00040.B0_N', name:'LJ NutriMix 2+ 20g Vanilla Sampler',       flavour:'Vanilla',    pack_type:'Sampler',   pack_size:20,   brand:'LJ', cls:'C', asp:44.01,   targetDoi:30 },
+  { code:'MWLJNTS.0003.B0_N',  name:'LJ NutriMix 2+ 20g Strawberry Sampler',    flavour:'Strawberry', pack_type:'Sampler',   pack_size:20,   brand:'LJ', cls:'C', asp:42.79,   targetDoi:30 },
+  { code:'MWLJNTP.00694.BO_N', name:'LJ Proteinmix 15g Sampler',                flavour:'Protein',    pack_type:'Sampler',   pack_size:15,   brand:'LJ', cls:'C', asp:42.52,   targetDoi:30 },
+  { code:'MWLJNTP.00699.B0_N', name:'LJ NutriMix 2+ Unsweetened 350g Pouch',    flavour:'Chocolate',  pack_type:'Pouch',     pack_size:350,  brand:'LJ', cls:'C', asp:607.80,  targetDoi:30 },
+  { code:'MWLJNTP.00551.BO_N', name:'LJ Nutrimix Pack of 6 CSV',                flavour:'Chocolate',  pack_type:'Pack of 6', pack_size:120,  brand:'LJ', cls:'C', asp:309.83,  targetDoi:30 },
+  { code:'MWLJNTP.00519.B0_N', name:'LJ NutriMix 2+ Pack of 6',                 flavour:'Chocolate',  pack_type:'Pack of 6', pack_size:120,  brand:'LJ', cls:'C', asp:308.53,  targetDoi:30 },
 ];
 
 const DEFAULT_CONFIG  = { shiftHours:12, changeoverSame:0.25, changeoverDiff:0.75, rateBasis:24 };
@@ -379,6 +379,7 @@ function LoginScreen({ sb }) {
 // ─── SUPPLY PLAN TAB ─────────────────────────────────────────────────────────
 function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, results }) {
   const fileRef = useRef();
+  const [colPicker, setColPicker] = React.useState(null); // { rows, headers, skuCol }
 
   function handleImport(e) {
     const file = e.target.files[0]; if (!file) return;
@@ -388,27 +389,38 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
         const wb = XLSX.read(ev.target.result, { type:'array' });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(ws, { defval:'' });
-        const newPlan = { ...plan };
-        let matched = 0;
-        for (const row of rows) {
-          const vals = Object.values(row);
-          // Find a value that matches a SKU code
-          for (const v of vals) {
-            const sku = skus.find(s => s.code === String(v).trim());
-            if (sku) {
-              // Find a numeric value in the row (qty)
-              const nums = Object.entries(row).filter(([k,vv]) => k!==Object.keys(row)[0] && Number(vv)>0);
-              if (nums.length) { newPlan[sku.code] = Number(nums[0][1]); matched++; }
-              break;
-            }
-          }
+        if (!rows.length) { alert('File is empty.'); return; }
+        const headers = Object.keys(rows[0]);
+        // Find SKU column (column whose values match known SKU codes)
+        let skuCol = null;
+        for (const h of headers) {
+          const matches = rows.filter(r => skus.find(s => s.code === String(r[h]).trim())).length;
+          if (matches > 0) { skuCol = h; break; }
         }
-        setPlan(newPlan);
-        alert(`Imported ${matched} SKUs from file.`);
+        if (!skuCol) { alert('No SKU codes found in file. Make sure the file has a column with Mosaic SKU codes (e.g. MWLJNTP.0003.B0_N).'); return; }
+        // Numeric columns (excluding skuCol)
+        const numCols = headers.filter(h => h !== skuCol && rows.some(r => Number(r[h]) > 0));
+        if (numCols.length === 1) {
+          applyImport(rows, skuCol, numCols[0]);
+        } else {
+          setColPicker({ rows, headers, skuCol, numCols });
+        }
       } catch(err) { alert('Could not read file: ' + err.message); }
       e.target.value = '';
     };
     reader.readAsArrayBuffer(file);
+  }
+
+  function applyImport(rows, skuCol, qtyCol) {
+    const newPlan = { ...plan };
+    let matched = 0;
+    for (const row of rows) {
+      const sku = skus.find(s => s.code === String(row[skuCol]).trim());
+      if (sku && Number(row[qtyCol]) > 0) { newPlan[sku.code] = Number(row[qtyCol]); matched++; }
+    }
+    setPlan(newPlan);
+    setColPicker(null);
+    alert(`Imported ${matched} SKUs from "${qtyCol}".`);
   }
 
   function clearPlan() { if (window.confirm('Clear all quantities?')) setPlan({}); }
@@ -450,7 +462,26 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
         ))}
       </div>
 
-      <div className="info-box">Enter quantities below or import from XLSX. Stock and DRR will connect to API — enter manually for now.</div>
+      <div className="info-box">Import Production Plan from XLSX (needs a SKU code column + quantity column). FG Stock &amp; DRR for DOI suggestion — enter manually or via API.</div>
+
+      {/* Column picker modal */}
+      {colPicker && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:'#fff',borderRadius:12,padding:28,minWidth:340,boxShadow:'0 8px 32px rgba(0,0,0,0.18)'}}>
+            <div style={{fontWeight:700,fontSize:16,marginBottom:4}}>Select Production Plan Column</div>
+            <div style={{fontSize:13,color:'#64748b',marginBottom:16}}>SKU column detected: <b>{colPicker.skuCol}</b>. Which column has the production quantities?</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {colPicker.numCols.map(col => (
+                <button key={col} className="btn btn-secondary" style={{textAlign:'left',justifyContent:'flex-start'}}
+                  onClick={()=>applyImport(colPicker.rows, colPicker.skuCol, col)}>
+                  {col}
+                </button>
+              ))}
+            </div>
+            <button className="btn btn-secondary btn-sm" style={{marginTop:16}} onClick={()=>setColPicker(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       <div className="tbl-wrap tbl-scroll">
         <table>
@@ -462,25 +493,32 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               <th>Line</th>
               <th>Cls</th>
               <th className="right">Rate (u/hr)</th>
-              <th className="right">Qty (units)</th>
+              <th className="right">Production Plan (units)</th>
               <th className="right">Est. Hours</th>
               <th className="right">FG Stock</th>
               <th className="right">DRR</th>
-              <th className="right">DOI (days)</th>
+              <th className="right">Current DOI</th>
+              <th className="right">DOI Suggested</th>
             </tr>
           </thead>
           <tbody>
             {ALL_LINES.map(line => {
               const lineSkus = byLine[line] || [];
               return [
-                <tr key={`hdr-${line}`}><td colSpan={11} className="grp-row">{LINE_LABELS[line]}</td></tr>,
+                <tr key={`hdr-${line}`}><td colSpan={12} className="grp-row">{LINE_LABELS[line]}</td></tr>,
                 ...lineSkus.map(sku => {
-                  const qty   = Number(plan[sku.code]) || 0;
-                  const rph   = getRph(sku.pack_type, sku.pack_size, DEFAULT_CONFIG.rateBasis);
-                  const hrs   = rph > 0 && qty > 0 ? qty / rph : 0;
-                  const stock = Number(stockData[sku.code]?.stock) || 0;
-                  const drr   = Number(stockData[sku.code]?.drr) || 0;
-                  const doi   = drr > 0 ? stock / drr : null;
+                  const qty      = Number(plan[sku.code]) || 0;
+                  const rph      = getRph(sku.pack_type, sku.pack_size, DEFAULT_CONFIG.rateBasis);
+                  const hrs      = rph > 0 && qty > 0 ? qty / rph : 0;
+                  const stock    = Number(stockData[sku.code]?.stock) || 0;
+                  const drr      = Number(stockData[sku.code]?.drr) || 0;
+                  const doi      = drr > 0 ? stock / drr : null;
+                  const tDoi     = sku.targetDoi || 60;
+                  // DOI suggested = Max(targetDoi×DRR − Max(stock − demand, 0), 0)
+                  // demand approximated as DRR × 25 working days when no separate demand field
+                  const demand   = drr * 25;
+                  const closing  = Math.max(0, stock - demand);
+                  const suggested = drr > 0 ? Math.max(0, Math.round(tDoi * drr - closing)) : null;
                   return (
                     <tr key={sku.code}>
                       <td className="mono">{sku.code}</td>
@@ -500,13 +538,14 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
                       <td className="right">{qty>0?fmtH(hrs):'—'}</td>
                       <td className="right">
                         <input type="number" min="0" className="num-input" value={stockData[sku.code]?.stock||''}
-                          onChange={e=>setStockData(d=>({...d,[sku.code]:{...d[sku.code],stock:e.target.value}}))} placeholder="API"/>
+                          onChange={e=>setStockData(d=>({...d,[sku.code]:{...d[sku.code],stock:e.target.value}}))} placeholder="—"/>
                       </td>
                       <td className="right">
                         <input type="number" min="0" className="num-input" value={stockData[sku.code]?.drr||''}
-                          onChange={e=>setStockData(d=>({...d,[sku.code]:{...d[sku.code],drr:e.target.value}}))} placeholder="API"/>
+                          onChange={e=>setStockData(d=>({...d,[sku.code]:{...d[sku.code],drr:e.target.value}}))} placeholder="—"/>
                       </td>
                       <td className="right">{doi!=null?<span style={{color:doi<30?'#dc2626':doi<45?'#d97706':'#059669',fontWeight:600}}>{fmt(doi,0)}d</span>:'—'}</td>
+                      <td className="right">{suggested!=null?<span style={{color:'#6366f1',fontWeight:600}}>{fmt(suggested,0)}</span>:'—'}</td>
                     </tr>
                   );
                 })
@@ -731,6 +770,7 @@ function SettingsTab({ config, setConfig, skus, setSkus }) {
                 <th>Code</th><th>Product</th><th>Line</th><th>Flavour</th>
                 <th>Pack Type</th><th className="right">Pack Size</th>
                 <th className="right">Rate (u/day)</th><th>Class</th><th className="right">ASP (₹)</th>
+                <th className="right">Target DOI (days)</th>
               </tr>
             </thead>
             <tbody>
@@ -751,6 +791,10 @@ function SettingsTab({ config, setConfig, skus, setSkus }) {
                   <td className="right">
                     <input type="number" className="num-input" value={sku.asp}
                       onChange={e=>{const n=[...skus];n[i]={...n[i],asp:Number(e.target.value)};setSkus(n);}}/>
+                  </td>
+                  <td className="right">
+                    <input type="number" min="1" className="num-input" value={sku.targetDoi||60}
+                      onChange={e=>{const n=[...skus];n[i]={...n[i],targetDoi:Number(e.target.value)};setSkus(n);}}/>
                   </td>
                 </tr>
               ))}
@@ -818,7 +862,7 @@ function App() {
       const { data, error } = await sb.from('scheduler_data').select('*').eq('user_id', userId).eq('factory_key', 'sapiens').single();
       if (error || !data) return;
       const d = data.data || {};
-      if (d.skus)        setSkus(d.skus);
+      if (d.skus)        setSkus(d.skus.map(s => { const def = DEFAULT_SKUS.find(x=>x.code===s.code); return def ? {...def,...s, targetDoi: s.targetDoi ?? def.targetDoi} : s; }));
       if (d.config)      setConfig(d.config);
       if (d.workingDays) setWorkingDays(d.workingDays);
       if (d.plan)        setPlan(d.plan);
