@@ -235,27 +235,50 @@ const flvPill = f => <span className="flavour-pill" style={{background:FLAVOUR_C
 function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockData={}) {
   const { shiftHours, changeoverSame, changeoverDiff, rateBasis } = config;
 
-  // Enrich with DOI tiering
-  const planRows = [];
+  // Enrich with DOI tiering — two-phase logic for Tier 1:
+  //   Phase 1 (mandatory): Plan - FG  → ensures no stockout
+  //   Phase 2 (cover):     Target - Plan → top up to target (best-effort, same priority pool as Tier 2)
+  const phase1Rows = []; // Tier 1 mandatory deficit runs
+  const coverRows  = []; // Tier 1 cover + Tier 2 cover runs (best-effort)
+  const t3list     = []; // Tier 3 — skipped
   for (const sku of skus) {
-    const qty = Number(supplyPlan[sku.code]) || 0;
-    if (qty <= 0) continue;
-    const line         = getLine(sku.pack_type);
-    const rph          = getRph(sku.pack_type, sku.pack_size, rateBasis);
-    const hrs          = rph > 0 ? qty / rph : 0;
-    const rev          = qty * sku.asp;
-    const stock        = Number(stockData[sku.code]?.stock) || 0;
-    const drr          = Number(stockData[sku.code]?.drr) || 0;
-    const tDoi         = sku.targetDoi || 60;
-    const targetStock  = tDoi * drr;
-    const closingStock = Math.max(0, stock - qty);
-    // Tier 1: stock can't cover demand (urgent)
-    // Tier 2: stock covers demand but closing < target (cover build)
-    // Tier 3: closing >= target (skip — already fine)
-    const tier = stock < qty ? 1 : closingStock < targetStock ? 2 : 3;
-    planRows.push({ ...sku, qty, line, rph, hrs, rev, rph_rev: hrs > 0 ? rev / hrs : 0,
-                    stock, drr, targetStock, closingStock, tier });
+    const plan = Number(supplyPlan[sku.code]) || 0;
+    const line  = getLine(sku.pack_type);
+    const rph   = getRph(sku.pack_type, sku.pack_size, rateBasis);
+    const fg    = Number(stockData[sku.code]?.stock) || 0;
+    const drr   = Number(stockData[sku.code]?.drr)   || 0;
+    const tDoi  = sku.targetDoi || 60;
+    const targetStock  = Math.round(tDoi * drr);
+    const closingStock = Math.max(0, fg - plan);
+
+    const makeRow = (qty, phase) => {
+      const hrs = rph > 0 ? qty / rph : 0;
+      const rev = qty * sku.asp;
+      return { ...sku, qty, plan, line, rph, hrs, rev,
+               rph_rev: hrs > 0 ? rev / hrs : 0,
+               fg, drr, targetStock, closingStock, phase };
+    };
+
+    if (fg < plan) {
+      // Tier 1: stockout risk
+      const deficit  = plan - fg;                     // Phase 1 — must make
+      const coverQty = Math.max(0, targetStock - plan); // Phase 2 — cover beyond plan
+      if (deficit > 0)  phase1Rows.push(makeRow(deficit, 'T1-deficit'));
+      if (coverQty > 0) coverRows.push(makeRow(coverQty, 'T1-cover'));
+    } else if (closingStock < targetStock) {
+      // Tier 2: closing < target → cover build
+      const coverQty = Math.max(0, targetStock - closingStock);
+      if (coverQty > 0) coverRows.push(makeRow(coverQty, 'T2'));
+    } else {
+      // Tier 3: already covered — skip
+      t3list.push(sku);
+    }
   }
+  // For backward compatibility downstream, expose a flat planRows view
+  const planRows = [
+    ...phase1Rows.map(r=>({...r, tier:1})),
+    ...coverRows.map(r=>({...r, tier: r.phase==='T1-cover'?1:2})),
+  ];
 
   function makeGroup(key, sk) {
     const tRev = sk.reduce((s,r)=>s+r.rev,0);
@@ -294,19 +317,16 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
 
   const results = {};
   for (const line of ALL_LINES) {
-    const allRows = planRows.filter(r => r.line === line);
-    if (!allRows.length) { results[line] = null; continue; }
+    const lP1   = phase1Rows.filter(r => r.line === line);
+    const lCov  = coverRows.filter(r => r.line === line);
+    const lT3   = t3list.filter(r => getLine(r.pack_type) === line);
+    if (!lP1.length && !lCov.length) { results[line] = null; continue; }
 
-    // Split by tier; tier 3 = skipped
-    const t1rows = allRows.filter(r => r.tier === 1);
-    const t2rows = allRows.filter(r => r.tier === 2);
-    const t3rows = allRows.filter(r => r.tier === 3);
-
-    const groups1 = buildGroups(t1rows, line, scenario);
-    const groups2 = buildGroups(t2rows, line, scenario);
+    const groups1 = buildGroups(lP1,  line, scenario); // Phase 1 mandatory
+    const groups2 = buildGroups(lCov, line, scenario); // Phase 2 cover (Tier1 cover + Tier2)
     const groups  = [...groups1, ...groups2];
 
-    // Build sequence — insert tier divider between T1 and T2
+    // Build sequence — Phase 1 first, then cover
     const seq = [];
     let prevFl = null, prevPt = null, gRank = 0;
     const buildSeq = (grps, tierLabel) => {
@@ -315,7 +335,6 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
         gRank++;
         for (let i = 0; i < g.skus.length; i++) {
           const s = g.skus[i];
-          // For 'all' groups (L1/Sampler Scenario A), compare per-SKU flavour/pack_type
           const curFl = g.flavour === 'all' ? s.flavour : g.flavour;
           const curPt = g.flavour === 'all' ? s.pack_type : (g.pack_type || g.flavour);
           if (prevFl !== null) {
@@ -334,9 +353,9 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
       }
     };
 
-    buildSeq(groups1, groups1.length ? '🔴 Tier 1 — Demand Coverage (Urgent)' : null);
-    buildSeq(groups2, groups2.length ? '🟡 Tier 2 — Cover Build (DOI Top-up)' : null);
-    if (t3rows.length) seq.push({ type:'tier', label: `⏭ ${t3rows.length} SKU(s) not produced — closing stock ≥ target stock` });
+    buildSeq(groups1, lP1.length  ? '🔴 Phase 1 — Deficit Coverage (Must Make)' : null);
+    buildSeq(groups2, lCov.length ? '🟡 Phase 2 — Cover Build (Best Effort)'    : null);
+    if (lT3.length) seq.push({ type:'tier', label: `⏭ ${lT3.length} SKU(s) not produced — closing stock ≥ target stock` });
 
     // Budget
     const budget = (workingDays[line] || 0) * shiftHours;
@@ -344,7 +363,7 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
     const coH    = seq.filter(s=>s.type==='co').reduce((s,r)=>s+r.hours,0);
     const total  = runH + coH;
 
-    // Day schedule (tier rows have no duration)
+    // Day schedule
     let acc = 0;
     const daySeq = seq.map(item => {
       if (item.type === 'tier') return { ...item, startDay: acc/shiftHours+1, endDay: acc/shiftHours+1, h: 0 };
@@ -355,8 +374,10 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
       return { ...item, startDay: sd, endDay: ed, h };
     });
 
+    const allRows = planRows.filter(r=>r.line===line);
     results[line] = { groups, seq, daySeq, budget, runH, coH, total, over: total > budget,
-                      skuCount: allRows.length, t1Count: t1rows.length, t2Count: t2rows.length, t3Count: t3rows.length };
+                      skuCount: allRows.length,
+                      t1Count: lP1.length, t2Count: lCov.length, t3Count: lT3.length };
   }
   return results;
 }
@@ -1016,7 +1037,8 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                       const need         = Math.max(0, targetStock - closingStock);
                       const seqItem = r.seq && r.seq.find(s=>s.code===item.code);
                       const units = seqItem ? seqItem.qty : Math.round(item.h * item.rph);
-                      qtyMath = { fg, drr, planQty, tDoi, targetStock, closingStock, need, units };
+                      const phase = item.phase || (planQty > fg ? 'T1-deficit' : closingStock < targetStock ? 'T2' : '');
+                      qtyMath = { fg, drr, planQty, tDoi, targetStock, closingStock, need, units, phase };
                     }
                     return (
                       <tr key={i} className={isRun?'':'co-row'}>
@@ -1030,11 +1052,12 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                         <td style={{fontSize:11,color:'#374151',whiteSpace:'nowrap'}}>
                           {isRun && qtyMath && (
                             <span>
-                              Plan <b>{fmt(qtyMath.planQty)}</b>
-                              {' · '}FG <b>{fmt(qtyMath.fg)}</b>
-                              {' → '}Closing <b>{fmt(qtyMath.closingStock)}</b>
-                              {' · '}Target <b>{fmt(qtyMath.targetStock)}</b> ({qtyMath.tDoi}d×{qtyMath.drr})
-                              {' → '}Need <b style={{color:'#059669'}}>{fmt(qtyMath.need)}</b>
+                              {qtyMath.phase==='T1-deficit'
+                                ? <>🔴 Deficit: Plan <b>{fmt(qtyMath.planQty)}</b> − FG <b>{fmt(qtyMath.fg)}</b> = <b style={{color:'#dc2626'}}>{fmt(qtyMath.need)}</b> units</>
+                                : qtyMath.phase==='T1-cover'
+                                ? <>🟡 Cover: Target <b>{fmt(qtyMath.targetStock)}</b> − Plan <b>{fmt(qtyMath.planQty)}</b> = <b style={{color:'#059669'}}>{fmt(qtyMath.need)}</b> units</>
+                                : <>🟡 Cover: Target <b>{fmt(qtyMath.targetStock)}</b> − Closing <b>{fmt(qtyMath.closingStock)}</b> = <b style={{color:'#059669'}}>{fmt(qtyMath.need)}</b> units · FG {fmt(qtyMath.fg)} · DRR {qtyMath.drr}</>
+                              }
                             </span>
                           )}
                         </td>
