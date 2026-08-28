@@ -704,7 +704,7 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
 }
 
 // ─── LINE SCHEDULE TAB ───────────────────────────────────────────────────────
-function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stockData }) {
+function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stockData, plan }) {
   const anyResult = results && ALL_LINES.some(l=>results[l]);
   const [startDate, setStartDate] = React.useState(() => {
     // Default to 1st of next month
@@ -1005,16 +1005,16 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                     if (isRun) {
                       const sd = (stockData||{})[item.code] || {};
                       const skuDef = (skus||[]).find(s=>s.code===item.code);
-                      const fg     = Number(sd.stock) || 0;
-                      const drr    = Number(sd.drr)   || 0;
-                      const plan   = Number(sd.plan)  || 0;
+                      const fg       = Number(sd.stock) || 0;
+                      const drr      = Number(sd.drr)   || 0;
+                      const planQty  = Number((plan||{})[item.code]) || 0;
                       const tDoi   = skuDef ? (skuDef.targetDoi||60) : 60;
                       const targetStock  = Math.round(tDoi * drr);
-                      const closingStock = Math.max(0, fg - plan);
+                      const closingStock = Math.max(0, fg - planQty);
                       const need         = Math.max(0, targetStock - closingStock);
                       const seqItem = r.seq && r.seq.find(s=>s.code===item.code);
                       const units = seqItem ? seqItem.qty : Math.round(item.h * item.rph);
-                      qtyMath = { fg, drr, plan, tDoi, targetStock, closingStock, need, units };
+                      qtyMath = { fg, drr, planQty, tDoi, targetStock, closingStock, need, units };
                     }
                     return (
                       <tr key={i} className={isRun?'':'co-row'}>
@@ -1028,7 +1028,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                         <td style={{fontSize:11,color:'#374151',whiteSpace:'nowrap'}}>
                           {isRun && qtyMath && (
                             <span>
-                              Plan <b>{fmt(qtyMath.plan)}</b>
+                              Plan <b>{fmt(qtyMath.planQty)}</b>
                               {' · '}FG <b>{fmt(qtyMath.fg)}</b>
                               {' → '}Closing <b>{fmt(qtyMath.closingStock)}</b>
                               {' · '}Target <b>{fmt(qtyMath.targetStock)}</b> ({qtyMath.tDoi}d×{qtyMath.drr})
@@ -1275,7 +1275,7 @@ function App() {
       <div className="content">
         {tab === 'plan'     && <SupplyPlanTab skus={skus} plan={plan} setPlan={setPlanSaving} stockData={stockData} setStockData={setStockSaving} onRun={handleRun} results={results}/>}
         {tab === 'queue'    && <QueueTab results={results} workingDays={workingDays} config={config} scenario={scenario}/>}
-        {tab === 'schedule' && <ScheduleTab results={results} workingDays={workingDays} setWorkingDays={setWDSaving} config={config} skus={skus} stockData={stockData}/>}
+        {tab === 'schedule' && <ScheduleTab results={results} workingDays={workingDays} setWorkingDays={setWDSaving} config={config} skus={skus} stockData={stockData} plan={plan}/>}
         {tab === 'settings' && <SettingsTab config={config} setConfig={setConfigSaving} skus={skus} setSkus={setSkusSaving}/>}
       </div>
     </div>
