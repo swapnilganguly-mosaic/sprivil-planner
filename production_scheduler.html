@@ -288,6 +288,8 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
 
   function buildGroups(rows, line, sc) {
     if (!rows.length) return [];
+    // L1 (Jars): always sort by absolute revenue descending — no grouping
+    if (line === 'L1') return [makeGroup('all', [...rows].sort((a,b)=>b.rev-a.rev))];
     if (sc === 'B') {
       const flMap = {};
       for (const r of rows) { (flMap[r.flavour] = flMap[r.flavour] || []).push(r); }
