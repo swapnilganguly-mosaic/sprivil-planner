@@ -315,18 +315,21 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
         gRank++;
         for (let i = 0; i < g.skus.length; i++) {
           const s = g.skus[i];
+          // For 'all' groups (L1/Sampler Scenario A), compare per-SKU flavour/pack_type
+          const curFl = g.flavour === 'all' ? s.flavour : g.flavour;
+          const curPt = g.flavour === 'all' ? s.pack_type : (g.pack_type || g.flavour);
           if (prevFl !== null) {
-            const flavourChange = prevFl !== g.flavour;
-            const packChange    = !flavourChange && prevPt !== (g.pack_type || g.flavour);
+            const flavourChange = prevFl !== curFl;
+            const packChange    = !flavourChange && prevPt !== curPt;
             const coH = flavourChange ? changeoverDiff : changeoverSame;
-            const label = flavourChange ? `Flavour change → ${g.flavour}`
-              : packChange ? `Pack type change → ${g.pack_type || g.flavour}`
-              : `SKU change (${g.flavour})`;
+            const label = flavourChange ? `Flavour change → ${curFl}`
+              : packChange ? `Pack type change → ${curPt}`
+              : `SKU change (${curFl})`;
             seq.push({ type:'co', hours:coH, label });
           }
           seq.push({ type:'run', ...s, gRank, skuRank:i+1 });
-          prevFl = g.flavour;
-          prevPt = g.pack_type || g.flavour;
+          prevFl = curFl;
+          prevPt = curPt;
         }
       }
     };
@@ -406,7 +409,7 @@ function LoginScreen({ sb }) {
 }
 
 // ─── SUPPLY PLAN TAB ─────────────────────────────────────────────────────────
-function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, results }) {
+function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, results, config }) {
   const planRef  = useRef();
   const stockRef = useRef();
   const drrRef   = useRef();
@@ -443,7 +446,8 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
       const newPlan = { ...plan };
       for (const row of rows) {
         const sku = skus.find(s => s.code === String(row[skuCol]).trim());
-        if (sku && Number(row[valCol]) > 0) { newPlan[sku.code] = Number(row[valCol]); matched++; }
+        const rawVal = String(row[valCol] ?? '').trim();
+        if (sku && rawVal !== '') { newPlan[sku.code] = Number(rawVal); matched++; }
       }
       setPlan(newPlan);
     } else {
@@ -451,8 +455,9 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
       const newStock = { ...stockData };
       for (const row of rows) {
         const sku = skus.find(s => s.code === String(row[skuCol]).trim());
-        if (sku && Number(row[valCol]) >= 0) {
-          newStock[sku.code] = { ...(newStock[sku.code]||{}), [key]: Number(row[valCol]) };
+        const rawVal = String(row[valCol] ?? '').trim();
+        if (sku && rawVal !== '') {
+          newStock[sku.code] = { ...(newStock[sku.code]||{}), [key]: Number(rawVal) };
           matched++;
         }
       }
@@ -473,7 +478,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
   for (const line of ALL_LINES) {
     const hrs = skus
       .filter(s => getLine(s.pack_type)===line && Number(plan[s.code])>0)
-      .reduce((sum,s)=>{ const r=getRph(s.pack_type,s.pack_size,12); return sum+(r>0?Number(plan[s.code])/r:0); },0);
+      .reduce((sum,s)=>{ const r=getRph(s.pack_type,s.pack_size,(config&&config.rateBasis)||24); return sum+(r>0?Number(plan[s.code])/r:0); },0);
     liveEst[line] = hrs;
   }
 
@@ -753,16 +758,15 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
 
     const planL1  = getLineDayPlan('L1', workDates);
     const planL2  = getLineDayPlan('L2', workDates);
-    const planL3  = getLineDayPlan('L3', workDates);
     const planSmp = getLineDayPlan('Sampler', workDates);
 
     // Build rows — one row per working day, split if multiple SKUs on same day/line
-    const header = ['Date','Day','L1 — Product','L1 Units','L2 — Product','L2 Units','L3 — Product','L3 Units','Sampler — Product','Sampler Units'];
+    const header = ['Date','Day','L1 — Product','L1 Units','L2 — Product','L2 Units','Sampler — Product','Sampler Units'];
     const aoa = [header];
 
     for (let d = 0; d < 25; d++) {
       const { label, day } = workDates[d];
-      const segs = [planL1[d], planL2[d], planL3[d], planSmp[d]];
+      const segs = [planL1[d], planL2[d], planSmp[d]];
       const maxSeg = Math.max(1, ...segs.map(s=>s.length));
       for (let s = 0; s < maxSeg; s++) {
         const row = [s===0?label:'', s===0?day:''];
@@ -775,7 +779,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
     }
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [{wch:10},{wch:5},{wch:36},{wch:10},{wch:36},{wch:10},{wch:36},{wch:10},{wch:36},{wch:10}];
+    ws['!cols'] = [{wch:10},{wch:5},{wch:36},{wch:10},{wch:36},{wch:10},{wch:36},{wch:10}];
     XLSX.utils.book_append_sheet(wb, ws, 'Daily Plan');
     XLSX.writeFile(wb, 'Daily_Production_Plan.xlsx');
   }
@@ -786,14 +790,13 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
     const workDates = buildWorkDates(sd);
     const planL1  = getLineDayPlan('L1', workDates);
     const planL2  = getLineDayPlan('L2', workDates);
-    const planL3  = getLineDayPlan('L3', workDates);
     const planSmp = getLineDayPlan('Sampler', workDates);
 
     // Build SKU totals from daySeq (sum hours × rph per SKU per line)
     const skuTotals = []; // { line, code, name, units }
     const LINE_PLANS = [
       { key:'L1', plans:planL1 }, { key:'L2', plans:planL2 },
-      { key:'L3', plans:planL3 }, { key:'Sampler', plans:planSmp },
+      { key:'Sampler', plans:planSmp },
     ];
     LINE_PLANS.forEach(({ key, plans }) => {
       const r = results && results[key];
@@ -828,7 +831,6 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
     const LINES = [
       { key: 'L1', plans: planL1, cls: 'l1', label: 'L1' },
       { key: 'L2', plans: planL2, cls: 'l2', label: 'L2' },
-      { key: 'L3', plans: planL3, cls: 'l3', label: 'L3' },
       { key: 'Sampler', plans: planSmp, cls: 'smp', label: 'SMP' },
     ];
 
@@ -1174,7 +1176,12 @@ function App() {
       const { data, error } = await sb.from('scheduler_data').select('*').eq('user_id', userId).eq('factory_key', 'sapiens').single();
       if (error || !data) return;
       const d = data.data || {};
-      if (d.skus)        setSkus(d.skus.map(s => { const def = DEFAULT_SKUS.find(x=>x.code===s.code); return def ? {...def,...s, targetDoi: s.targetDoi ?? def.targetDoi} : s; }));
+      if (d.skus) {
+        const mapped = d.skus.map(s => { const def = DEFAULT_SKUS.find(x=>x.code===s.code); return def ? {...def,...s, targetDoi: s.targetDoi ?? def.targetDoi} : s; });
+        const savedCodes = new Set(d.skus.map(s=>s.code));
+        const newDefaults = DEFAULT_SKUS.filter(x=>!savedCodes.has(x.code));
+        setSkus([...mapped, ...newDefaults]);
+      }
       if (d.config)      setConfig(d.config);
       if (d.workingDays) setWorkingDays(d.workingDays);
       if (d.plan)        setPlan(d.plan);
@@ -1273,7 +1280,7 @@ function App() {
       </div>
 
       <div className="content">
-        {tab === 'plan'     && <SupplyPlanTab skus={skus} plan={plan} setPlan={setPlanSaving} stockData={stockData} setStockData={setStockSaving} onRun={handleRun} results={results}/>}
+        {tab === 'plan'     && <SupplyPlanTab skus={skus} plan={plan} setPlan={setPlanSaving} stockData={stockData} setStockData={setStockSaving} onRun={handleRun} results={results} config={config}/>}
         {tab === 'queue'    && <QueueTab results={results} workingDays={workingDays} config={config} scenario={scenario}/>}
         {tab === 'schedule' && <ScheduleTab results={results} workingDays={workingDays} setWorkingDays={setWDSaving} config={config} skus={skus} stockData={stockData} plan={plan}/>}
         {tab === 'settings' && <SettingsTab config={config} setConfig={setConfigSaving} skus={skus} setSkus={setSkusSaving}/>}
