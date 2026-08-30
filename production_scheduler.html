@@ -1108,10 +1108,10 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                           {isRun && qtyMath && (
                             <span>
                               {qtyMath.phase==='T1-deficit'
-                                ? <>🔴 Deficit: Plan <b>{fmt(qtyMath.planQty)}</b> − FG <b>{fmt(qtyMath.fg)}</b> = <b style={{color:'#dc2626'}}>{fmt(qtyMath.need)}</b> units</>
+                                ? <>🔴 Deficit: Plan <b>{fmt(qtyMath.planQty)}</b> − FG <b>{fmt(qtyMath.fg)}</b> = <b style={{color:'#dc2626'}}>{fmt(Math.max(0, qtyMath.planQty - qtyMath.fg))}</b> units</>
                                 : qtyMath.phase==='T1-cover'
-                                ? <>🟡 Cover: Target <b>{fmt(qtyMath.targetStock)}</b> − Plan <b>{fmt(qtyMath.planQty)}</b> = <b style={{color:'#059669'}}>{fmt(qtyMath.need)}</b> units</>
-                                : <>🟡 Cover: Target <b>{fmt(qtyMath.targetStock)}</b> − Closing <b>{fmt(qtyMath.closingStock)}</b> = <b style={{color:'#059669'}}>{fmt(qtyMath.need)}</b> units · FG {fmt(qtyMath.fg)} · DRR {qtyMath.drr}</>
+                                ? <>🟡 Cover: Target <b>{fmt(qtyMath.targetStock)}</b> − Plan <b>{fmt(qtyMath.planQty)}</b> = <b style={{color:'#059669'}}>{fmt(Math.max(0, qtyMath.targetStock - qtyMath.planQty))}</b> units</>
+                                : <>🟡 Cover: Target <b>{fmt(qtyMath.targetStock)}</b> − Closing <b>{fmt(qtyMath.closingStock)}</b> = <b style={{color:'#059669'}}>{fmt(Math.max(0, qtyMath.targetStock - qtyMath.closingStock))}</b> units · FG {fmt(qtyMath.fg)} · DRR {qtyMath.drr}</>
                               }
                             </span>
                           )}
