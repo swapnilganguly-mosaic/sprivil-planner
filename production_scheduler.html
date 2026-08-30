@@ -887,6 +887,8 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
         const skuDef = (skus||[]).find(s=>s.code===v.code);
         v.packSize = skuDef ? (skuDef.pack_size||0) : 0;
         v.tons = v.packSize * v.units / 1e6;
+        v.planQty = Number((plan||{})[v.code]) || 0;
+        v.gap = v.units - v.planQty; // positive = over-scheduled, negative = under
         skuTotals.push(v);
       });
     });
@@ -924,7 +926,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
           const totalTons  = skuTotals.reduce((a,s)=>a+s.tons,0);
           return (
           <div className="settings-card" style={{marginBottom:16}}>
-            <h3>Monthly Production Summary — Units &amp; Tons per SKU</h3>
+            <h3>Plan vs Actual Production</h3>
             <div className="tbl-wrap">
               <table>
                 <thead>
@@ -932,25 +934,37 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                     <th>Line</th>
                     <th>SKU Code</th>
                     <th>Product</th>
-                    <th className="right">Pack Size (g)</th>
-                    <th className="right">Total Units</th>
+                    <th className="right">Pack (g)</th>
+                    <th className="right">Plan (units)</th>
+                    <th className="right">Actual (units)</th>
+                    <th className="right">Gap</th>
                     <th className="right">Tons</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {skuTotals.map((s,i) => (
+                  {skuTotals.map((s,i) => {
+                    const gapColor = s.gap < 0 ? '#dc2626' : s.gap > 0 ? '#059669' : '#64748b';
+                    const gapLabel = s.gap === 0 ? '—' : (s.gap > 0 ? '+' : '') + s.gap.toLocaleString();
+                    return (
                     <tr key={i}>
                       <td><span className={`cal-line-tag ${LINE_CLS[s.line]}`} style={{fontWeight:700,display:'inline-block'}}>{LINE_LABELS[s.line]}</span></td>
                       <td className="mono" style={{fontSize:11}}>{s.code}</td>
                       <td style={{fontSize:12}}>{s.name}</td>
                       <td className="right">{s.packSize}</td>
+                      <td className="right">{s.planQty > 0 ? s.planQty.toLocaleString() : <span style={{color:'#94a3b8'}}>—</span>}</td>
                       <td className="right" style={{fontWeight:700}}>{s.units.toLocaleString()}</td>
-                      <td className="right" style={{fontWeight:700}}>{s.tons.toFixed(3)}</td>
+                      <td className="right" style={{fontWeight:700,color:gapColor}}>{gapLabel}</td>
+                      <td className="right">{s.tons.toFixed(3)}</td>
                     </tr>
-                  ))}
+                    );
+                  })}
                   <tr style={{background:'#ecfdf5',fontWeight:700,borderTop:'2px solid #6ee7b7'}}>
                     <td colSpan={4} style={{fontWeight:700,color:'#065f46'}}>TOTAL</td>
+                    <td className="right">{skuTotals.reduce((a,s)=>a+s.planQty,0).toLocaleString()}</td>
                     <td className="right">{totalUnits.toLocaleString()}</td>
+                    <td className="right" style={{color: totalUnits >= skuTotals.reduce((a,s)=>a+s.planQty,0) ? '#059669':'#dc2626'}}>
+                      {(()=>{const g=totalUnits-skuTotals.reduce((a,s)=>a+s.planQty,0); return g===0?'—':(g>0?'+':'')+g.toLocaleString();})()}
+                    </td>
                     <td className="right">{totalTons.toFixed(3)} T</td>
                   </tr>
                 </tbody>
