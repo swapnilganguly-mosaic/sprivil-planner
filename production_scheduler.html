@@ -232,6 +232,43 @@ const flvPill = f => <span className="flavour-pill" style={{background:FLAVOUR_C
 
 // ─── ENGINE ──────────────────────────────────────────────────────────────────
 // scenario: 'A' = Revenue Max | 'B' = Min Changeover
+// ── Module-level helpers (used by runEngine AND QueueTab) ────────────────────
+function makeGroup(key, sk) {
+  const tRev = sk.reduce((s,r)=>s+r.rev,0);
+  const tHrs = sk.reduce((s,r)=>s+r.hrs,0);
+  return { flavour: key, skus: [...sk].sort((a,b)=>b.rev-a.rev), tRev, tHrs, rph: tHrs>0?tRev/tHrs:0 };
+}
+
+function buildGroups(rows, line, sc) {
+  if (!rows.length) return [];
+  if (line === 'L1') return [makeGroup('all', [...rows].sort((a,b)=>b.rev-a.rev))];
+  if (sc === 'B') {
+    const flMap = {};
+    for (const r of rows) { (flMap[r.flavour] = flMap[r.flavour] || []).push(r); }
+    const flGroups = Object.entries(flMap).map(([fl, flSkus]) => {
+      const ptMap = {};
+      for (const r of flSkus) { (ptMap[r.pack_type] = ptMap[r.pack_type] || []).push(r); }
+      const subGroups = Object.entries(ptMap).map(([pt, sk]) => {
+        const tRev = sk.reduce((s,r)=>s+r.rev,0);
+        const tHrs = sk.reduce((s,r)=>s+r.hrs,0);
+        return { flavour: fl, pack_type: pt, skus: [...sk].sort((a,b)=>b.rev-a.rev), tRev, tHrs, rph: tHrs>0?tRev/tHrs:0 };
+      }).sort((a,b) => b.rph - a.rph);
+      return { flavour: fl, subGroups, flTRev: flSkus.reduce((s,r)=>s+r.rev,0) };
+    }).sort((a,b) => b.flTRev - a.flTRev);
+    const groups = [];
+    for (const fg of flGroups) for (const sg of fg.subGroups)
+      groups.push({ flavour: sg.flavour, pack_type: sg.pack_type, skus: sg.skus, tRev: sg.tRev, tHrs: sg.tHrs, rph: sg.rph });
+    return groups;
+  } else {
+    if (line === 'L2') {
+      const gMap = {};
+      for (const r of rows) { (gMap[r.pack_type] = gMap[r.pack_type] || []).push(r); }
+      return Object.entries(gMap).map(([pt, sk]) => makeGroup(pt, sk)).sort((a,b) => b.rph - a.rph);
+    }
+    return [makeGroup('all', rows)];
+  }
+}
+
 function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockData={}) {
   const { shiftHours, changeoverSame, changeoverDiff, rateBasis } = config;
 
@@ -257,43 +294,6 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
 
   // For backward compat (QueueTab uses planRows)
   const planRows = [];
-
-  function makeGroup(key, sk) {
-    const tRev = sk.reduce((s,r)=>s+r.rev,0);
-    const tHrs = sk.reduce((s,r)=>s+r.hrs,0);
-    return { flavour: key, skus: [...sk].sort((a,b)=>b.rev-a.rev), tRev, tHrs, rph: tHrs>0?tRev/tHrs:0 };
-  }
-
-  function buildGroups(rows, line, sc) {
-    if (!rows.length) return [];
-    // L1 (Jars): always sort by absolute revenue descending — no grouping
-    if (line === 'L1') return [makeGroup('all', [...rows].sort((a,b)=>b.rev-a.rev))];
-    if (sc === 'B') {
-      const flMap = {};
-      for (const r of rows) { (flMap[r.flavour] = flMap[r.flavour] || []).push(r); }
-      const flGroups = Object.entries(flMap).map(([fl, flSkus]) => {
-        const ptMap = {};
-        for (const r of flSkus) { (ptMap[r.pack_type] = ptMap[r.pack_type] || []).push(r); }
-        const subGroups = Object.entries(ptMap).map(([pt, sk]) => {
-          const tRev = sk.reduce((s,r)=>s+r.rev,0);
-          const tHrs = sk.reduce((s,r)=>s+r.hrs,0);
-          return { flavour: fl, pack_type: pt, skus: [...sk].sort((a,b)=>b.rev-a.rev), tRev, tHrs, rph: tHrs>0?tRev/tHrs:0 };
-        }).sort((a,b) => b.rph - a.rph);
-        return { flavour: fl, subGroups, flTRev: flSkus.reduce((s,r)=>s+r.rev,0) };
-      }).sort((a,b) => b.flTRev - a.flTRev);
-      const groups = [];
-      for (const fg of flGroups) for (const sg of fg.subGroups)
-        groups.push({ flavour: sg.flavour, pack_type: sg.pack_type, skus: sg.skus, tRev: sg.tRev, tHrs: sg.tHrs, rph: sg.rph });
-      return groups;
-    } else {
-      if (line === 'L2') {
-        const gMap = {};
-        for (const r of rows) { (gMap[r.pack_type] = gMap[r.pack_type] || []).push(r); }
-        return Object.entries(gMap).map(([pt, sk]) => makeGroup(pt, sk)).sort((a,b) => b.rph - a.rph);
-      }
-      return [makeGroup('all', rows)];
-    }
-  }
 
   const results = {};
   for (const line of ALL_LINES) {
