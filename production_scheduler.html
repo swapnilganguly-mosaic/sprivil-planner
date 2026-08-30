@@ -306,11 +306,12 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
     let remaining = budget;
 
     // Helper: make a pass row with correct qty/rev/hrs for this pass
-    const makePassRow = (s, qty, phase) => {
+    const makePassRow = (s, qty, phase, closing) => {
       const hrs = s.rph > 0 ? qty / s.rph : 0;
       const rev = qty * s.asp;
+      const cl = closing !== undefined ? closing : s.closingNoProd;
       return { ...s, qty, hrs, rev, rph_rev: hrs>0?rev/hrs:0, phase,
-               plan: s.demand, targetStock: s.targetStock, closingStock: s.closingNoProd };
+               plan: s.demand, targetStock: s.targetStock, closingStock: cl };
     };
 
     // Helper: insert one run into seq with changeover, returns false if no budget for C/O
@@ -388,7 +389,7 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
     // ── PASS 2: 30-day floor (budget-capped) ─────────────────────────────────
     const p2Rows = lineSkus
       .filter(s => s.drr > 0 && closingAfterP1[s.code] < s.floor30 && s.closingNoProd < s.targetStock)
-      .map(s => makePassRow(s, Math.max(0, s.floor30 - closingAfterP1[s.code]), 'P2'));
+      .map(s => makePassRow(s, Math.max(0, s.floor30 - closingAfterP1[s.code]), 'P2', closingAfterP1[s.code]));
 
     if (p2Rows.length) runPass(p2Rows, '🟡 Pass 2 — 30-Day Cover (Best Effort)');
 
@@ -403,7 +404,7 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
     // ── PASS 3: Target DOI top-up beyond 30 days (budget-capped) ─────────────
     const p3Rows = lineSkus
       .filter(s => s.tDoi > 30 && s.drr > 0 && closingAfterP2[s.code] < s.targetStock && s.closingNoProd < s.targetStock)
-      .map(s => makePassRow(s, Math.max(0, s.targetStock - closingAfterP2[s.code]), 'P3'));
+      .map(s => makePassRow(s, Math.max(0, s.targetStock - closingAfterP2[s.code]), 'P3', closingAfterP2[s.code]));
 
     if (p3Rows.length) runPass(p3Rows, '🔵 Pass 3 — Target DOI Top-up (Best Effort)');
 
@@ -1121,14 +1122,21 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                         <td style={{fontSize:11,color:'#374151',whiteSpace:'nowrap'}}>
                           {isRun && qtyMath && (
                             <span>
-                              {qtyMath.phase==='P1'
-                                ? <>🔴 Deficit: Plan <b>{fmt(qtyMath.planQty)}</b> − FG <b>{fmt(qtyMath.fg)}</b> = <b style={{color:'#dc2626'}}>{fmt(Math.max(0, qtyMath.planQty - qtyMath.fg))}</b> units</>
-                                : qtyMath.phase==='P2'
-                                ? <>🟡 30-day Cover: Floor <b>{fmt(Math.round(30*(qtyMath.drr||0)))}</b> − Closing <b>{fmt(qtyMath.closingStock)}</b> = <b style={{color:'#f59e0b'}}>{fmt(Math.max(0, Math.round(30*(qtyMath.drr||0)) - qtyMath.closingStock))}</b> units · FG {fmt(qtyMath.fg)} · DRR {(qtyMath.drr||0).toFixed(1)}</>
-                                : qtyMath.phase==='P3'
-                                ? <>🔵 DOI Top-up: Target <b>{fmt(qtyMath.targetStock)}</b> − Closing <b>{fmt(qtyMath.closingStock)}</b> = <b style={{color:'#2563eb'}}>{fmt(Math.max(0, qtyMath.targetStock - qtyMath.closingStock))}</b> units · FG {fmt(qtyMath.fg)} · DRR {(qtyMath.drr||0).toFixed(1)}</>
-                                : <>Cover: Target <b>{fmt(qtyMath.targetStock)}</b> − Closing <b>{fmt(qtyMath.closingStock)}</b> = <b style={{color:'#059669'}}>{fmt(Math.max(0, qtyMath.targetStock - qtyMath.closingStock))}</b> units</>
-                              }
+                              {(() => {
+                                const deficit = Math.max(0, qtyMath.planQty - qtyMath.fg);
+                                const floor30 = Math.round(30*(qtyMath.drr||0));
+                                const p2need  = Math.max(0, floor30 - qtyMath.closingStock);
+                                const p3need  = Math.max(0, qtyMath.targetStock - qtyMath.closingStock);
+                                const actual  = qtyMath.units;
+                                const capped  = item.capped;
+                                if (qtyMath.phase==='P1')
+                                  return <>🔴 Deficit: Plan <b>{fmt(qtyMath.planQty)}</b> − FG <b>{fmt(qtyMath.fg)}</b> = <b style={{color:'#dc2626'}}>{fmt(deficit)}</b> units</>;
+                                if (qtyMath.phase==='P2')
+                                  return <>🟡 30-day need: <b>{fmt(p2need)}</b>{capped ? <> · ✂ made <b style={{color:'#f59e0b'}}>{fmt(actual)}</b> (budget cap)</> : <> · DRR {(qtyMath.drr||0).toFixed(1)}</>}</>;
+                                if (qtyMath.phase==='P3')
+                                  return <>🔵 DOI top-up need: <b>{fmt(p3need)}</b>{capped ? <> · ✂ made <b style={{color:'#2563eb'}}>{fmt(actual)}</b> (budget cap)</> : <> · DRR {(qtyMath.drr||0).toFixed(1)}</>}</>;
+                                return <>Cover: Target <b>{fmt(qtyMath.targetStock)}</b> − Closing <b>{fmt(qtyMath.closingStock)}</b> = <b style={{color:'#059669'}}>{fmt(Math.max(0, qtyMath.targetStock - qtyMath.closingStock))}</b> units</>;
+                              })()}
                             </span>
                           )}
                         </td>
