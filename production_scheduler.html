@@ -1135,8 +1135,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                       const targetStock  = Math.round(tDoi * drr);
                       const closingStock = Math.max(0, fg - planQty);
                       const need         = Math.max(0, targetStock - closingStock);
-                      const seqItem = r.seq && r.seq.find(s=>s.code===item.code);
-                      const units = seqItem ? seqItem.qty : Math.round(item.h * item.rph);
+                      const units = item.qty != null ? item.qty : Math.round(item.h * item.rph);
                       const phase = item.phase || (fg < planQty ? 'P1' : closingStock < targetStock ? 'P2' : '');
                       qtyMath = { fg, drr, planQty, tDoi, targetStock, closingStock, need, units, phase };
                     }
