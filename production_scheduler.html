@@ -1106,7 +1106,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                       const need         = Math.max(0, targetStock - closingStock);
                       const seqItem = r.seq && r.seq.find(s=>s.code===item.code);
                       const units = seqItem ? seqItem.qty : Math.round(item.h * item.rph);
-                      const phase = item.phase || (planQty > fg ? 'T1-deficit' : closingStock < targetStock ? 'T2' : '');
+                      const phase = item.phase || (fg < planQty ? 'P1' : closingStock < targetStock ? 'P2' : '');
                       qtyMath = { fg, drr, planQty, tDoi, targetStock, closingStock, need, units, phase };
                     }
                     return (
@@ -1121,11 +1121,13 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                         <td style={{fontSize:11,color:'#374151',whiteSpace:'nowrap'}}>
                           {isRun && qtyMath && (
                             <span>
-                              {qtyMath.phase==='T1-deficit'
+                              {qtyMath.phase==='P1'
                                 ? <>🔴 Deficit: Plan <b>{fmt(qtyMath.planQty)}</b> − FG <b>{fmt(qtyMath.fg)}</b> = <b style={{color:'#dc2626'}}>{fmt(Math.max(0, qtyMath.planQty - qtyMath.fg))}</b> units</>
-                                : qtyMath.phase==='T1-cover'
-                                ? <>🟡 Cover: Target <b>{fmt(qtyMath.targetStock)}</b> − Plan <b>{fmt(qtyMath.planQty)}</b> = <b style={{color:'#059669'}}>{fmt(Math.max(0, qtyMath.targetStock - qtyMath.planQty))}</b> units</>
-                                : <>🟡 Cover: Target <b>{fmt(qtyMath.targetStock)}</b> − Closing <b>{fmt(qtyMath.closingStock)}</b> = <b style={{color:'#059669'}}>{fmt(Math.max(0, qtyMath.targetStock - qtyMath.closingStock))}</b> units · FG {fmt(qtyMath.fg)} · DRR {qtyMath.drr}</>
+                                : qtyMath.phase==='P2'
+                                ? <>🟡 30-day Cover: Floor <b>{fmt(Math.round(30*(qtyMath.drr||0)))}</b> − Closing <b>{fmt(qtyMath.closingStock)}</b> = <b style={{color:'#f59e0b'}}>{fmt(Math.max(0, Math.round(30*(qtyMath.drr||0)) - qtyMath.closingStock))}</b> units · FG {fmt(qtyMath.fg)} · DRR {(qtyMath.drr||0).toFixed(1)}</>
+                                : qtyMath.phase==='P3'
+                                ? <>🔵 DOI Top-up: Target <b>{fmt(qtyMath.targetStock)}</b> − Closing <b>{fmt(qtyMath.closingStock)}</b> = <b style={{color:'#2563eb'}}>{fmt(Math.max(0, qtyMath.targetStock - qtyMath.closingStock))}</b> units · FG {fmt(qtyMath.fg)} · DRR {(qtyMath.drr||0).toFixed(1)}</>
+                                : <>Cover: Target <b>{fmt(qtyMath.targetStock)}</b> − Closing <b>{fmt(qtyMath.closingStock)}</b> = <b style={{color:'#059669'}}>{fmt(Math.max(0, qtyMath.targetStock - qtyMath.closingStock))}</b> units</>
                               }
                             </span>
                           )}
