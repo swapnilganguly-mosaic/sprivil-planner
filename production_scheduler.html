@@ -235,50 +235,28 @@ const flvPill = f => <span className="flavour-pill" style={{background:FLAVOUR_C
 function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockData={}) {
   const { shiftHours, changeoverSame, changeoverDiff, rateBasis } = config;
 
-  // Enrich with DOI tiering — two-phase logic for Tier 1:
-  //   Phase 1 (mandatory): Plan - FG  → ensures no stockout
-  //   Phase 2 (cover):     Target - Plan → top up to target (best-effort, same priority pool as Tier 2)
-  const phase1Rows = []; // Tier 1 mandatory deficit runs
-  const coverRows  = []; // Tier 1 cover + Tier 2 cover runs (best-effort)
-  const t3list     = []; // Tier 3 — skipped
-  for (const sku of skus) {
-    const plan = Number(supplyPlan[sku.code]) || 0;
-    const line  = getLine(sku.pack_type);
-    const rph   = getRph(sku.pack_type, sku.pack_size, rateBasis);
-    const fg    = Number(stockData[sku.code]?.stock) || 0;
-    const drr   = Number(stockData[sku.code]?.drr)   || 0;
-    const tDoi  = sku.targetDoi || 60;
-    const targetStock  = Math.round(tDoi * drr);
-    const closingStock = Math.max(0, fg - plan);
+  // 3-Pass engine per line:
+  //   Pass 1 (Survival):    FG < Demand → produce deficit, mandatory, line-specific priority
+  //   Pass 2 (30-day floor): closing < 30×DRR → fill to 30-day cover, rev priority, budget-capped
+  //   Pass 3 (Target cover): closing < TargetDOI×DRR (only if TargetDOI > 30) → fill remainder, budget-capped
+  //   Skip:                 closing ≥ TargetDOI×DRR → don't produce
 
-    const makeRow = (qty, phase) => {
-      const hrs = rph > 0 ? qty / rph : 0;
-      const rev = qty * sku.asp;
-      return { ...sku, qty, plan, line, rph, hrs, rev,
-               rph_rev: hrs > 0 ? rev / hrs : 0,
-               fg, drr, targetStock, closingStock, phase };
-    };
+  // Pre-enrich all SKUs
+  const enriched = skus.map(sku => {
+    const demand = Number(supplyPlan[sku.code]) || 0;
+    const fg     = Number(stockData[sku.code]?.stock) || 0;
+    const drr    = Number(stockData[sku.code]?.drr)   || 0;
+    const tDoi   = sku.targetDoi || 60;
+    const rph    = getRph(sku.pack_type, sku.pack_size, rateBasis);
+    const line   = getLine(sku.pack_type);
+    const targetStock = tDoi * drr;
+    const floor30     = 30 * drr;
+    const closingNoProd = Math.max(0, fg - demand); // closing if nothing produced
+    return { ...sku, demand, fg, drr, rph, line, tDoi, targetStock, floor30, closingNoProd };
+  });
 
-    if (fg < plan) {
-      // Tier 1: stockout risk
-      const deficit  = plan - fg;                     // Phase 1 — must make
-      const coverQty = Math.max(0, targetStock - plan); // Phase 2 — cover beyond plan
-      if (deficit > 0)  phase1Rows.push(makeRow(deficit, 'T1-deficit'));
-      if (coverQty > 0) coverRows.push(makeRow(coverQty, 'T1-cover'));
-    } else if (closingStock < targetStock) {
-      // Tier 2: closing < target → cover build
-      const coverQty = Math.max(0, targetStock - closingStock);
-      if (coverQty > 0) coverRows.push(makeRow(coverQty, 'T2'));
-    } else {
-      // Tier 3: already covered — skip
-      t3list.push(sku);
-    }
-  }
-  // For backward compatibility downstream, expose a flat planRows view
-  const planRows = [
-    ...phase1Rows.map(r=>({...r, tier:1})),
-    ...coverRows.map(r=>({...r, tier: r.phase==='T1-cover'?1:2})),
-  ];
+  // For backward compat (QueueTab uses planRows)
+  const planRows = [];
 
   function makeGroup(key, sk) {
     const tRev = sk.reduce((s,r)=>s+r.rev,0);
@@ -319,120 +297,142 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
 
   const results = {};
   for (const line of ALL_LINES) {
-    const lP1   = phase1Rows.filter(r => r.line === line);
-    const lCov  = coverRows.filter(r => r.line === line);
-    const lT3   = t3list.filter(r => getLine(r.pack_type) === line);
-    if (!lP1.length && !lCov.length) { results[line] = null; continue; }
+    const lineSkus = enriched.filter(s => s.line === line);
+    if (!lineSkus.length) { results[line] = null; continue; }
 
-    const groups1 = buildGroups(lP1,  line, scenario); // Phase 1 mandatory
-    const groups2 = buildGroups(lCov, line, scenario); // Phase 2 cover (Tier1 cover + Tier2)
-    const groups  = [...groups1, ...groups2];
-
-    // Build sequence — Phase 1 first, then cover
+    const budget = (workingDays[line] || 0) * shiftHours;
     const seq = [];
     let prevFl = null, prevPt = null, gRank = 0;
-    const buildSeq = (grps, tierLabel) => {
-      if (tierLabel) seq.push({ type:'tier', label: tierLabel });
-      for (const g of grps) {
-        gRank++;
-        for (let i = 0; i < g.skus.length; i++) {
-          const s = g.skus[i];
-          const curFl = g.flavour === 'all' ? s.flavour : g.flavour;
-          const curPt = g.flavour === 'all' ? s.pack_type : (g.pack_type || g.flavour);
-          if (prevFl !== null) {
-            const flavourChange = prevFl !== curFl;
-            const packChange    = !flavourChange && prevPt !== curPt;
-            const coH = flavourChange ? changeoverDiff : changeoverSame;
-            const label = flavourChange ? `Flavour change → ${curFl}`
-              : packChange ? `Pack type change → ${curPt}`
-              : `SKU change (${curFl})`;
-            seq.push({ type:'co', hours:coH, label });
-          }
-          seq.push({ type:'run', ...s, gRank, skuRank:i+1 });
-          prevFl = curFl;
-          prevPt = curPt;
-        }
-      }
+    let remaining = budget;
+
+    // Helper: make a pass row with correct qty/rev/hrs for this pass
+    const makePassRow = (s, qty, phase) => {
+      const hrs = s.rph > 0 ? qty / s.rph : 0;
+      const rev = qty * s.asp;
+      return { ...s, qty, hrs, rev, rph_rev: hrs>0?rev/hrs:0, phase,
+               plan: s.demand, targetStock: s.targetStock, closingStock: s.closingNoProd };
     };
 
-    // Build Phase 1 fully (mandatory — no cap)
-    buildSeq(groups1, lP1.length ? '🔴 Phase 1 — Deficit Coverage (Must Make)' : null);
-
-    // Calculate remaining budget after Phase 1
-    const budget = (workingDays[line] || 0) * shiftHours;
-    const p1RunH = seq.filter(s=>s.type==='run').reduce((s,r)=>s+r.hrs,0);
-    const p1CoH  = seq.filter(s=>s.type==='co').reduce((s,r)=>s+r.hours,0);
-    let remaining = budget - p1RunH - p1CoH;
-
-    // Build Phase 2 — cap each run to remaining hours
-    if (lCov.length && remaining > 0) {
-      seq.push({ type:'tier', label: '🟡 Phase 2 — Cover Build (Best Effort)' });
-      let skippedCover = 0;
-      for (const g of groups2) {
-        gRank++;
-        for (let i = 0; i < g.skus.length; i++) {
-          const s = g.skus[i];
-          const curFl = g.flavour === 'all' ? s.flavour : g.flavour;
-          const curPt = g.flavour === 'all' ? s.pack_type : (g.pack_type || g.flavour);
-
-          // Reserve changeover hours first
-          let coH = 0;
-          if (prevFl !== null) {
-            const flavourChange = prevFl !== curFl;
-            const packChange    = !flavourChange && prevPt !== curPt;
-            coH = flavourChange ? changeoverDiff : changeoverSame;
-            if (remaining <= coH) { skippedCover++; continue; } // not enough for C/O
-            const label = flavourChange ? `Flavour change → ${curFl}`
-              : packChange ? `Pack type change → ${curPt}`
-              : `SKU change (${curFl})`;
-            seq.push({ type:'co', hours:coH, label });
-            remaining -= coH;
-          }
-
-          // Cap run qty to remaining hours
-          const maxQty  = Math.floor(remaining * s.rph);
-          if (maxQty <= 0) { skippedCover++; break; }
-          const capQty  = Math.min(s.qty, maxQty);
-          const capHrs  = capQty / s.rph;
-          const capRev  = capQty * s.asp;
-          const capped  = capQty < s.qty;
-          seq.push({ type:'run', ...s, qty: capQty, hrs: capHrs, rev: capRev,
-                     rph_rev: capHrs > 0 ? capRev / capHrs : 0,
-                     gRank, skuRank: i+1, capped });
-          remaining -= capHrs;
-          prevFl = curFl;
-          prevPt = curPt;
-          if (remaining <= 0) { skippedCover += g.skus.length - i - 1; break; }
-        }
-        if (remaining <= 0) break;
+    // Helper: insert one run into seq with changeover, returns false if no budget for C/O
+    const insertRun = (row, capToRemaining) => {
+      const curFl = row.flavour;
+      const curPt = row.pack_type;
+      let coH = 0;
+      if (prevFl !== null) {
+        const fc = prevFl !== curFl;
+        const pc = !fc && prevPt !== curPt;
+        coH = fc ? changeoverDiff : changeoverSame;
+        if (capToRemaining && remaining <= coH) return false; // can't afford C/O
+        const lbl = fc ? `Flavour change → ${curFl}` : pc ? `Pack type change → ${curPt}` : `SKU change (${curFl})`;
+        seq.push({ type:'co', hours:coH, label:lbl });
+        remaining -= coH;
       }
-      if (skippedCover > 0)
-        seq.push({ type:'tier', label: `⏭ ${skippedCover} cover run(s) skipped — no remaining capacity` });
-    } else if (lCov.length) {
-      seq.push({ type:'tier', label: `⏭ ${lCov.length} cover run(s) skipped — no remaining capacity after Phase 1` });
+      let qty = row.qty;
+      let capped = false;
+      if (capToRemaining) {
+        const maxQty = row.rph > 0 ? Math.floor(remaining * row.rph) : 0;
+        if (maxQty <= 0) { remaining += coH; seq.pop(); return false; } // undo C/O
+        if (qty > maxQty) { qty = maxQty; capped = true; }
+      }
+      const hrs = row.rph > 0 ? qty / row.rph : 0;
+      const rev = qty * row.asp;
+      seq.push({ type:'run', ...row, qty, hrs, rev, rph_rev:hrs>0?rev/hrs:0, gRank, capped });
+      remaining -= hrs;
+      prevFl = curFl; prevPt = curPt;
+      planRows.push({ ...row, qty, hrs, rev, line, tier: row.phase==='P1'?1:2 });
+      return true;
+    };
+
+    // Helper: run a capped pass over a set of rows
+    const runPass = (passRows, label) => {
+      if (!passRows.length) return;
+      const groups = buildGroups(passRows, line, scenario);
+      let skipped = 0;
+      seq.push({ type:'tier', label });
+      for (const g of groups) {
+        gRank++;
+        for (const s of g.skus) {
+          if (remaining <= 0) { skipped++; continue; }
+          const ok = insertRun(s, true);
+          if (!ok) skipped++;
+        }
+      }
+      if (skipped > 0)
+        seq.push({ type:'tier', label: `⏭ ${skipped} SKU(s) skipped — no remaining capacity` });
+    };
+
+    // ── PASS 1: Survival (mandatory, no budget cap) ──────────────────────────
+    const p1Rows = lineSkus
+      .filter(s => s.fg < s.demand)
+      .map(s => makePassRow(s, s.demand - s.fg, 'P1'));
+
+    if (p1Rows.length) {
+      seq.push({ type:'tier', label: '🔴 Pass 1 — Survival (Must Make)' });
+      const groups1 = buildGroups(p1Rows, line, scenario);
+      for (const g of groups1) {
+        gRank++;
+        for (const s of g.skus) insertRun(s, false); // false = no cap
+      }
     }
 
-    if (lT3.length) seq.push({ type:'tier', label: `⏭ ${lT3.length} SKU(s) not produced — closing stock ≥ target stock` });
+    // Closing stock per SKU after Pass 1
+    const p1ActualByCode = {};
+    seq.filter(r=>r.type==='run'&&r.phase==='P1').forEach(r=>{ p1ActualByCode[r.code]=(p1ActualByCode[r.code]||0)+r.qty; });
+    const closingAfterP1 = {};
+    lineSkus.forEach(s => {
+      closingAfterP1[s.code] = s.fg < s.demand
+        ? 0  // after survival, closing = 0 (FG + deficit - demand = 0)
+        : s.closingNoProd;
+    });
+
+    // ── PASS 2: 30-day floor (budget-capped) ─────────────────────────────────
+    const p2Rows = lineSkus
+      .filter(s => s.drr > 0 && closingAfterP1[s.code] < s.floor30 && s.closingNoProd < s.targetStock)
+      .map(s => makePassRow(s, Math.max(0, s.floor30 - closingAfterP1[s.code]), 'P2'));
+
+    if (p2Rows.length) runPass(p2Rows, '🟡 Pass 2 — 30-Day Cover (Best Effort)');
+
+    // Closing after Pass 2
+    const p2ActualByCode = {};
+    seq.filter(r=>r.type==='run'&&r.phase==='P2').forEach(r=>{ p2ActualByCode[r.code]=(p2ActualByCode[r.code]||0)+r.qty; });
+    const closingAfterP2 = {};
+    lineSkus.forEach(s => {
+      closingAfterP2[s.code] = closingAfterP1[s.code] + (p2ActualByCode[s.code]||0);
+    });
+
+    // ── PASS 3: Target DOI top-up beyond 30 days (budget-capped) ─────────────
+    const p3Rows = lineSkus
+      .filter(s => s.tDoi > 30 && s.drr > 0 && closingAfterP2[s.code] < s.targetStock && s.closingNoProd < s.targetStock)
+      .map(s => makePassRow(s, Math.max(0, s.targetStock - closingAfterP2[s.code]), 'P3'));
+
+    if (p3Rows.length) runPass(p3Rows, '🔵 Pass 3 — Target DOI Top-up (Best Effort)');
+
+    // Skip notice
+    const skipped = lineSkus.filter(s => s.closingNoProd >= s.targetStock);
+    if (skipped.length) seq.push({ type:'tier', label:`⏭ ${skipped.length} SKU(s) not produced — closing stock ≥ target stock` });
 
     const runH  = seq.filter(s=>s.type==='run').reduce((s,r)=>s+r.hrs,0);
     const coH   = seq.filter(s=>s.type==='co').reduce((s,r)=>s+r.hours,0);
     const total = runH + coH;
 
+    // All runs for this line (for QueueTab groups)
+    const allLineRuns = seq.filter(r=>r.type==='run');
+    const groups = buildGroups(allLineRuns, line, scenario);
+
     // Day schedule
     let acc = 0;
     const daySeq = seq.map(item => {
       if (item.type === 'tier') return { ...item, startDay: acc/shiftHours+1, endDay: acc/shiftHours+1, h: 0 };
-      const h  = item.type === 'run' ? item.hrs : item.hours;
+      const h = item.type === 'run' ? item.hrs : item.hours;
       const sd = acc / shiftHours + 1;
       acc += h;
-      const ed = acc / shiftHours + 1;
-      return { ...item, startDay: sd, endDay: ed, h };
+      return { ...item, startDay: sd, endDay: acc/shiftHours+1, h };
     });
 
-    const allRows = planRows.filter(r=>r.line===line);
-    results[line] = { groups, seq, daySeq, budget, runH, coH, total, over: total > budget,
+    const allRows = seq.filter(r=>r.type==='run');
+    results[line] = { groups, seq: allLineRuns, daySeq, budget, runH, coH, total, over: total>budget,
                       skuCount: allRows.length,
-                      t1Count: lP1.length, t2Count: lCov.length, t3Count: lT3.length };
+                      t1Count: p1Rows.length, t2Count: p2Rows.length, t3Count: p3Rows.length };
   }
   return results;
 }
