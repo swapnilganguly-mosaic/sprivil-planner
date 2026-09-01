@@ -624,7 +624,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               <th>Line</th>
               <th>Cls</th>
               <th className="right">Rate (u/hr)</th>
-              <th className="right">Production Plan (units)</th>
+              <th className="right">Demand Plan (units)</th>
               <th className="right">Est. Hours</th>
               <th className="right">FG Stock</th>
               <th className="right">Current DRR</th>
@@ -904,8 +904,13 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
         const skuDef = (skus||[]).find(s=>s.code===v.code);
         v.packSize = skuDef ? (skuDef.pack_size||0) : 0;
         v.tons = v.packSize * v.units / 1e6;
-        v.planQty = Number((plan||{})[v.code]) || 0;
-        v.gap = v.units - v.planQty; // positive = over-scheduled, negative = under
+        v.planQty  = Number((plan||{})[v.code]) || 0;
+        v.fg       = Number((stockData||{})[v.code]?.stock) || 0;
+        v.drrNext  = Number((stockData||{})[v.code]?.drr_next) || 0;
+        v.closing  = v.units + v.fg - v.planQty;
+        v.closingDoi = v.drrNext > 0 ? v.closing / v.drrNext : null;
+        v.tDoi     = skuDef ? (skuDef.targetDoi || 60) : 60;
+        v.gap = v.units - v.planQty;
         skuTotals.push(v);
       });
     });
@@ -952,10 +957,12 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                     <th>SKU Code</th>
                     <th>Product</th>
                     <th className="right">Pack (g)</th>
-                    <th className="right">Plan (units)</th>
+                    <th className="right">Demand Plan</th>
                     <th className="right">Actual (units)</th>
                     <th className="right">Gap</th>
                     <th className="right">Tons</th>
+                    <th className="right">Closing Stock</th>
+                    <th className="right">Closing DOI</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -972,6 +979,14 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                       <td className="right" style={{fontWeight:700}}>{s.units.toLocaleString()}</td>
                       <td className="right" style={{fontWeight:700,color:gapColor}}>{gapLabel}</td>
                       <td className="right">{s.tons.toFixed(3)}</td>
+                      <td className="right" style={{fontWeight:600}}>{s.closing.toLocaleString()}</td>
+                      <td className="right">
+                        {s.closingDoi != null ? (
+                          <span style={{fontWeight:700, color: s.closingDoi < 30 ? '#dc2626' : s.closingDoi < s.tDoi ? '#d97706' : '#059669'}}>
+                            {s.closingDoi.toFixed(1)}d
+                          </span>
+                        ) : '—'}
+                      </td>
                     </tr>
                     );
                   })}
@@ -983,6 +998,8 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                       {(()=>{const g=totalUnits-skuTotals.reduce((a,s)=>a+s.planQty,0); return g===0?'—':(g>0?'+':'')+g.toLocaleString();})()}
                     </td>
                     <td className="right">{totalTons.toFixed(3)} T</td>
+                    <td className="right" style={{fontWeight:700}}>{skuTotals.reduce((a,s)=>a+s.closing,0).toLocaleString()}</td>
+                    <td className="right">—</td>
                   </tr>
                 </tbody>
               </table>
