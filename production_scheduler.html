@@ -282,14 +282,15 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
   const enriched = skus.map(sku => {
     const demand = Number(supplyPlan[sku.code]) || 0;
     const fg     = Number(stockData[sku.code]?.stock) || 0;
-    const drr    = Number(stockData[sku.code]?.drr)   || 0;
+    const drr      = Number(stockData[sku.code]?.drr)      || 0;
+    const drr_next = Number(stockData[sku.code]?.drr_next) || drr;
     const tDoi   = sku.targetDoi || 60;
     const rph    = getRph(sku.pack_type, sku.pack_size, rateBasis);
     const line   = getLine(sku.pack_type);
-    const targetStock = tDoi * drr;
-    const floor30     = 30 * drr;
+    const targetStock = tDoi * drr_next;
+    const floor30     = 30 * drr_next;
     const closingNoProd = Math.max(0, fg - demand); // closing if nothing produced
-    return { ...sku, demand, fg, drr, rph, line, tDoi, targetStock, floor30, closingNoProd };
+    return { ...sku, demand, fg, drr, drr_next, rph, line, tDoi, targetStock, floor30, closingNoProd };
   });
 
   // For backward compat (QueueTab uses planRows)
@@ -490,6 +491,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
   const planRef  = useRef();
   const stockRef = useRef();
   const drrRef   = useRef();
+  const drrNextRef = useRef();
   const [colPicker, setColPicker] = React.useState(null); // { rows, skuCol, numCols, field }
 
   function parseFile(file, field) {
@@ -541,7 +543,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
       setStockData(newStock);
     }
     setColPicker(null);
-    const label = field === 'plan' ? 'Production Plan' : field === 'stock' ? 'FG Stock' : 'DRR';
+    const label = field === 'plan' ? 'Production Plan' : field === 'stock' ? 'FG Stock' : field === 'drr' ? 'Current DRR' : 'DRR Next';
     alert(`Imported ${matched} SKUs into ${label} from "${valCol}".`);
   }
 
@@ -570,8 +572,10 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
         <input ref={planRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'plan');e.target.value='';}}/>
         <button className="btn btn-secondary" onClick={()=>stockRef.current.click()}>⬆ FG Stock</button>
         <input ref={stockRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'stock');e.target.value='';}}/>
-        <button className="btn btn-secondary" onClick={()=>drrRef.current.click()}>⬆ DRR</button>
+        <button className="btn btn-secondary" onClick={()=>drrRef.current.click()}>⬆ Current DRR</button>
         <input ref={drrRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'drr');e.target.value='';}}/>
+        <button className="btn btn-secondary" onClick={()=>drrNextRef.current.click()}>⬆ DRR Next</button>
+        <input ref={drrNextRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'drr_next');e.target.value='';}}/>
 
         {hasAny && <button className="btn btn-secondary btn-sm" onClick={clearPlan}>✕ Clear</button>}
         <span className="spacer"/>
@@ -623,7 +627,8 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               <th className="right">Production Plan (units)</th>
               <th className="right">Est. Hours</th>
               <th className="right">FG Stock</th>
-              <th className="right">DRR</th>
+              <th className="right">Current DRR</th>
+              <th className="right">DRR Next</th>
               <th className="right">Current DOI</th>
               <th className="right">Target Stock</th>
             </tr>
@@ -632,7 +637,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
             {ALL_LINES.map(line => {
               const lineSkus = byLine[line] || [];
               return [
-                <tr key={`hdr-${line}`}><td colSpan={12} className="grp-row">{LINE_LABELS[line]}</td></tr>,
+                <tr key={`hdr-${line}`}><td colSpan={13} className="grp-row">{LINE_LABELS[line]}</td></tr>,
                 ...lineSkus.map(sku => {
                   const qty      = Number(plan[sku.code]) || 0;
                   const rph      = getRph(sku.pack_type, sku.pack_size, DEFAULT_CONFIG.rateBasis);
@@ -670,6 +675,10 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
                       <td className="right">
                         <input type="number" min="0" className="num-input" value={stockData[sku.code]?.drr||''}
                           onChange={e=>setStockData(d=>({...d,[sku.code]:{...d[sku.code],drr:e.target.value}}))} placeholder="—"/>
+                      </td>
+                      <td className="right">
+                        <input type="number" min="0" className="num-input" value={stockData[sku.code]?.drr_next||''}
+                          onChange={e=>setStockData(d=>({...d,[sku.code]:{...d[sku.code],drr_next:e.target.value}}))} placeholder="—"/>
                       </td>
                       <td className="right">{doi!=null?<span style={{color:doi<30?'#dc2626':doi<45?'#d97706':'#059669',fontWeight:600}}>{fmt(doi,0)}d</span>:'—'}</td>
                       <td className="right">{suggested!=null?<span style={{color:'#6366f1',fontWeight:600}}>{fmt(suggested,0)}</span>:'—'}</td>
