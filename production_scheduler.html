@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Production Scheduler — Sapiens</title>
+  <title>Production Scheduler — Mosaic Wellness</title>
   <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
@@ -221,6 +221,55 @@ const DEFAULT_SKUS = [
 
 const DEFAULT_CONFIG  = { shiftHours:12, changeoverSame:0.25, changeoverDiff:0.75, rateBasis:24 };
 const DEFAULT_WD      = { L1:24, L2:24, Sampler:24 };
+const NG_ALL_LINES   = ['Q1','Q2','Q3'];
+const NG_LINE_LABELS = { Q1:'Q1 — Roll On', Q2:'Q2 — Bodywash / Other', Q3:'Q3 — Scrub (Tube Line)' };
+const NG_DEFAULT_WD  = { Q1:26, Q2:26, Q3:26 };
+const NG_DEFAULT_CONFIG = { shiftHours:16, changeoverFlat:2, rateBasis:16 };
+
+const NG_ELECTRO_SKUS = [
+  { code:'MWBWSKP.00418.B0_N', name:'BW 4% AHA BHA Roll On Flora 50ml',       pack_type:'Roll On',       cls:'A', asp:208.125, targetDoi:60, line:'Q1', rph:2812.5 },
+  { code:'MWBWSKP.00684.B0_N', name:'BW 6% AHA BHA Roll On Flora 50ml',       pack_type:'Roll On',       cls:'A', asp:258.907, targetDoi:60, line:'Q1', rph:2812.5 },
+  { code:'MWBWSKP.00589.B0_N', name:'BB 4% AHA BHA Roll On Flora 75ml',       pack_type:'Roll On',       cls:'A', asp:246.002, targetDoi:60, line:'Q1', rph:2812.5 },
+  { code:'MWBWSKP.00681.B0_N', name:'BW 4% AHA BHA Roll On Aqua 50ml',        pack_type:'Roll On',       cls:'A', asp:201.381, targetDoi:60, line:'Q1', rph:2812.5 },
+  { code:'MWBWSKP.00525.B0_N', name:'BB AHA BHA Roll On Watermelon 50ml',     pack_type:'Roll On',       cls:'A', asp:204.586, targetDoi:60, line:'Q1', rph:2812.5 },
+  { code:'MWBWSKP.00787.B0_N', name:'BB 6% AHA BHA Roll On 75ml',             pack_type:'Roll On',       cls:'A', asp:395.551, targetDoi:60, line:'Q1', rph:2812.5 },
+  { code:'MWBWSKP.00526.B0_N', name:'BB 4% AHA BHA Roll On FF 50ml',          pack_type:'Roll On',       cls:'A', asp:227.490, targetDoi:60, line:'Q1', rph:2812.5 },
+  { code:'MWBWSKP.00703.B0_N', name:'BB 5% AHA BHA Body Wash 250ml',          pack_type:'Bodywash',      cls:'A', asp:250.586, targetDoi:60, line:'Q2', rph:1250.0 },
+  { code:'MWBWSKP.00328.B0_N', name:'BW 5% Niacinamide Body Wash 250ml',      pack_type:'Bodywash',      cls:'A', asp:196.435, targetDoi:60, line:'Q2', rph:1250.0 },
+  { code:'MWBWBCP.00167.B0_N', name:'BB 5% AHA BHA Body Wash 700ml',          pack_type:'Bodywash 700ml',cls:'A', asp:481.827, targetDoi:60, line:'Q2', rph:750.0  },
+  { code:'MWBWSKP.00788.B0_N', name:'BB 6% AHA BHA Roll On Aqua 50ml',        pack_type:'Roll On',       cls:'B', asp:242.210, targetDoi:45, line:'Q1', rph:2812.5 },
+  { code:'MWBWSKP.00646.B0_N', name:'BB 4% AHA BHA Roll On FF 75ml',          pack_type:'Roll On',       cls:'B', asp:282.392, targetDoi:45, line:'Q1', rph:2812.5 },
+  { code:'MWBWSKK.00801.B0_N', name:'De-Tan SPF50+ Body Sunscreen 175g',      pack_type:'Lotion',        cls:'B', asp:349.680, targetDoi:45, line:'Q1', rph:1250.0 },
+  { code:'MWBWSKP.00428.B0_N', name:'BB 10% AHA Scrub 200g',                  pack_type:'Scrub',         cls:'B', asp:197.474, targetDoi:45, line:'Q3', rph:1250.0 },
+  { code:'MWBWSKP.00697.B0_N', name:'BB 12% AHA Body Scrub 300g',             pack_type:'Scrub',         cls:'B', asp:268.067, targetDoi:45, line:'Q1', rph:375.0  },
+  { code:'MWBWBCP.00168.B0_N', name:'BB 1% Salicylic Ceramide Body Wash',     pack_type:'Bodywash',      cls:'B', asp:367.776, targetDoi:45, line:'Q2', rph:312.5  },
+  { code:'MWMMHRP.0001.AAAA.B0_N', name:'MM DHT Blocking Shampoo 200ml',      pack_type:'Shampoo',       cls:'B', asp:273.873, targetDoi:45, line:'Q2', rph:1250.0 },
+  { code:'MWMMHRP.0014.AAAA.B0_N', name:'MM DHT Blocking Shampoo 300ml',      pack_type:'Shampoo',       cls:'B', asp:368.570, targetDoi:45, line:'Q2', rph:1250.0 },
+  { code:'MWMMHRP.7121.B0_R',  name:'MM Advance Daily Antidandruff Shampoo',  pack_type:'Shampoo',       cls:'B', asp:384.648, targetDoi:45, line:'Q2', rph:1250.0 },
+  { code:'MWBWSKP.00779.B0_N', name:'BB 4% AHA BHA Roll On Flora 50ml v2',    pack_type:'Roll On',       cls:'C', asp:208.130, targetDoi:30, line:'Q1', rph:2812.5 },
+  { code:'MWBWSKP.00680.B0_N', name:'BW 4% AHA BHA Roll On Honey Oud 50ml',  pack_type:'Roll On',       cls:'C', asp:214.042, targetDoi:30, line:'Q1', rph:2812.5 },
+  { code:'MWBBSKP.00806.BO_N', name:'BW 6% AHA BHA Roll On Oud 50ml',        pack_type:'Roll On',       cls:'C', asp:321.980, targetDoi:30, line:'Q1', rph:2812.5 },
+  { code:'MWBBSKP.00826.BO_N', name:'BW 6% AHA BHA Roll On Flora 30ml',      pack_type:'Roll On',       cls:'C', asp:155.350, targetDoi:30, line:'Q1', rph:2812.5 },
+  { code:'MWBBSKP.00807.BO_N', name:'BW 6% AHA BHA Roll On Water 50ml',      pack_type:'Roll On',       cls:'C', asp:313.771, targetDoi:30, line:'Q1', rph:2812.5 },
+  { code:'MWBBSKP.00808.BO_N', name:'BW 6% AHA BHA Roll On Frag 50ml',       pack_type:'Roll On',       cls:'C', asp:330.178, targetDoi:30, line:'Q1', rph:2812.5 },
+  { code:'MWBBSKP.00812.BO_N', name:'BB 6% AHA BHA Roll On Aqua 75ml',       pack_type:'Roll On',       cls:'C', asp:428.085, targetDoi:30, line:'Q1', rph:2812.5 },
+  { code:'MWBWBCP.00188.BO_N', name:'BB 30% Urea Foot Roll-On 75ml',         pack_type:'Roll On',       cls:'C', asp:483.702, targetDoi:30, line:'Q1', rph:2812.5 },
+  { code:'MWBWHFP.0018.B0_N',  name:'BB Keratin Shampoo 250ml',               pack_type:'Shampoo',       cls:'C', asp:308.989, targetDoi:30, line:'Q1', rph:1250.0 },
+  { code:'MWBWHFP.0019.B0_N',  name:'BB Deep Moisturizing Conditioner 200ml', pack_type:'Conditioner',   cls:'C', asp:248.214, targetDoi:30, line:'Q1', rph:1250.0 },
+  { code:'MWBWBCP.00170.B0_N', name:'BB Triple Milk Deep Hydrating Lotion',   pack_type:'Lotion',        cls:'C', asp:313.488, targetDoi:30, line:'Q1', rph:1250.0 },
+  { code:'MWBWSKP.00676.B0_N', name:'BW 10% AHA Scrub 300g',                 pack_type:'Scrub',         cls:'C', asp:280.978, targetDoi:30, line:'Q1', rph:375.0  },
+  { code:'MWBWSKP.00651.B0_N', name:'BB 7% Glycolic Acid Body Stick 30g',    pack_type:'Stick',         cls:'C', asp:265.992, targetDoi:30, line:'Q1', rph:250.0  },
+  { code:'MWBWSKK.00822.BO_N', name:'BW 5% AHA BHA Body Wash Flora 250ml',   pack_type:'Bodywash',      cls:'C', asp:250.590, targetDoi:30, line:'Q2', rph:1250.0 },
+  { code:'MWBWHFP.00626.B0_N', name:'BB 5% Niacinamide Body Wash 700ml',     pack_type:'Bodywash 700ml',cls:'C', asp:506.601, targetDoi:30, line:'Q2', rph:750.0  },
+  { code:'MWBBBCP.00204.BO_N', name:'BW 5% AHA BHA Body Wash 1L',            pack_type:'Bodywash',      cls:'C', asp:604.300, targetDoi:30, line:'Q2', rph:500.0  },
+  { code:'MWBWSKK.00821.BO_N', name:'BW 5% AHA BHA Body Wash Flora 700ml',   pack_type:'Bodywash 700ml',cls:'C', asp:481.830, targetDoi:30, line:'Q2', rph:750.0  },
+  { code:'MWBWSKP.00401.B0_N', name:'BB 2% AHA Body Wash 250ml',             pack_type:'Bodywash',      cls:'C', asp:165.096, targetDoi:30, line:'Q2', rph:1250.0 },
+  { code:'MWBWSKP.00672.B0_N', name:'BB Ultra Light Sunscreen SPF50+ 50ml',  pack_type:'Lotion',        cls:'C', asp:305.387, targetDoi:30, line:'Q2', rph:1250.0 },
+  { code:'MWBWSKP.00584.B0_N', name:'BB Sunscreen Spray 100ml',              pack_type:'Spray',         cls:'C', asp:241.385, targetDoi:30, line:'Q2', rph:1250.0 },
+  { code:'MWBWHFP.00707.B0_N', name:'BB 1% ZPTO Antidandruff Shampoo 200ml', pack_type:'Shampoo',      cls:'C', asp:397.635, targetDoi:30, line:'Q2', rph:1250.0 },
+  { code:'MWMMHTP.0127.AAAA.B0_N', name:'MM Charcoal Body Wash 250ml',       pack_type:'Bodywash',      cls:'C', asp:159.191, targetDoi:30, line:'Q2', rph:1250.0 },
+];
+
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const getLine = pt => LINE_FOR_PACK[pt] || 'L1';
@@ -269,8 +318,23 @@ function buildGroups(rows, line, sc) {
   }
 }
 
-function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockData={}) {
+
+function buildGroupsNG(rows, line, _sc) {
+  if (!rows.length) return [];
+  if (line === 'Q2') {
+    const gMap = {};
+    for (const r of rows) { (gMap[r.pack_type] = gMap[r.pack_type] || []).push(r); }
+    return Object.entries(gMap).map(([pt, sk]) => makeGroup(pt, sk)).sort((a,b) => b.rph - a.rph);
+  }
+  return [makeGroup('all', [...rows].sort((a,b)=>b.rev-a.rev))];
+}
+function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockData={}, factCfg=null) {
   const { shiftHours, changeoverSame, changeoverDiff, rateBasis } = config;
+  const allLines  = factCfg ? factCfg.allLines    : ALL_LINES;
+  const skuLineOf = factCfg ? (s => s.line)        : (s => getLine(s.pack_type));
+  const skuRphOf  = factCfg ? (s => s.rph)         : (s => getRph(s.pack_type, s.pack_size, rateBasis));
+  const bGroups   = factCfg ? factCfg.buildGroups  : buildGroups;
+  const flatCoH   = factCfg ? factCfg.coH          : null;
 
   // 3-Pass engine per line:
   //   Pass 1 (Survival):    FG < Demand → produce deficit, mandatory, line-specific priority
@@ -285,8 +349,8 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
     const drr      = Number(stockData[sku.code]?.drr)      || 0;
     const drr_next = Number(stockData[sku.code]?.drr_next) || drr;
     const tDoi   = sku.targetDoi || 60;
-    const rph    = getRph(sku.pack_type, sku.pack_size, rateBasis);
-    const line   = getLine(sku.pack_type);
+    const rph    = skuRphOf(sku);
+    const line   = skuLineOf(sku);
     const targetStock = tDoi * drr_next;
     const floor30     = 30 * drr_next;
     const closingNoProd = Math.max(0, fg - demand); // closing if nothing produced
@@ -297,7 +361,7 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
   const planRows = [];
 
   const results = {};
-  for (const line of ALL_LINES) {
+  for (const line of allLines) {
     const lineSkus = enriched.filter(s => s.line === line);
     if (!lineSkus.length) { results[line] = null; continue; }
 
@@ -317,15 +381,25 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
 
     // Helper: insert one run into seq with changeover, returns false if no budget for C/O
     const insertRun = (row, capToRemaining) => {
-      const curFl = row.flavour;
+      const curFl = row.flavour || row.pack_type;
       const curPt = row.pack_type;
       let coH = 0;
       if (prevFl !== null) {
-        const fc = prevFl !== curFl;
-        const pc = !fc && prevPt !== curPt;
-        coH = fc ? changeoverDiff : changeoverSame;
-        if (capToRemaining && remaining <= coH) return false; // can't afford C/O
-        const lbl = fc ? `Flavour change → ${curFl}` : pc ? `Pack type change → ${curPt}` : `SKU change (${curFl})`;
+        if (flatCoH !== null) {
+          coH = flatCoH;
+        } else {
+          const isFc = prevFl !== curFl;
+          coH = isFc ? changeoverDiff : changeoverSame;
+        }
+        if (capToRemaining && remaining <= coH) return false;
+        let lbl;
+        if (flatCoH !== null) {
+          lbl = `SKU change`;
+        } else {
+          const isFc2 = prevFl !== curFl;
+          const isPc2 = !isFc2 && prevPt !== curPt;
+          lbl = isFc2 ? `Flavour change → ${curFl}` : isPc2 ? `Pack type change → ${curPt}` : `SKU change (${curFl})`;
+        }
         seq.push({ type:'co', hours:coH, label:lbl });
         remaining -= coH;
       }
@@ -348,7 +422,7 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
     // Helper: run a capped pass over a set of rows
     const runPass = (passRows, label) => {
       if (!passRows.length) return;
-      const groups = buildGroups(passRows, line, scenario);
+      const groups = bGroups(passRows, line, scenario);
       let skipped = 0;
       seq.push({ type:'tier', label });
       for (const g of groups) {
@@ -370,7 +444,7 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
 
     if (p1Rows.length) {
       seq.push({ type:'tier', label: '🔴 Pass 1 — Survival (Must Make)' });
-      const groups1 = buildGroups(p1Rows, line, scenario);
+      const groups1 = bGroups(p1Rows, line, scenario);
       for (const g of groups1) {
         gRank++;
         for (const s of g.skus) insertRun(s, false); // false = no cap
@@ -419,7 +493,7 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
 
     // All runs for this line (for QueueTab groups)
     const allLineRuns = seq.filter(r=>r.type==='run');
-    const groups = buildGroups(allLineRuns, line, scenario);
+    const groups = bGroups(allLineRuns, line, scenario);
 
     // Day schedule
     let acc = 0;
@@ -487,7 +561,7 @@ function LoginScreen({ sb }) {
 }
 
 // ─── SUPPLY PLAN TAB ─────────────────────────────────────────────────────────
-function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, results, config }) {
+function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, results, config, fac }) {
   const planRef  = useRef();
   const stockRef = useRef();
   const drrRef   = useRef();
@@ -554,16 +628,16 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
 
   // Live hours estimate per line
   const liveEst = {};
-  for (const line of ALL_LINES) {
+  for (const line of fac.allLines) {
     const hrs = skus
-      .filter(s => getLine(s.pack_type)===line && Number(plan[s.code])>0)
-      .reduce((sum,s)=>{ const r=getRph(s.pack_type,s.pack_size,(config&&config.rateBasis)||24); return sum+(r>0?Number(plan[s.code])/r:0); },0);
+      .filter(s => fac.skuLineOf(s)===line && Number(plan[s.code])>0)
+      .reduce((sum,s)=>{ const r=fac.skuRphOf(s); return sum+(r>0?Number(plan[s.code])/r:0); },0);
     liveEst[line] = hrs;
   }
 
   // Group skus by line for display
   const byLine = {};
-  for (const s of skus) { (byLine[getLine(s.pack_type)] = byLine[getLine(s.pack_type)] || []).push(s); }
+  for (const s of skus) { const _sl=fac.skuLineOf(s); (byLine[_sl]=byLine[_sl]||[]).push(s); }
 
   return (
     <div>
@@ -585,10 +659,10 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
 
       {/* Line hour estimates */}
       <div className="summary-grid" style={{marginBottom:12}}>
-        {ALL_LINES.map(line=>(
+        {fac.allLines.map(line=>(
           <div className="summary-card" key={line}>
             <div className="val">{fmtH(liveEst[line])}</div>
-            <div className="lbl">{LINE_LABELS[line]} — est. run hours</div>
+            <div className="lbl">{fac.lineLabels[line]} — est. run hours</div>
           </div>
         ))}
       </div>
@@ -634,13 +708,13 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
             </tr>
           </thead>
           <tbody>
-            {ALL_LINES.map(line => {
+            {fac.allLines.map(line => {
               const lineSkus = byLine[line] || [];
               return [
-                <tr key={`hdr-${line}`}><td colSpan={13} className="grp-row">{LINE_LABELS[line]}</td></tr>,
+                <tr key={`hdr-${line}`}><td colSpan={13} className="grp-row">{fac.lineLabels[line]}</td></tr>,
                 ...lineSkus.map(sku => {
                   const qty      = Number(plan[sku.code]) || 0;
-                  const rph      = getRph(sku.pack_type, sku.pack_size, DEFAULT_CONFIG.rateBasis);
+                  const rph      = fac.skuRphOf(sku);
                   const hrs      = rph > 0 && qty > 0 ? qty / rph : 0;
                   const stock    = Number(stockData[sku.code]?.stock) || 0;
                   const drr      = Number(stockData[sku.code]?.drr) || 0;
@@ -655,7 +729,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
                     <tr key={sku.code}>
                       <td className="mono">{sku.code}</td>
                       <td style={{maxWidth:220,overflow:'hidden',textOverflow:'ellipsis'}}>{sku.name}</td>
-                      <td>{flvPill(sku.flavour)}</td>
+                      <td>{sku.flavour ? flvPill(sku.flavour) : <span style={{fontSize:10,color:'#94a3b8'}}>{sku.pack_type}</span>}</td>
                       <td><span style={{fontWeight:600,color:'#065f46'}}>{line}</span></td>
                       <td>{clsPill(sku.cls)}</td>
                       <td className="right">{fmt(rph,0)}</td>
@@ -695,8 +769,8 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
 }
 
 // ─── QUEUE TAB ───────────────────────────────────────────────────────────────
-function QueueTab({ results, workingDays, config, scenario='A' }) {
-  const anyResult = results && ALL_LINES.some(l=>results[l]);
+function QueueTab({ results, workingDays, config, scenario='A', fac }) {
+  const anyResult = results && fac.allLines.some(l=>results[l]);
   if (!anyResult) return (
     <div className="empty"><div className="icon">📋</div><p>Run the scheduler to see the priority queue.</p></div>
   );
@@ -712,14 +786,14 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
         <span style={{color:'#64748b'}}>—</span>
         <span style={{color:'#374151'}}>{scenarioMeta.desc}</span>
       </div>
-      {ALL_LINES.map(line => {
+      {fac.allLines.map(line => {
         const r = results[line];
         if (!r) return null;
         const pct = r.budget > 0 ? Math.min(100, r.total / r.budget * 100) : 0;
         return (
           <div key={line}>
             <div className="line-hdr">
-              <h3>{LINE_LABELS[line]}</h3>
+              <h3>{fac.lineLabels[line]}</h3>
               <div className="budget-bar-wrap"><div className={`budget-bar ${r.over?'over':'ok'}`} style={{width:`${pct}%`}}/></div>
               <span className="budget-label">
                 {fmtH(r.total)} / {fmtH(r.budget)}
@@ -748,7 +822,7 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
                   {(() => {
                     // Re-sort runs by priority (revenue for L1, rev/hr-by-group for L2)
                     const allRuns = r.seq.filter(s=>s.type==='run');
-                    const displayGroups = buildGroups(allRuns, line, scenario);
+                    const displayGroups = fac.buildGroups(allRuns, line, scenario);
                     let rank = 0;
                     let gNum = 0;
                     const rows = [];
@@ -764,7 +838,7 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
                             <td style={{textAlign:'center',fontWeight:600,color:'#64748b'}}>{gNum}</td>
                             <td className="mono">{s.code}</td>
                             <td style={{maxWidth:200,overflow:'hidden',textOverflow:'ellipsis'}}>{s.name}</td>
-                            <td>{flvPill(s.flavour)}</td>
+                            <td>{s.flavour ? flvPill(s.flavour) : <span style={{fontSize:10,color:'#94a3b8'}}>{s.pack_type}</span>}</td>
                             <td>{clsPill(s.cls)}</td>
                             <td className="right">{fmt(s.qty)}</td>
                             <td className="right">{fmtH(s.hrs)}</td>
@@ -802,8 +876,8 @@ function QueueTab({ results, workingDays, config, scenario='A' }) {
 }
 
 // ─── LINE SCHEDULE TAB ───────────────────────────────────────────────────────
-function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stockData, plan }) {
-  const anyResult = results && ALL_LINES.some(l=>results[l]);
+function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stockData, plan, fac }) {
+  const anyResult = results && fac.allLines.some(l=>results[l]);
   const [startDate, setStartDate] = React.useState(() => {
     // Default to 1st of next month
     const d = new Date();
@@ -849,17 +923,13 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
     const sd = new Date(startDate + 'T00:00:00');
     const workDates = buildWorkDates(sd);
 
-    const planL1  = getLineDayPlan('L1', workDates);
-    const planL2  = getLineDayPlan('L2', workDates);
-    const planSmp = getLineDayPlan('Sampler', workDates);
-
-    // Build rows — one row per working day, split if multiple SKUs on same day/line
-    const header = ['Date','Day','L1 — Product','L1 Units','L2 — Product','L2 Units','Sampler — Product','Sampler Units'];
+    const linePlanArr = fac.allLines.map(l => getLineDayPlan(l, workDates));
+    const header = ['Date','Day',...fac.allLines.flatMap(l=>[fac.lineLabels[l]+' Product', fac.lineLabels[l]+' Units'])];
     const aoa = [header];
 
     for (let d = 0; d < 25; d++) {
       const { label, day } = workDates[d];
-      const segs = [planL1[d], planL2[d], planSmp[d]];
+      const segs = linePlanArr.map(lp => lp[d]);
       const maxSeg = Math.max(1, ...segs.map(s=>s.length));
       for (let s = 0; s < maxSeg; s++) {
         const row = [s===0?label:'', s===0?day:''];
@@ -872,7 +942,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
     }
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [{wch:10},{wch:5},{wch:36},{wch:10},{wch:36},{wch:10},{wch:36},{wch:10}];
+    ws['!cols'] = [{wch:10},{wch:5},...fac.allLines.flatMap(()=>[{wch:36},{wch:10}])];
     XLSX.utils.book_append_sheet(wb, ws, 'Daily Plan');
     XLSX.writeFile(wb, 'Daily_Production_Plan.xlsx');
   }
@@ -881,16 +951,12 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
   function CalendarView() {
     const sd = new Date(startDate + 'T00:00:00');
     const workDates = buildWorkDates(sd);
-    const planL1  = getLineDayPlan('L1', workDates);
-    const planL2  = getLineDayPlan('L2', workDates);
-    const planSmp = getLineDayPlan('Sampler', workDates);
+    const linePlanMap = {};
+    fac.allLines.forEach(l => { linePlanMap[l] = getLineDayPlan(l, workDates); });
 
     // Build SKU totals from daySeq (sum hours × rph per SKU per line)
     const skuTotals = []; // { line, code, name, units }
-    const LINE_PLANS = [
-      { key:'L1', plans:planL1 }, { key:'L2', plans:planL2 },
-      { key:'Sampler', plans:planSmp },
-    ];
+    const LINE_PLANS = fac.allLines.map(l => ({ key:l, plans:linePlanMap[l] }));
     LINE_PLANS.forEach(({ key, plans }) => {
       const r = results && results[key];
       if (!r) return;
@@ -928,11 +994,9 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
     // pad to fill last week
     while (slots.length % 6 !== 0) slots.push(null);
 
-    const LINES = [
-      { key: 'L1', plans: planL1, cls: 'l1', label: 'L1' },
-      { key: 'L2', plans: planL2, cls: 'l2', label: 'L2' },
-      { key: 'Sampler', plans: planSmp, cls: 'smp', label: 'SMP' },
-    ];
+    const _LCLS = { L1:'l1', L2:'l2', Sampler:'smp', Q1:'l1', Q2:'l2', Q3:'l3' };
+    const _LLBL = { L1:'L1', L2:'L2', Sampler:'SMP', Q1:'Q1', Q2:'Q2', Q3:'Q3' };
+    const LINES = fac.allLines.map(l => ({ key:l, plans:linePlanMap[l], cls:_LCLS[l]||'l1', label:_LLBL[l]||l }));
 
     // chunk into weeks of 6
     const weeks = [];
@@ -971,7 +1035,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                     const gapLabel = s.gap === 0 ? '—' : (s.gap > 0 ? '+' : '') + s.gap.toLocaleString();
                     return (
                     <tr key={i}>
-                      <td><span className={`cal-line-tag ${LINE_CLS[s.line]}`} style={{fontWeight:700,display:'inline-block'}}>{LINE_LABELS[s.line]}</span></td>
+                      <td><span className={`cal-line-tag ${(LINE_CLS[s.line]||'l1')}`} style={{fontWeight:700,display:'inline-block'}}>{fac.lineLabels[s.line]||s.line}</span></td>
                       <td className="mono" style={{fontSize:11}}>{s.code}</td>
                       <td style={{fontSize:12}}>{s.name}</td>
                       <td className="right">{s.packSize}</td>
@@ -1011,7 +1075,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
         {/* Legend */}
         <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:10,flexWrap:'wrap'}}>
           <span style={{fontSize:11,fontWeight:700,color:'#64748b'}}>Lines:</span>
-          {LINES.map(l=><span key={l.key} className={`cal-line-tag ${l.cls}`} style={{fontWeight:700}}>{LINE_LABELS[l.key]}</span>)}
+          {LINES.map(l=><span key={l.key} className={`cal-line-tag ${l.cls}`} style={{fontWeight:700}}>{fac.lineLabels[l.key]}</span>)}
         </div>
         {/* Day headers */}
         <div className="cal-hdr-row">
@@ -1055,9 +1119,9 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
       <div className="settings-card" style={{marginBottom:16}}>
         <h3>Schedule Settings</h3>
         <div className="field-row">
-          {ALL_LINES.map(line=>(
+          {fac.allLines.map(line=>(
             <div className="field-group" key={line}>
-              <label>{LINE_LABELS[line]} (days)</label>
+              <label>{fac.lineLabels[line]} (days)</label>
               <input type="number" min="1" max="31" value={workingDays[line]||''} onChange={e=>setWorkingDays(d=>({...d,[line]:Number(e.target.value)}))}/>
             </div>
           ))}
@@ -1117,7 +1181,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
       )}
 
       {/* Timeline / Table View */}
-      {anyResult && !calView && ALL_LINES.map(line => {
+      {anyResult && !calView && fac.allLines.map(line => {
         const r = results[line];
         if (!r) return null;
         const maxDay = r.budget / config.shiftHours;
@@ -1125,7 +1189,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
         return (
           <div key={line}>
             <div className="line-hdr">
-              <h3>{LINE_LABELS[line]}</h3>
+              <h3>{fac.lineLabels[line]}</h3>
               <div className="budget-bar-wrap"><div className={`budget-bar ${r.over?'over':'ok'}`} style={{width:`${Math.min(100,r.total/r.budget*100)}%`}}/></div>
               <span className="budget-label">{fmtH(r.total)} / {fmtH(r.budget)} ({workingDays[line]} days × {config.shiftHours}h)</span>
               {r.over && <span style={{color:'#dc2626',fontWeight:700}}>⚠ OVER</span>}
@@ -1178,7 +1242,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                         <td>{isRun ? <span className="run-badge">{item.capped ? '✂ RUN' : 'RUN'}</span> : <span className="co-badge">C/O</span>}</td>
                         <td className="mono" style={{fontSize:isRun?11:10,color:isRun?'#1e293b':'#92400e'}}>{isRun?item.code:''}</td>
                         <td style={{maxWidth:180,overflow:'hidden',textOverflow:'ellipsis',fontSize:isRun?12:11}}>{isRun?item.name:item.label}</td>
-                        <td>{isRun?flvPill(item.flavour):''}</td>
+                        <td>{isRun?(item.flavour?flvPill(item.flavour):<span style={{fontSize:10,color:'#94a3b8'}}>{item.pack_type}</span>):''}</td>
                         <td className="right">{fmtH(item.h)}</td>
                         <td className="right" style={{fontWeight:700}}>{isRun && qtyMath ? fmt(qtyMath.units) : ''}</td>
                         <td style={{fontSize:11,color:'#374151',whiteSpace:'nowrap'}}>
@@ -1216,11 +1280,11 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
 }
 
 // ─── SETTINGS TAB ────────────────────────────────────────────────────────────
-function SettingsTab({ config, setConfig, skus, setSkus }) {
+function SettingsTab({ config, setConfig, skus, setSkus, fac }) {
   return (
     <div>
       <div className="settings-card">
-        <h3>Factory Config — Sapiens</h3>
+        <h3>Factory Config — {fac.factoryLabel}</h3>
         <div className="field-row">
           <div className="field-group"><label>Shift hours</label>
             <input type="number" value={config.shiftHours} onChange={e=>setConfig(c=>({...c,shiftHours:Number(e.target.value)}))}/>
@@ -1228,12 +1292,15 @@ function SettingsTab({ config, setConfig, skus, setSkus }) {
           <div className="field-group"><label>Rate basis (h/day)</label>
             <input type="number" value={config.rateBasis} onChange={e=>setConfig(c=>({...c,rateBasis:Number(e.target.value)}))}/>
           </div>
-          <div className="field-group"><label>C/O same flavour (h)</label>
+          {fac.id==='sapiens' && <><div className="field-group"><label>C/O same flavour (h)</label>
             <input type="number" step="0.05" value={config.changeoverSame} onChange={e=>setConfig(c=>({...c,changeoverSame:Number(e.target.value)}))}/>
           </div>
           <div className="field-group"><label>C/O diff flavour (h)</label>
             <input type="number" step="0.05" value={config.changeoverDiff} onChange={e=>setConfig(c=>({...c,changeoverDiff:Number(e.target.value)}))}/>
-          </div>
+          </div></>}
+          {fac.id==='ng_electro' && <div className="field-group"><label>C/O per SKU (h, flat)</label>
+            <input type="number" step="0.5" value={config.changeoverFlat||2} onChange={e=>setConfig(c=>({...c,changeoverFlat:Number(e.target.value)}))}/>
+          </div>}
         </div>
         <p style={{fontSize:11,color:'#64748b',marginTop:8}}>Rate basis = hours assumed in the u/day rates (24 = full day). Effective rate per hour = u/day ÷ rate basis.</p>
       </div>
@@ -1256,11 +1323,11 @@ function SettingsTab({ config, setConfig, skus, setSkus }) {
                 <tr key={sku.code}>
                   <td className="mono" style={{fontSize:10}}>{sku.code}</td>
                   <td style={{maxWidth:180,overflow:'hidden',textOverflow:'ellipsis'}}>{sku.name}</td>
-                  <td>{getLine(sku.pack_type)}</td>
-                  <td>{flvPill(sku.flavour)}</td>
+                  <td>{fac.skuLineOf(sku)}</td>
+                  <td>{sku.flavour?flvPill(sku.flavour):<span style={{fontSize:10,color:'#94a3b8'}}>{sku.pack_type}</span>}</td>
                   <td>{sku.pack_type}</td>
                   <td className="right">{sku.pack_size}g</td>
-                  <td className="right">{fmt(RATE_LOOKUP[`${sku.pack_type}|${sku.pack_size}`]||0)}</td>
+                  <td className="right">{fmt(Math.round(fac.skuRphOf(sku)*fac.rphBasis))}</td>
                   <td>
                     <select value={sku.cls} onChange={e=>{const n=[...skus];n[i]={...n[i],cls:e.target.value};setSkus(n);}}>
                       <option>A</option><option>B</option><option>C</option>
@@ -1301,6 +1368,30 @@ create policy "scheduler_own" on scheduler_data
   );
 }
 
+// ── Factory registry ──────────────────────────────────────────────────────────
+const FACTORY_DEFS = {
+  sapiens: {
+    id:'sapiens', factoryKey:'sapiens', factoryLabel:'Sapiens · LJ',
+    allLines:ALL_LINES, lineLabels:LINE_LABELS,
+    defaultSkus:DEFAULT_SKUS, defaultConfig:DEFAULT_CONFIG, defaultWD:DEFAULT_WD,
+    skuLineOf: s => getLine(s.pack_type),
+    skuRphOf:  (s, cfg) => getRph(s.pack_type, s.pack_size, (cfg||DEFAULT_CONFIG).rateBasis),
+    buildGroups: buildGroups,
+    coH: null,
+    rphBasis: DEFAULT_CONFIG.rateBasis,
+  },
+  ng_electro: {
+    id:'ng_electro', factoryKey:'ng_electro', factoryLabel:'NG Electro · Bodywise',
+    allLines:NG_ALL_LINES, lineLabels:NG_LINE_LABELS,
+    defaultSkus:NG_ELECTRO_SKUS, defaultConfig:NG_DEFAULT_CONFIG, defaultWD:NG_DEFAULT_WD,
+    skuLineOf: s => s.line,
+    skuRphOf:  s => s.rph,
+    buildGroups: buildGroupsNG,
+    coH: 2,
+    rphBasis: 16,
+  },
+};
+
 // ─── APP ─────────────────────────────────────────────────────────────────────
 function App() {
   const sbRef     = useRef(null);
@@ -1309,14 +1400,39 @@ function App() {
 
   const [authState, setAuthState] = useState('loading');
   const [tab, setTab]             = useState('plan');
+  const [factory, setFactory]     = useState('sapiens');
+
+  // Sapiens state
   const [skus, setSkus]           = useState(DEFAULT_SKUS);
   const [config, setConfig]       = useState(DEFAULT_CONFIG);
   const [workingDays, setWorkingDays] = useState(DEFAULT_WD);
   const [plan, setPlan]           = useState({});
   const [stockData, setStockData] = useState({});
   const [results, setResults]     = useState(null);
-  const [scenario, setScenario]   = useState('A'); // 'A' = Revenue Max | 'B' = Min Changeover
+
+  // NG Electro state
+  const [ngSkus, setNgSkus]       = useState(NG_ELECTRO_SKUS);
+  const [ngConfig, setNgConfig]   = useState(NG_DEFAULT_CONFIG);
+  const [ngWD, setNgWD]           = useState(NG_DEFAULT_WD);
+  const [ngPlan, setNgPlan]       = useState({});
+  const [ngStock, setNgStock]     = useState({});
+  const [ngResults, setNgResults] = useState(null);
+
+  const [scenario, setScenario]   = useState('A');
   const [saveStatus, setSaveStatus] = useState('');
+
+  // Active factory pointers
+  const isNG           = factory === 'ng_electro';
+  const facDef         = FACTORY_DEFS[factory];
+  // fac passed to all tabs — skuRphOf curried with active config
+  const fac = { ...facDef, skuRphOf: s => facDef.skuRphOf(s, isNG ? ngConfig : config) };
+
+  const activeSkus      = isNG ? ngSkus    : skus;
+  const activeConfig    = isNG ? ngConfig  : config;
+  const activeWD        = isNG ? ngWD      : workingDays;
+  const activePlan      = isNG ? ngPlan    : plan;
+  const activeStockData = isNG ? ngStock   : stockData;
+  const activeResults   = isNG ? ngResults : results;
 
   // ── init supabase ──
   useEffect(() => {
@@ -1337,29 +1453,42 @@ function App() {
 
   async function loadFromDB(sb, userId) {
     try {
-      const { data, error } = await sb.from('scheduler_data').select('*').eq('user_id', userId).eq('factory_key', 'sapiens').single();
-      if (error || !data) return;
-      const d = data.data || {};
-      if (d.skus) {
-        const mapped = d.skus.map(s => { const def = DEFAULT_SKUS.find(x=>x.code===s.code); return def ? {...def,...s, targetDoi: s.targetDoi ?? def.targetDoi} : s; });
-        const savedCodes = new Set(d.skus.map(s=>s.code));
-        const newDefaults = DEFAULT_SKUS.filter(x=>!savedCodes.has(x.code));
-        setSkus([...mapped, ...newDefaults]);
+      const { data: sd } = await sb.from('scheduler_data').select('*').eq('user_id', userId).eq('factory_key', 'sapiens').single();
+      if (sd && sd.data) {
+        const d = sd.data;
+        if (d.skus) {
+          const mapped = d.skus.map(s => { const def = DEFAULT_SKUS.find(x=>x.code===s.code); return def ? {...def,...s, targetDoi:s.targetDoi??def.targetDoi} : s; });
+          const saved = new Set(d.skus.map(s=>s.code));
+          setSkus([...mapped, ...DEFAULT_SKUS.filter(x=>!saved.has(x.code))]);
+        }
+        if (d.config)      setConfig(d.config);
+        if (d.workingDays) setWorkingDays(d.workingDays);
+        if (d.plan)        setPlan(d.plan);
+        if (d.stockData)   setStockData(d.stockData);
       }
-      if (d.config)      setConfig(d.config);
-      if (d.workingDays) setWorkingDays(d.workingDays);
-      if (d.plan)        setPlan(d.plan);
-      if (d.stockData)   setStockData(d.stockData);
+      const { data: ngd } = await sb.from('scheduler_data').select('*').eq('user_id', userId).eq('factory_key', 'ng_electro').single();
+      if (ngd && ngd.data) {
+        const d = ngd.data;
+        if (d.skus) {
+          const mapped = d.skus.map(s => { const def = NG_ELECTRO_SKUS.find(x=>x.code===s.code); return def ? {...def,...s} : s; });
+          const saved = new Set(d.skus.map(s=>s.code));
+          setNgSkus([...mapped, ...NG_ELECTRO_SKUS.filter(x=>!saved.has(x.code))]);
+        }
+        if (d.config)      setNgConfig(d.config);
+        if (d.workingDays) setNgWD(d.workingDays);
+        if (d.plan)        setNgPlan(d.plan);
+        if (d.stockData)   setNgStock(d.stockData);
+      }
     } catch(e) { console.warn('loadFromDB:', e.message); }
   }
 
-  async function saveToDB(snapshot) {
+  async function saveToDB(snapshot, fkey, fname) {
     const sb = sbRef.current; const user = userRef.current;
     if (!sb || !user) return;
     setSaveStatus('saving…');
     try {
       await sb.from('scheduler_data').upsert({
-        user_id: user.id, factory_key: 'sapiens', name: 'Sapiens',
+        user_id: user.id, factory_key: fkey||'sapiens', name: fname||'Sapiens',
         data: snapshot, updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,factory_key' });
       setSaveStatus('saved ✓');
@@ -1367,24 +1496,47 @@ function App() {
     } catch(e) { setSaveStatus('save failed'); }
   }
 
-  // Auto-save on state change (debounced)
-  function triggerSave(patch) {
+  function triggerSave(patch, fkey) {
+    const key = fkey || factory;
+    const isNg = key === 'ng_electro';
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      saveToDB({ skus, config, workingDays, plan, stockData, ...patch });
+      if (isNg) {
+        saveToDB({ skus: ngSkus, config: ngConfig, workingDays: ngWD, plan: ngPlan, stockData: ngStock, ...patch }, 'ng_electro', 'NG Electro');
+      } else {
+        saveToDB({ skus, config, workingDays, plan, stockData, ...patch }, 'sapiens', 'Sapiens');
+      }
     }, 1200);
   }
 
-  // Wrap setters to trigger save
-  const setPlanSaving     = v => { setPlan(v);        triggerSave({ plan: typeof v==='function' ? v(plan) : v }); };
-  const setStockSaving    = v => { setStockData(v);   triggerSave({ stockData: typeof v==='function' ? v(stockData) : v }); };
-  const setConfigSaving   = v => { setConfig(v);      triggerSave({ config: typeof v==='function' ? v(config) : v }); };
-  const setSkusSaving     = v => { setSkus(v);        triggerSave({ skus: v }); };
-  const setWDSaving       = v => { setWorkingDays(v); triggerSave({ workingDays: typeof v==='function' ? v(workingDays) : v }); };
+  // Sapiens setters
+  const setPlanSaving   = v => { setPlan(v);        triggerSave({ plan: typeof v==='function' ? v(plan) : v }); };
+  const setStockSaving  = v => { setStockData(v);   triggerSave({ stockData: typeof v==='function' ? v(stockData) : v }); };
+  const setConfigSaving = v => { setConfig(v);      triggerSave({ config: typeof v==='function' ? v(config) : v }); };
+  const setSkusSaving   = v => { setSkus(v);        triggerSave({ skus: v }); };
+  const setWDSaving     = v => { setWorkingDays(v); triggerSave({ workingDays: typeof v==='function' ? v(workingDays) : v }); };
+
+  // NG Electro setters
+  const setNgPlanSave  = v => { setNgPlan(v);   triggerSave({ plan: typeof v==='function' ? v(ngPlan) : v }, 'ng_electro'); };
+  const setNgStockSave = v => { setNgStock(v);  triggerSave({ stockData: typeof v==='function' ? v(ngStock) : v }, 'ng_electro'); };
+  const setNgCfgSave   = v => { setNgConfig(v); triggerSave({ config: typeof v==='function' ? v(ngConfig) : v }, 'ng_electro'); };
+  const setNgSkusSave  = v => { setNgSkus(v);   triggerSave({ skus: v }, 'ng_electro'); };
+  const setNgWDSave    = v => { setNgWD(v);     triggerSave({ workingDays: typeof v==='function' ? v(ngWD) : v }, 'ng_electro'); };
+
+  // Active setters (switch by factory)
+  const setActivePlan   = isNG ? setNgPlanSave  : setPlanSaving;
+  const setActiveStock  = isNG ? setNgStockSave : setStockSaving;
+  const setActiveConfig = isNG ? setNgCfgSave   : setConfigSaving;
+  const setActiveSkus   = isNG ? setNgSkusSave  : setSkusSaving;
+  const setActiveWD     = isNG ? setNgWDSave    : setWDSaving;
 
   function handleRun(sc) {
-    const r = runEngine(plan, skus, config, workingDays, sc || scenario, stockData);
-    setResults(r);
+    const ngFactCfg = isNG ? {
+      allLines: NG_ALL_LINES, buildGroups: buildGroupsNG,
+      coH: ngConfig.changeoverFlat ?? 2,
+    } : null;
+    const r = runEngine(activePlan, activeSkus, activeConfig, activeWD, sc || scenario, activeStockData, ngFactCfg);
+    if (isNG) setNgResults(r); else setResults(r);
     setTab('queue');
   }
 
@@ -1407,7 +1559,16 @@ function App() {
       <div className="app-header">
         <span style={{fontSize:20}}>🗓️</span>
         <h1>Production Scheduler</h1>
-        <span className="badge">Sapiens · LJ</span>
+        <div style={{display:'flex',gap:0,border:'1px solid #a7f3d0',borderRadius:8,overflow:'hidden'}}>
+          {Object.values(FACTORY_DEFS).map(fd=>(
+            <button key={fd.id} onClick={()=>{setFactory(fd.id);setTab('plan');}}
+              style={{padding:'4px 14px',border:'none',cursor:'pointer',fontSize:12,fontWeight:600,
+                background:factory===fd.id?'#059669':'#fff',
+                color:factory===fd.id?'#fff':'#374151',transition:'all .15s'}}>
+              {fd.factoryLabel}
+            </button>
+          ))}
+        </div>
         <div className="header-right">
           {/* Scenario toggle */}
           <div style={{display:'flex',alignItems:'center',gap:0,border:'1px solid #d1d5db',borderRadius:8,overflow:'hidden',fontSize:12}}>
@@ -1438,16 +1599,16 @@ function App() {
         {TABS.map(t => (
           <button key={t.key} className={`tab-btn${tab===t.key?' active':''}`} onClick={()=>setTab(t.key)}>
             {t.label}
-            {t.key==='queue' && results && <span style={{marginLeft:4,background:'#059669',color:'white',borderRadius:8,padding:'1px 5px',fontSize:10}}>✓</span>}
+            {t.key==='queue' && activeResults && <span style={{marginLeft:4,background:'#059669',color:'white',borderRadius:8,padding:'1px 5px',fontSize:10}}>✓</span>}
           </button>
         ))}
       </div>
 
       <div className="content">
-        {tab === 'plan'     && <SupplyPlanTab skus={skus} plan={plan} setPlan={setPlanSaving} stockData={stockData} setStockData={setStockSaving} onRun={handleRun} results={results} config={config}/>}
-        {tab === 'queue'    && <QueueTab results={results} workingDays={workingDays} config={config} scenario={scenario}/>}
-        {tab === 'schedule' && <ScheduleTab results={results} workingDays={workingDays} setWorkingDays={setWDSaving} config={config} skus={skus} stockData={stockData} plan={plan}/>}
-        {tab === 'settings' && <SettingsTab config={config} setConfig={setConfigSaving} skus={skus} setSkus={setSkusSaving}/>}
+        {tab === 'plan'     && <SupplyPlanTab skus={activeSkus} plan={activePlan} setPlan={setActivePlan} stockData={activeStockData} setStockData={setActiveStock} onRun={handleRun} results={activeResults} config={activeConfig} fac={fac}/>}
+        {tab === 'queue'    && <QueueTab results={activeResults} workingDays={activeWD} config={activeConfig} scenario={scenario} fac={fac}/>}
+        {tab === 'schedule' && <ScheduleTab results={activeResults} workingDays={activeWD} setWorkingDays={setActiveWD} config={activeConfig} skus={activeSkus} stockData={activeStockData} plan={activePlan} fac={fac}/>}
+        {tab === 'settings' && <SettingsTab config={activeConfig} setConfig={setActiveConfig} skus={activeSkus} setSkus={setActiveSkus} fac={fac}/>}
       </div>
     </div>
   );
