@@ -290,7 +290,17 @@ function makeGroup(key, sk) {
 
 function buildGroups(rows, line, sc) {
   if (!rows.length) return [];
-  if (line === 'L1') return [makeGroup('all', [...rows].sort((a,b)=>b.rev-a.rev))];
+  if (line === 'L1') {
+    if (sc === 'B') {
+      // Min Changeover: cluster by flavour (sorted by group total rev), SKUs within by rev
+      const flMap = {};
+      for (const r of rows) { (flMap[r.flavour] = flMap[r.flavour] || []).push(r); }
+      return Object.entries(flMap)
+        .map(([fl, sk]) => makeGroup(fl, sk))
+        .sort((a,b) => b.tRev - a.tRev);
+    }
+    return [makeGroup('all', [...rows].sort((a,b)=>b.rev-a.rev))];
+  }
   if (sc === 'B') {
     const flMap = {};
     for (const r of rows) { (flMap[r.flavour] = flMap[r.flavour] || []).push(r); }
