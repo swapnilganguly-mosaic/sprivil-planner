@@ -1573,7 +1573,7 @@ function App() {
           {/* Scenario toggle */}
           <div style={{display:'flex',alignItems:'center',gap:0,border:'1px solid #d1d5db',borderRadius:8,overflow:'hidden',fontSize:12}}>
             <button
-              onClick={()=>{ setScenario('A'); if(results) handleRun('A'); }}
+              onClick={()=>{ setScenario('A'); if(activeResults) handleRun('A'); }}
               style={{padding:'5px 12px',border:'none',cursor:'pointer',fontWeight:600,
                 background: scenario==='A' ? '#059669' : '#fff',
                 color:      scenario==='A' ? '#fff'    : '#374151',
@@ -1581,7 +1581,7 @@ function App() {
               A — Revenue Max
             </button>
             <button
-              onClick={()=>{ setScenario('B'); if(results) handleRun('B'); }}
+              onClick={()=>{ setScenario('B'); if(activeResults) handleRun('B'); }}
               style={{padding:'5px 12px',border:'none',borderLeft:'1px solid #d1d5db',cursor:'pointer',fontWeight:600,
                 background: scenario==='B' ? '#7c3aed' : '#fff',
                 color:      scenario==='B' ? '#fff'    : '#374151',
