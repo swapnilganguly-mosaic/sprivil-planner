@@ -1371,7 +1371,7 @@ create policy "scheduler_own" on scheduler_data
 // ── Factory registry ──────────────────────────────────────────────────────────
 const FACTORY_DEFS = {
   sapiens: {
-    id:'sapiens', factoryKey:'sapiens', factoryLabel:'Sapiens · LJ',
+    id:'sapiens', factoryKey:'sapiens', factoryLabel:'Sapiens',
     allLines:ALL_LINES, lineLabels:LINE_LABELS,
     defaultSkus:DEFAULT_SKUS, defaultConfig:DEFAULT_CONFIG, defaultWD:DEFAULT_WD,
     skuLineOf: s => getLine(s.pack_type),
@@ -1381,7 +1381,7 @@ const FACTORY_DEFS = {
     rphBasis: DEFAULT_CONFIG.rateBasis,
   },
   ng_electro: {
-    id:'ng_electro', factoryKey:'ng_electro', factoryLabel:'NG Electro · Bodywise',
+    id:'ng_electro', factoryKey:'ng_electro', factoryLabel:'NG Electro',
     allLines:NG_ALL_LINES, lineLabels:NG_LINE_LABELS,
     defaultSkus:NG_ELECTRO_SKUS, defaultConfig:NG_DEFAULT_CONFIG, defaultWD:NG_DEFAULT_WD,
     skuLineOf: s => s.line,
@@ -1559,16 +1559,12 @@ function App() {
       <div className="app-header">
         <span style={{fontSize:20}}>🗓️</span>
         <h1>Production Scheduler</h1>
-        <div style={{display:'flex',gap:0,border:'1px solid #a7f3d0',borderRadius:8,overflow:'hidden'}}>
+        <select value={factory} onChange={e=>{setFactory(e.target.value);setTab('plan');}}
+          style={{padding:'5px 10px',border:'1px solid #a7f3d0',borderRadius:8,fontSize:13,fontWeight:600,color:'#065f46',background:'white',cursor:'pointer'}}>
           {Object.values(FACTORY_DEFS).map(fd=>(
-            <button key={fd.id} onClick={()=>{setFactory(fd.id);setTab('plan');}}
-              style={{padding:'4px 14px',border:'none',cursor:'pointer',fontSize:12,fontWeight:600,
-                background:factory===fd.id?'#059669':'#fff',
-                color:factory===fd.id?'#fff':'#374151',transition:'all .15s'}}>
-              {fd.factoryLabel}
-            </button>
+            <option key={fd.id} value={fd.id}>{fd.factoryLabel}</option>
           ))}
-        </div>
+        </select>
         <div className="header-right">
           {/* Scenario toggle */}
           <div style={{display:'flex',alignItems:'center',gap:0,border:'1px solid #d1d5db',borderRadius:8,overflow:'hidden',fontSize:12}}>
