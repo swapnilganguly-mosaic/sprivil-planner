@@ -733,7 +733,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
         <button className="btn btn-primary" onClick={onRun} disabled={!hasAny}>▶ Run Scheduler</button>
       </div>
 
-      {/* Line hour estimates */}
+      {/* Line hour estimates + tons summary */}
       <div className="summary-grid" style={{marginBottom:12}}>
         {fac.allLines.map(line=>(
           <div className="summary-card" key={line}>
@@ -741,6 +741,28 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
             <div className="lbl">{fac.lineLabels[line]} — est. run hours</div>
           </div>
         ))}
+        {(() => {
+          if (!Object.keys(actualByCode).length) return null;
+          let plannedTons = 0, actualTons = 0;
+          for (const sku of skus) {
+            const ac = actualByCode[sku.code];
+            if (!ac) continue;
+            const ps = (sku.pack_size || 0) / 1e6;
+            plannedTons += ac.total * ps;
+            const a = (ac.P1>0?applyMoq(sku,ac.P1):0)+(ac.P2>0?applyMoq(sku,ac.P2):0)+(ac.P3>0?applyMoq(sku,ac.P3):0);
+            actualTons += a * ps;
+          }
+          return <>
+            <div className="summary-card" style={{borderTop:'3px solid #7c3aed'}}>
+              <div className="val" style={{color:'#7c3aed'}}>{plannedTons.toFixed(2)} T</div>
+              <div className="lbl">Planned Production — total tons</div>
+            </div>
+            <div className="summary-card" style={{borderTop:'3px solid #059669'}}>
+              <div className="val" style={{color:'#059669'}}>{actualTons.toFixed(2)} T</div>
+              <div className="lbl">Actual Production — total tons</div>
+            </div>
+          </>;
+        })()}
       </div>
 
       <div className="info-box">Import Production Plan from XLSX (needs a SKU code column + quantity column). FG Stock &amp; DRR for DOI suggestion — enter manually or via API.</div>
