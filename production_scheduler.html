@@ -47,6 +47,7 @@
     .tbl-wrap { overflow: auto; border: 1px solid #d1fae5; border-radius: 8px; background: white; box-shadow: 0 2px 6px rgba(5,150,105,.05); }
     table { border-collapse: collapse; width: 100%; }
     thead th { position: sticky; top: 0; z-index: 5; background: #065f46; color: white; padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 600; white-space: nowrap; border-right: 1px solid #047857; }
+    thead tr:nth-child(2) th { top: 35px; background: #f1f5f9; color: #374151; z-index: 4; padding: 3px 4px; }
     thead th.right { text-align: right; }
     tbody tr:nth-child(even) { background: #f0faf4; }
     tbody tr:hover { background: #d1fae5; }
@@ -796,7 +797,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               <th className="right">Closing Stock</th>
               <th className="right">Closing DOI</th>
             </tr>
-            <tr style={{background:'#f1f5f9'}}>
+            <tr>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('code')} onChange={e=>setFilter('code',e.target.value)}/></th>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('product')} onChange={e=>setFilter('product',e.target.value)}/></th>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('flavour')} onChange={e=>setFilter('flavour',e.target.value)}/></th>
