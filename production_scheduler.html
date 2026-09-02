@@ -709,9 +709,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
         <input ref={planRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'plan');e.target.value='';}}/>
         <button className="btn btn-secondary" onClick={()=>stockRef.current.click()}>⬆ Opening Stock</button>
         <input ref={stockRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'stock');e.target.value='';}}/>
-        <button className="btn btn-secondary" onClick={()=>poRef.current.click()}>⬆ Open PO</button>
-        <input ref={poRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'open_po');e.target.value='';}}/>
-        <button className="btn btn-secondary" onClick={()=>drrRef.current.click()}>⬆ Current DRR</button>
+<button className="btn btn-secondary" onClick={()=>drrRef.current.click()}>⬆ Current DRR</button>
         <input ref={drrRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'drr');e.target.value='';}}/>
         <button className="btn btn-secondary" onClick={()=>drrNextRef.current.click()}>⬆ DRR Next</button>
         <input ref={drrNextRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'drr_next');e.target.value='';}}/>
@@ -791,7 +789,6 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               <th className="right">Demand Plan (units)</th>
               <th className="right">Est. Hours</th>
               <th className="right">Opening Stock</th>
-              <th className="right">Open PO</th>
               <th className="right">Current DRR</th>
               <th className="right">DRR Next</th>
               <th className="right">Current DOI</th>
@@ -807,7 +804,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('demand')} onChange={e=>setFilter('demand',e.target.value)}/></th>
               <th></th>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('stock')} onChange={e=>setFilter('stock',e.target.value)}/></th>
-              <th></th><th></th><th></th>
+              <th></th><th></th>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('doi')} onChange={e=>setFilter('doi',e.target.value)}/></th>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('actual')} onChange={e=>setFilter('actual',e.target.value)}/></th>
             </tr>
@@ -817,7 +814,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               const lineSkus = byLine[line] || [];
               if (!lineSkus.length) return null;
               return [
-                <tr key={`hdr-${line}`}><td colSpan={14} className="grp-row">{fac.lineLabels[line]}</td></tr>,
+                <tr key={`hdr-${line}`}><td colSpan={13} className="grp-row">{fac.lineLabels[line]}</td></tr>,
                 ...lineSkus.map(sku => {
                   const qty      = Number(plan[sku.code]) || 0;
                   const rph      = fac.skuRphOf(sku);
@@ -846,10 +843,6 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
                       <td className="right">
                         <input type="number" min="0" className="num-input" value={stockData[sku.code]?.stock||''}
                           onChange={e=>setStockData(d=>({...d,[sku.code]:{...d[sku.code],stock:e.target.value}}))} placeholder="—"/>
-                      </td>
-                      <td className="right">
-                        <input type="number" min="0" className="num-input" value={stockData[sku.code]?.open_po||''}
-                          onChange={e=>setStockData(d=>({...d,[sku.code]:{...d[sku.code],open_po:e.target.value}}))} placeholder="—"/>
                       </td>
                       <td className="right">
                         <input type="number" min="0" className="num-input" value={stockData[sku.code]?.drr||''}
