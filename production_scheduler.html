@@ -1078,7 +1078,8 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
       const accEnd   = item.endDay - 1;
       for (let d = Math.floor(accStart); d < Math.ceil(accEnd) && d < 25; d++) {
         const overlap = Math.min(accEnd, d+1) - Math.max(accStart, d);
-        const units = Math.round(overlap * sh * item.rph);
+        const rawUnits = Math.round(overlap * sh * item.rph);
+        const units = rawUnits > 0 ? Math.max(rawUnits, applyMoq(item, rawUnits)) : 0;
         if (units > 0) dayPlan[d].push({ name: item.name, units });
       }
     }
