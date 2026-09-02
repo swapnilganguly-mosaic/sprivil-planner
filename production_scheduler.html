@@ -600,18 +600,26 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
   const [filters, setFilters] = React.useState({});
   const [breakdown, setBreakdown] = React.useState(null); // { code, name, P1, P2, P3, total }
 
-  // Compute actual production per SKU from results
+  // Compute actual production per SKU — mirrors calendar logic (per-day MOQ clamping)
   const actualByCode = React.useMemo(() => {
     const m = {};
     if (!results) return m;
+    const sh = config.shiftHours;
     for (const line of fac.allLines) {
       const r = results[line];
       if (!r) continue;
-      for (const item of r.seq) {
+      for (const item of r.daySeq) {
         if (item.type !== 'run') continue;
+        const accStart = item.startDay - 1;
+        const accEnd   = item.endDay - 1;
         const ac = m[item.code] || { total:0, P1:0, P2:0, P3:0 };
-        ac.total += item.qty || 0;
-        ac[item.phase] = (ac[item.phase]||0) + (item.qty||0);
+        for (let d = Math.floor(accStart); d < Math.ceil(accEnd); d++) {
+          const overlap = Math.min(accEnd, d+1) - Math.max(accStart, d);
+          const rawUnits = Math.round(overlap * sh * item.rph);
+          const units = rawUnits > 0 ? Math.max(rawUnits, applyMoq(item, rawUnits)) : 0;
+          ac.total += units;
+          ac[item.phase] = (ac[item.phase]||0) + units;
+        }
         m[item.code] = ac;
       }
     }
