@@ -1583,8 +1583,10 @@ function App() {
       if (sd && sd.data) {
         const d = sd.data;
         if (d.skus) {
-          const mapped = d.skus.map(s => { const def = DEFAULT_SKUS.find(x=>x.code===s.code); return def ? {...def,...s, targetDoi:s.targetDoi??def.targetDoi} : s; });
-          const saved = new Set(d.skus.map(s=>s.code));
+          const validCodes = new Set(DEFAULT_SKUS.map(x=>x.code));
+          const filtered = d.skus.filter(s => validCodes.has(s.code));
+          const mapped = filtered.map(s => { const def = DEFAULT_SKUS.find(x=>x.code===s.code); return def ? {...def,...s, targetDoi:s.targetDoi??def.targetDoi} : s; });
+          const saved = new Set(filtered.map(s=>s.code));
           setSkus([...mapped, ...DEFAULT_SKUS.filter(x=>!saved.has(x.code))]);
         }
         if (d.config)      setConfig(d.config);
