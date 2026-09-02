@@ -517,14 +517,20 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
     const allLineRuns = seq.filter(r=>r.type==='run');
     const groups = bGroups(allLineRuns, line, scenario);
 
-    // Day schedule
+    // Day schedule — use MOQ-adjusted hours so calendar shows actual production
     let acc = 0;
     const daySeq = seq.map(item => {
       if (item.type === 'tier') return { ...item, startDay: acc/shiftHours+1, endDay: acc/shiftHours+1, h: 0 };
       const h = item.type === 'run' ? item.hrs : item.hours;
+      let dispH = h;
+      if (item.type === 'run' && item.rph > 0) {
+        const pQty = h * item.rph;
+        const aQty = applyMoq(item, pQty);
+        if (aQty > pQty) dispH = aQty / item.rph;
+      }
       const sd = acc / shiftHours + 1;
-      acc += h;
-      return { ...item, startDay: sd, endDay: acc/shiftHours+1, h };
+      acc += dispH;
+      return { ...item, startDay: sd, endDay: acc/shiftHours+1, h: dispH };
     });
 
     const allRows = seq.filter(r=>r.type==='run');
@@ -1070,12 +1076,9 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
       if (item.type !== 'run') continue;
       const accStart = item.startDay - 1;
       const accEnd   = item.endDay - 1;
-      const plannedQty = item.h * item.rph;
-      const actualQty  = applyMoq(item, plannedQty);
-      const scale = plannedQty > 0 ? actualQty / plannedQty : 1;
       for (let d = Math.floor(accStart); d < Math.ceil(accEnd) && d < 25; d++) {
         const overlap = Math.min(accEnd, d+1) - Math.max(accStart, d);
-        const units = Math.round(overlap * sh * item.rph * scale);
+        const units = Math.round(overlap * sh * item.rph);
         if (units > 0) dayPlan[d].push({ name: item.name, units });
       }
     }
@@ -1132,12 +1135,9 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
       });
       Object.values(map).forEach(v => {
         const skuDef = (skus||[]).find(s=>s.code===v.code);
-        const plannedUnits = v.P1 + v.P2 + v.P3;
-        const actualP1 = v.P1 > 0 ? applyMoq(skuDef, v.P1) : 0;
-        const actualP2 = v.P2 > 0 ? applyMoq(skuDef, v.P2) : 0;
-        const actualP3 = v.P3 > 0 ? applyMoq(skuDef, v.P3) : 0;
-        v.plannedUnits = plannedUnits;
-        v.units = actualP1 + actualP2 + actualP3;
+        // daySeq h is already MOQ-adjusted, so P1/P2/P3 are already actual units
+        v.plannedUnits = v.P1 + v.P2 + v.P3;
+        v.units = v.plannedUnits;
         v.packSize = skuDef ? (skuDef.pack_size||0) : 0;
         v.tons = v.packSize * v.units / 1e6;
         v.planQty  = Number((plan||{})[v.code]) || 0;
