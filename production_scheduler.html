@@ -578,6 +578,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
   const planRef  = useRef();
   const stockRef = useRef();
   const poRef    = useRef();
+  const mwStockRef = useRef();
   const drrRef   = useRef();
   const drrNextRef = useRef();
   const [colPicker, setColPicker] = React.useState(null); // { rows, skuCol, numCols, field }
@@ -654,7 +655,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
       setStockData(newStock);
     }
     setColPicker(null);
-    const label = field === 'plan' ? 'Production Plan' : field === 'stock' ? 'Opening Stock' : field === 'open_po' ? 'Open PO' : field === 'drr' ? 'Current DRR' : 'DRR Next';
+    const label = field === 'plan' ? 'Production Plan' : field === 'stock' ? 'Opening Stock' : field === 'mw_stock' ? 'MW Stock' : field === 'open_po' ? 'Open PO' : field === 'drr' ? 'Current DRR' : 'DRR Next';
     alert(`Imported ${matched} SKUs into ${label} from "${valCol}".`);
   }
 
@@ -710,7 +711,9 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
         <input ref={planRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'plan');e.target.value='';}}/>
         <button className="btn btn-secondary" onClick={()=>stockRef.current.click()}>⬆ Opening Stock</button>
         <input ref={stockRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'stock');e.target.value='';}}/>
-<button className="btn btn-secondary" onClick={()=>drrRef.current.click()}>⬆ Current DRR</button>
+        <button className="btn btn-secondary" onClick={()=>mwStockRef.current.click()}>⬆ MW Stock</button>
+        <input ref={mwStockRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'mw_stock');e.target.value='';}}/>
+        <button className="btn btn-secondary" onClick={()=>drrRef.current.click()}>⬆ Current DRR</button>
         <input ref={drrRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'drr');e.target.value='';}}/>
         <button className="btn btn-secondary" onClick={()=>drrNextRef.current.click()}>⬆ DRR Next</button>
         <input ref={drrNextRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])parseFile(e.target.files[0],'drr_next');e.target.value='';}}/>
@@ -790,12 +793,11 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               <th className="right">Demand Plan (units)</th>
               <th className="right">Est. Hours</th>
               <th className="right">Opening Stock</th>
+              <th className="right">MW Stock</th>
               <th className="right">Current DRR</th>
               <th className="right">DRR Next</th>
               <th className="right">Current DOI</th>
               <th className="right">Actual Production</th>
-              <th className="right">Closing Stock</th>
-              <th className="right">Closing DOI</th>
             </tr>
             <tr>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('code')} onChange={e=>setFilter('code',e.target.value)}/></th>
@@ -807,10 +809,10 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('demand')} onChange={e=>setFilter('demand',e.target.value)}/></th>
               <th></th>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('stock')} onChange={e=>setFilter('stock',e.target.value)}/></th>
+              <th></th>
               <th></th><th></th>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('doi')} onChange={e=>setFilter('doi',e.target.value)}/></th>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('actual')} onChange={e=>setFilter('actual',e.target.value)}/></th>
-              <th></th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -818,14 +820,15 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               const lineSkus = byLine[line] || [];
               if (!lineSkus.length) return null;
               return [
-                <tr key={`hdr-${line}`}><td colSpan={15} className="grp-row">{fac.lineLabels[line]}</td></tr>,
+                <tr key={`hdr-${line}`}><td colSpan={14} className="grp-row">{fac.lineLabels[line]}</td></tr>,
                 ...lineSkus.map(sku => {
                   const qty      = Number(plan[sku.code]) || 0;
                   const rph      = fac.skuRphOf(sku);
                   const hrs      = rph > 0 && qty > 0 ? qty / rph : 0;
                   const stock    = Number(stockData[sku.code]?.stock) || 0;
+                  const mwStock  = Number(stockData[sku.code]?.mw_stock) || 0;
                   const drr      = Number(stockData[sku.code]?.drr) || 0;
-                  const doi      = drr > 0 ? stock / drr : null;
+                  const doi      = drr > 0 && mwStock > 0 ? mwStock / drr : (drr > 0 ? stock / drr : null);
                   const ac       = actualByCode[sku.code];
                   return (
                     <tr key={sku.code}>
@@ -849,6 +852,10 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
                           onChange={e=>setStockData(d=>({...d,[sku.code]:{...d[sku.code],stock:e.target.value}}))} placeholder="—"/>
                       </td>
                       <td className="right">
+                        <input type="number" min="0" className="num-input" value={stockData[sku.code]?.mw_stock||''}
+                          onChange={e=>setStockData(d=>({...d,[sku.code]:{...d[sku.code],mw_stock:e.target.value}}))} placeholder="—"/>
+                      </td>
+                      <td className="right">
                         <input type="number" min="0" className="num-input" value={stockData[sku.code]?.drr||''}
                           onChange={e=>setStockData(d=>({...d,[sku.code]:{...d[sku.code],drr:e.target.value}}))} placeholder="—"/>
                       </td>
@@ -865,15 +872,6 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
                           >{fmt(ac.total)}</span>
                         ) : '—'}
                       </td>
-                      {(() => {
-                        if (!ac) return <><td className="right">—</td><td className="right">—</td></>;
-                        const closing = stock + ac.total - qty;
-                        const closingDoi = drr > 0 ? closing / drr : null;
-                        return <>
-                          <td className="right" style={{fontWeight:600}}>{fmt(closing)}</td>
-                          <td className="right">{closingDoi != null ? <span style={{fontWeight:700,color:closingDoi<30?'#dc2626':closingDoi<45?'#d97706':'#059669'}}>{closingDoi.toFixed(1)}d</span> : '—'}</td>
-                        </>;
-                      })()}
                     </tr>
                   );
                 })
@@ -1149,6 +1147,8 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                     <th className="right">Actual (units)</th>
                     <th className="right">Gap</th>
                     <th className="right">Tons</th>
+                    <th className="right">Closing Stock</th>
+                    <th className="right">Closing DOI</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1165,6 +1165,8 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                       <td className="right" style={{fontWeight:700}}>{s.units.toLocaleString()}</td>
                       <td className="right" style={{fontWeight:700,color:gapColor}}>{gapLabel}</td>
                       <td className="right">{s.tons.toFixed(3)}</td>
+                      <td className="right" style={{fontWeight:600}}>{s.closing != null ? s.closing.toLocaleString() : '—'}</td>
+                      <td className="right">{s.closingDoi != null ? <span style={{fontWeight:700,color:s.closingDoi<30?'#dc2626':s.closingDoi<s.tDoi?'#d97706':'#059669'}}>{s.closingDoi.toFixed(1)}d</span> : '—'}</td>
                     </tr>
                     );
                   })}
@@ -1176,6 +1178,8 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
                       {(()=>{const g=totalUnits-skuTotals.reduce((a,s)=>a+s.planQty,0); return g===0?'—':(g>0?'+':'')+g.toLocaleString();})()}
                     </td>
                     <td className="right">{totalTons.toFixed(3)} T</td>
+                    <td className="right">{skuTotals.reduce((a,s)=>a+(s.closing||0),0).toLocaleString()}</td>
+                    <td className="right">—</td>
                   </tr>
                 </tbody>
               </table>
