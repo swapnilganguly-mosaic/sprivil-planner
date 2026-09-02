@@ -1625,7 +1625,7 @@ function App() {
         if (d.skus) {
           const validCodes = new Set(DEFAULT_SKUS.map(x=>x.code));
           const filtered = d.skus.filter(s => validCodes.has(s.code));
-          const mapped = filtered.map(s => { const def = DEFAULT_SKUS.find(x=>x.code===s.code); return def ? {...def,...s, targetDoi:s.targetDoi??def.targetDoi} : s; });
+          const mapped = filtered.map(s => { const def = DEFAULT_SKUS.find(x=>x.code===s.code); return def ? {...def,...s, pack_type:def.pack_type, rph:def.rph, pack_size:def.pack_size, line:def.line, asp:def.asp, targetDoi:s.targetDoi??def.targetDoi} : s; });
           const saved = new Set(filtered.map(s=>s.code));
           setSkus([...mapped, ...DEFAULT_SKUS.filter(x=>!saved.has(x.code))]);
         }
