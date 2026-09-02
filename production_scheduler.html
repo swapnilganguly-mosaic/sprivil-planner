@@ -279,6 +279,16 @@ const fmtH    = h => { if (!h) return '0h'; const hr=Math.floor(h), mn=Math.roun
 const clsPill = c => <span className={`cls-${(c||'').toLowerCase()}`}>{c}</span>;
 const flvPill = f => <span className="flavour-pill" style={{background:FLAVOUR_COLORS[f]?`${FLAVOUR_COLORS[f]}22`:undefined, color:FLAVOUR_COLORS[f]||'#374151'}}>{f}</span>;
 
+// ─── MOQ ─────────────────────────────────────────────────────────────────────
+const applyMoq = (s, qty) => {
+  if (!qty || qty <= 0) return qty;
+  const pt = (s && s.pack_type) || '';
+  if (pt === '1kg')                           return Math.ceil(qty / 500) * 500;
+  if (pt === 'Jar'    || pt === 'Pouch')      return Math.max(1400, qty);
+  if (pt === 'Sampler'|| pt === 'Pack of 6')  return Math.max(12000, qty);
+  return qty;
+};
+
 // ─── ENGINE ──────────────────────────────────────────────────────────────────
 // scenario: 'A' = Revenue Max | 'B' = Min Changeover
 // ── Module-level helpers (used by runEngine AND QueueTab) ────────────────────
@@ -382,19 +392,8 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
     let prevFl = null, prevPt = null, gRank = 0;
     let remaining = budget;
 
-    // MOQ rules by pack type
-    const applyMoq = (s, qty) => {
-      if (qty <= 0) return qty;
-      const pt = s.pack_type || '';
-      if (pt === '1kg')                          return Math.ceil(qty / 500) * 500;
-      if (pt === 'Jar'   || pt === 'Pouch')      return Math.max(1400, qty);
-      if (pt === 'Sampler' || pt === 'Pack of 6') return Math.max(12000, qty);
-      return qty;
-    };
-
-    // Helper: make a pass row with correct qty/rev/hrs for this pass
+    // Helper: make a pass row with correct qty/rev/hrs for this pass (pre-MOQ)
     const makePassRow = (s, qty, phase, closing) => {
-      qty = applyMoq(s, qty);
       const hrs = s.rph > 0 ? qty / s.rph : 0;
       const rev = qty * s.asp;
       const cl = closing !== undefined ? closing : s.closingNoProd;
@@ -808,6 +807,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               <th className="right">DRR Next</th>
               <th className="right">Current DOI</th>
               <th className="right">Planned Production</th>
+              <th className="right">Actual Production</th>
             </tr>
             <tr>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('code')} onChange={e=>setFilter('code',e.target.value)}/></th>
@@ -823,6 +823,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               <th></th><th></th>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('doi')} onChange={e=>setFilter('doi',e.target.value)}/></th>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('actual')} onChange={e=>setFilter('actual',e.target.value)}/></th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -830,7 +831,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               const lineSkus = byLine[line] || [];
               if (!lineSkus.length) return null;
               return [
-                <tr key={`hdr-${line}`}><td colSpan={14} className="grp-row">{fac.lineLabels[line]}</td></tr>,
+                <tr key={`hdr-${line}`}><td colSpan={15} className="grp-row">{fac.lineLabels[line]}</td></tr>,
                 ...lineSkus.map(sku => {
                   const qty      = Number(plan[sku.code]) || 0;
                   const rph      = fac.skuRphOf(sku);
@@ -881,6 +882,12 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
                             onClick={()=>setBreakdown({code:sku.code,name:sku.name,...ac})}
                           >{fmt(ac.total)}</span>
                         ) : '—'}
+                      </td>
+                      <td className="right">
+                        {ac ? (() => {
+                          const a = (ac.P1>0?applyMoq(sku,ac.P1):0)+(ac.P2>0?applyMoq(sku,ac.P2):0)+(ac.P3>0?applyMoq(sku,ac.P3):0);
+                          return <span style={{color:'#059669',fontWeight:700}}>{fmt(a)}</span>;
+                        })() : '—'}
                       </td>
                     </tr>
                   );
@@ -1087,7 +1094,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
     fac.allLines.forEach(l => { linePlanMap[l] = getLineDayPlan(l, workDates); });
 
     // Build SKU totals from daySeq (sum hours × rph per SKU per line)
-    const skuTotals = []; // { line, code, name, units }
+    const skuTotals = []; // { line, code, name, plannedUnits, units (actual post-MOQ) }
     const LINE_PLANS = fac.allLines.map(l => ({ key:l, plans:linePlanMap[l] }));
     LINE_PLANS.forEach(({ key, plans }) => {
       const r = results && results[key];
@@ -1095,11 +1102,17 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
       const map = {};
       r.daySeq.forEach(item => {
         if (item.type !== 'run') return;
-        if (!map[item.code]) map[item.code] = { line: key, code: item.code, name: item.name, units: 0 };
-        map[item.code].units += Math.round(item.h * item.rph);
+        if (!map[item.code]) map[item.code] = { line: key, code: item.code, name: item.name, P1:0, P2:0, P3:0 };
+        map[item.code][item.phase||'P1'] += Math.round(item.h * item.rph);
       });
       Object.values(map).forEach(v => {
         const skuDef = (skus||[]).find(s=>s.code===v.code);
+        const plannedUnits = v.P1 + v.P2 + v.P3;
+        const actualP1 = v.P1 > 0 ? applyMoq(skuDef, v.P1) : 0;
+        const actualP2 = v.P2 > 0 ? applyMoq(skuDef, v.P2) : 0;
+        const actualP3 = v.P3 > 0 ? applyMoq(skuDef, v.P3) : 0;
+        v.plannedUnits = plannedUnits;
+        v.units = actualP1 + actualP2 + actualP3;
         v.packSize = skuDef ? (skuDef.pack_size||0) : 0;
         v.tons = v.packSize * v.units / 1e6;
         v.planQty  = Number((plan||{})[v.code]) || 0;
