@@ -383,8 +383,19 @@ function runEngine(supplyPlan, skus, config, workingDays, scenario='A', stockDat
     let prevFl = null, prevPt = null, gRank = 0;
     let remaining = budget;
 
+    // MOQ rules by pack type
+    const applyMoq = (s, qty) => {
+      if (qty <= 0) return qty;
+      const pt = s.pack_type || '';
+      if (pt === '1kg')                          return Math.ceil(qty / 500) * 500;
+      if (pt === 'Jar'   || pt === 'Pouch')      return Math.max(1400, qty);
+      if (pt === 'Sampler' || pt === 'Pack of 6') return Math.max(12000, qty);
+      return qty;
+    };
+
     // Helper: make a pass row with correct qty/rev/hrs for this pass
     const makePassRow = (s, qty, phase, closing) => {
+      qty = applyMoq(s, qty);
       const hrs = s.rph > 0 ? qty / s.rph : 0;
       const rev = qty * s.asp;
       const cl = closing !== undefined ? closing : s.closingNoProd;
