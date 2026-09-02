@@ -797,7 +797,7 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
               <th className="right">Current DRR</th>
               <th className="right">DRR Next</th>
               <th className="right">Current DOI</th>
-              <th className="right">Actual Production</th>
+              <th className="right">Planned Production</th>
             </tr>
             <tr>
               <th><input style={{width:'100%',fontSize:11,padding:'2px 4px',border:'1px solid #cbd5e1',borderRadius:4,boxSizing:'border-box'}} placeholder="Filter…" value={fv('code')} onChange={e=>setFilter('code',e.target.value)}/></th>
@@ -1134,7 +1134,7 @@ function ScheduleTab({ results, workingDays, setWorkingDays, config, skus, stock
           const totalTons  = skuTotals.reduce((a,s)=>a+s.tons,0);
           return (
           <div className="settings-card" style={{marginBottom:16}}>
-            <h3>Plan vs Actual Production</h3>
+            <h3>Plan vs Planned Production</h3>
             <div className="tbl-wrap">
               <table>
                 <thead>
