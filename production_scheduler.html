@@ -237,6 +237,8 @@ const HH_SKUS = [
   { code:'MWLJNTP.00636.B0_N', name:'LJ NutriMix 7+ 350gm Vanilla Jar',    flavour:'Vanilla',    pack_type:'Jar',   pack_size:350,  brand:'LJ', cls:'B', asp:567.93,  targetDoi:45, line:'L1', rph:900 },
   { code:'MWLJNTP.00423.B0_N', name:'LJ NutriMix 7+ 350gm Choc Pouch',     flavour:'Chocolate',  pack_type:'Pouch', pack_size:350,  brand:'LJ', cls:'C', asp:587.19,  targetDoi:30, line:'L1', rph:900 },
   { code:'MWLJNTP.00500.B0_N', name:'LJ NutriMix 7+ Choc 1kg',             flavour:'Chocolate',  pack_type:'1kg',   pack_size:1000, brand:'LJ', cls:'A', asp:1197.74, targetDoi:60, line:'L1', rph:92  },
+  { code:'MWLJNTP.00126.B0_N', name:'LJ NutriMix 13+ 350g Choc Jar',      flavour:'Chocolate',  pack_type:'Jar',   pack_size:350,  brand:'LJ', cls:'A', asp:624.46,  targetDoi:60, line:'L1', rph:900 },
+  { code:'MWLJNTP.00339.B0_N', name:'LJ NutriMix MamaMix 350g Choc Pouch',flavour:'Chocolate',  pack_type:'Pouch', pack_size:350,  brand:'LJ', cls:'A', asp:645.19,  targetDoi:60, line:'L1', rph:900 },
 ];
 
 const NG_ELECTRO_SKUS = [
@@ -954,6 +956,13 @@ function SupplyPlanTab({ skus, plan, setPlan, stockData, setStockData, onRun, re
 function QueueTab({ results, workingDays, config, scenario='A', fac }) {
   const anyResult = results && fac.allLines.some(l=>results[l]);
   const [showRev, setShowRev] = React.useState(false);
+  const REV_PIN = '1234';
+  function toggleRevenue() {
+    if (showRev) { setShowRev(false); return; }
+    const pin = window.prompt('Enter PIN to view revenue data:');
+    if (pin === REV_PIN) setShowRev(true);
+    else if (pin !== null) window.alert('Incorrect PIN.');
+  }
   if (!anyResult) return (
     <div className="empty"><div className="icon">📋</div><p>Run the scheduler to see the priority queue.</p></div>
   );
@@ -969,7 +978,7 @@ function QueueTab({ results, workingDays, config, scenario='A', fac }) {
         <span style={{color:'#64748b'}}>—</span>
         <span style={{color:'#374151'}}>{scenarioMeta.desc}</span>
         <span style={{marginLeft:'auto'}}>
-          <button className="btn btn-secondary btn-sm" onClick={()=>setShowRev(v=>!v)} style={{fontSize:11,padding:'2px 8px'}}>
+          <button className="btn btn-secondary btn-sm" onClick={toggleRevenue} style={{fontSize:11,padding:'2px 8px'}}>
             {showRev ? '▾ Hide Revenue' : '▸ Show Revenue'}
           </button>
         </span>
