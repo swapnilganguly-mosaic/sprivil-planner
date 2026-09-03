@@ -226,6 +226,19 @@ const NG_LINE_LABELS = { Q1:'Q1 — Roll On', Q2:'Q2 — Bodywash / Other', Q3:'
 const NG_DEFAULT_WD  = { Q1:26, Q2:26, Q3:26 };
 const NG_DEFAULT_CONFIG = { shiftHours:16, changeoverFlat:2, rateBasis:16 };
 
+// ── H&H factory ───────────────────────────────────────────────────────────────
+const HH_ALL_LINES    = ['L1'];
+const HH_LINE_LABELS  = { L1: 'L1 — H&H (NutriMix 7+)' };
+const HH_DEFAULT_WD   = { L1: 25 };
+const HH_DEFAULT_CONFIG = { shiftHours:24, changeoverSame:0, changeoverDiff:0, rateBasis:24 };
+const HH_SKUS = [
+  { code:'MWLJNTP.00059.B0_N', name:'LJ NutriMix 7+ 350gm Choc Jar',      flavour:'Chocolate',  pack_type:'Jar',   pack_size:350,  brand:'LJ', cls:'A', asp:528.80,  targetDoi:60, line:'L1', rph:900 },
+  { code:'MWLJNTP.00177.B0_N', name:'LJ NutriMix 7+ 350gm Strawberry Jar', flavour:'Strawberry', pack_type:'Jar',   pack_size:350,  brand:'LJ', cls:'B', asp:575.21,  targetDoi:45, line:'L1', rph:900 },
+  { code:'MWLJNTP.00636.B0_N', name:'LJ NutriMix 7+ 350gm Vanilla Jar',    flavour:'Vanilla',    pack_type:'Jar',   pack_size:350,  brand:'LJ', cls:'B', asp:567.93,  targetDoi:45, line:'L1', rph:900 },
+  { code:'MWLJNTP.00423.B0_N', name:'LJ NutriMix 7+ 350gm Choc Pouch',     flavour:'Chocolate',  pack_type:'Pouch', pack_size:350,  brand:'LJ', cls:'C', asp:587.19,  targetDoi:30, line:'L1', rph:900 },
+  { code:'MWLJNTP.00500.B0_N', name:'LJ NutriMix 7+ Choc 1kg',             flavour:'Chocolate',  pack_type:'1kg',   pack_size:1000, brand:'LJ', cls:'A', asp:1197.74, targetDoi:60, line:'L1', rph:92  },
+];
+
 const NG_ELECTRO_SKUS = [
   { code:'MWBWSKP.00418.B0_N', name:'BW 4% AHA BHA Roll On Flora 50ml',       pack_type:'Roll On',       cls:'A', asp:208.125, targetDoi:60, line:'Q1', rph:2812.5 },
   { code:'MWBWSKP.00684.B0_N', name:'BW 6% AHA BHA Roll On Flora 50ml',       pack_type:'Roll On',       cls:'A', asp:258.907, targetDoi:60, line:'Q1', rph:2812.5 },
@@ -1565,6 +1578,16 @@ const FACTORY_DEFS = {
     coH: 2,
     rphBasis: 16,
   },
+  hh: {
+    id:'hh', factoryKey:'hh', factoryLabel:'H&H',
+    allLines:HH_ALL_LINES, lineLabels:HH_LINE_LABELS,
+    defaultSkus:HH_SKUS, defaultConfig:HH_DEFAULT_CONFIG, defaultWD:HH_DEFAULT_WD,
+    skuLineOf: s => s.line,
+    skuRphOf:  s => s.rph,
+    buildGroups: buildGroups,
+    coH: null,
+    rphBasis: 24,
+  },
 };
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
@@ -1593,21 +1616,29 @@ function App() {
   const [ngStock, setNgStock]     = useState({});
   const [ngResults, setNgResults] = useState(null);
 
+  // H&H state
+  const [hhSkus, setHhSkus]       = useState(HH_SKUS);
+  const [hhConfig, setHhConfig]   = useState(HH_DEFAULT_CONFIG);
+  const [hhWD, setHhWD]           = useState(HH_DEFAULT_WD);
+  const [hhPlan, setHhPlan]       = useState({});
+  const [hhStock, setHhStock]     = useState({});
+  const [hhResults, setHhResults] = useState(null);
+
   const [scenario, setScenario]   = useState('A');
   const [saveStatus, setSaveStatus] = useState('');
 
   // Active factory pointers
-  const isNG           = factory === 'ng_electro';
-  const facDef         = FACTORY_DEFS[factory];
-  // fac passed to all tabs — skuRphOf curried with active config
-  const fac = { ...facDef, skuRphOf: s => facDef.skuRphOf(s, isNG ? ngConfig : config) };
+  const isNG = factory === 'ng_electro';
+  const isHH = factory === 'hh';
+  const facDef = FACTORY_DEFS[factory];
+  const fac = { ...facDef, skuRphOf: s => facDef.skuRphOf(s, isNG ? ngConfig : isHH ? hhConfig : config) };
 
-  const activeSkus      = isNG ? ngSkus    : skus;
-  const activeConfig    = isNG ? ngConfig  : config;
-  const activeWD        = isNG ? ngWD      : workingDays;
-  const activePlan      = isNG ? ngPlan    : plan;
-  const activeStockData = isNG ? ngStock   : stockData;
-  const activeResults   = isNG ? ngResults : results;
+  const activeSkus      = isNG ? ngSkus    : isHH ? hhSkus    : skus;
+  const activeConfig    = isNG ? ngConfig  : isHH ? hhConfig  : config;
+  const activeWD        = isNG ? ngWD      : isHH ? hhWD      : workingDays;
+  const activePlan      = isNG ? ngPlan    : isHH ? hhPlan    : plan;
+  const activeStockData = isNG ? ngStock   : isHH ? hhStock   : stockData;
+  const activeResults   = isNG ? ngResults : isHH ? hhResults : results;
 
   // ── init supabase ──
   useEffect(() => {
@@ -1656,6 +1687,19 @@ function App() {
         if (d.plan)        setNgPlan(d.plan);
         if (d.stockData)   setNgStock(d.stockData);
       }
+      const { data: hhd } = await sb.from('scheduler_data').select('*').eq('user_id', userId).eq('factory_key', 'hh').single();
+      if (hhd && hhd.data) {
+        const d = hhd.data;
+        if (d.skus) {
+          const mapped = d.skus.map(s => { const def = HH_SKUS.find(x=>x.code===s.code); return def ? {...def,...s, pack_type:def.pack_type, rph:def.rph, pack_size:def.pack_size, line:def.line} : s; });
+          const saved = new Set(d.skus.map(s=>s.code));
+          setHhSkus([...mapped, ...HH_SKUS.filter(x=>!saved.has(x.code))]);
+        }
+        if (d.config)      setHhConfig(d.config);
+        if (d.workingDays) setHhWD(d.workingDays);
+        if (d.plan)        setHhPlan(d.plan);
+        if (d.stockData)   setHhStock(d.stockData);
+      }
     } catch(e) { console.warn('loadFromDB:', e.message); }
   }
 
@@ -1675,11 +1719,12 @@ function App() {
 
   function triggerSave(patch, fkey) {
     const key = fkey || factory;
-    const isNg = key === 'ng_electro';
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      if (isNg) {
+      if (key === 'ng_electro') {
         saveToDB({ skus: ngSkus, config: ngConfig, workingDays: ngWD, plan: ngPlan, stockData: ngStock, ...patch }, 'ng_electro', 'NG Electro');
+      } else if (key === 'hh') {
+        saveToDB({ skus: hhSkus, config: hhConfig, workingDays: hhWD, plan: hhPlan, stockData: hhStock, ...patch }, 'hh', 'H&H');
       } else {
         saveToDB({ skus, config, workingDays, plan, stockData, ...patch }, 'sapiens', 'Sapiens');
       }
@@ -1700,20 +1745,31 @@ function App() {
   const setNgSkusSave  = v => { setNgSkus(v);   triggerSave({ skus: v }, 'ng_electro'); };
   const setNgWDSave    = v => { setNgWD(v);     triggerSave({ workingDays: typeof v==='function' ? v(ngWD) : v }, 'ng_electro'); };
 
+  // H&H setters
+  const setHhPlanSave  = v => { setHhPlan(v);   triggerSave({ plan: typeof v==='function' ? v(hhPlan) : v }, 'hh'); };
+  const setHhStockSave = v => { setHhStock(v);  triggerSave({ stockData: typeof v==='function' ? v(hhStock) : v }, 'hh'); };
+  const setHhCfgSave   = v => { setHhConfig(v); triggerSave({ config: typeof v==='function' ? v(hhConfig) : v }, 'hh'); };
+  const setHhSkusSave  = v => { setHhSkus(v);   triggerSave({ skus: v }, 'hh'); };
+  const setHhWDSave    = v => { setHhWD(v);     triggerSave({ workingDays: typeof v==='function' ? v(hhWD) : v }, 'hh'); };
+
   // Active setters (switch by factory)
-  const setActivePlan   = isNG ? setNgPlanSave  : setPlanSaving;
-  const setActiveStock  = isNG ? setNgStockSave : setStockSaving;
-  const setActiveConfig = isNG ? setNgCfgSave   : setConfigSaving;
-  const setActiveSkus   = isNG ? setNgSkusSave  : setSkusSaving;
-  const setActiveWD     = isNG ? setNgWDSave    : setWDSaving;
+  const setActivePlan   = isNG ? setNgPlanSave  : isHH ? setHhPlanSave  : setPlanSaving;
+  const setActiveStock  = isNG ? setNgStockSave : isHH ? setHhStockSave : setStockSaving;
+  const setActiveConfig = isNG ? setNgCfgSave   : isHH ? setHhCfgSave   : setConfigSaving;
+  const setActiveSkus   = isNG ? setNgSkusSave  : isHH ? setHhSkusSave  : setSkusSaving;
+  const setActiveWD     = isNG ? setNgWDSave    : isHH ? setHhWDSave    : setWDSaving;
 
   function handleRun(sc) {
     const ngFactCfg = isNG ? {
       allLines: NG_ALL_LINES, buildGroups: buildGroupsNG,
       coH: ngConfig.changeoverFlat ?? 2,
     } : null;
-    const r = runEngine(activePlan, activeSkus, activeConfig, activeWD, sc || scenario, activeStockData, ngFactCfg);
-    if (isNG) setNgResults(r); else setResults(r);
+    const hhFactCfg = isHH ? {
+      allLines: HH_ALL_LINES, buildGroups: buildGroups, coH: null,
+    } : null;
+    const factCfgToUse = isNG ? ngFactCfg : isHH ? hhFactCfg : null;
+    const r = runEngine(activePlan, activeSkus, activeConfig, activeWD, sc || scenario, activeStockData, factCfgToUse);
+    if (isNG) setNgResults(r); else if (isHH) setHhResults(r); else setResults(r);
     setTab('queue');
   }
 
