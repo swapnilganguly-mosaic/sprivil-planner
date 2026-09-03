@@ -2752,15 +2752,22 @@ function buildOrderSchedule(mat, monthPlans, m1Start) {
   let remPO = openPO;
   const today = new Date(); today.setHours(0,0,0,0);
 
-  // If stock < ROP, compute how much extra we need on the first order to top up to ROP.
-  // Open PO is checked first — it may already cover the gap.
+  // PO arrives sitting_date + lead_time → only available for tranches starting on/after that day
+  const poArrivalDay = daysBetween(m1Start, today) + lt; // days from m1Start when PO lands
+
+  // RopTopUp: the PO arrives on the same day as the first (overdue) order — count it.
+  // This ensures the first order only covers the gap the PO can't fill.
   let ropTopUp = stock < rop ? Math.max(0, rop - stock - remPO) : 0;
   if (stock < rop) remPO = Math.max(0, remPO - (rop - stock)); // PO absorbs ROP gap first
 
   const result = tranches.map((t, ti) => {
     if (t.ts < effectiveCovDays) return {...t, orderQty:0, coveredBy:'stock', status:'covered'};
-    if (remPO >= t.qty) { remPO-=t.qty; return {...t, orderQty:0, coveredBy:'po', status:'covered-po'}; }
-    const shortfall = t.qty - remPO; remPO=0;
+    // PO is only usable once it has arrived (tranche start >= poArrivalDay)
+    if (remPO > 0 && t.ts >= poArrivalDay) {
+      if (remPO >= t.qty) { remPO-=t.qty; return {...t, orderQty:0, coveredBy:'po', status:'covered-po'}; }
+    }
+    const shortfall = t.qty - (t.ts >= poArrivalDay ? remPO : 0);
+    if (t.ts >= poArrivalDay) remPO = 0;
     // First uncovered tranche: add ROP top-up so stock never goes below ROP
     const extra = ti===0 ? ropTopUp : 0; ropTopUp=0;
     const rawQty = Math.round(shortfall) + extra;
@@ -2801,6 +2808,11 @@ function InventoryChart({ mat, monthPlans, schedule }) {
       ? Math.max(t.ts, todayOffsetFromM1 + lt)  // if ordered today, arrives today+LT
       : t.ts;
     receipts[receiptDay] = (receipts[receiptDay]||0) + t.orderQty;
+  }
+  // Open PO arrives at today + LT (same logic as poArrivalDay in engine)
+  if (mat.openPO > 0) {
+    const poDay = Math.max(0, todayOffsetFromM1 + lt);
+    receipts[poDay] = (receipts[poDay]||0) + mat.openPO;
   }
   let inv = mat.stock || 0;
   const pts = [];
@@ -3220,46 +3232,31 @@ function OrderScheduleTab({ rmMaterials, pmMaterials, onUpdate, m1Label, m2Label
 // APP
 // ─────────────────────────────────────────────
 function App() {
-  const [authState, setAuthState] = useState('loading'); // 'loading' | 'login' | 'app'
+  const FIXED_USER_ID = 'mosaic-shared';
+  const [appReady, setAppReady] = useState(false);
   const [factories, setFactories] = useState([]);
   const [activeFactoryId, setActiveFactoryId] = useState(() => loadActiveFactoryId());
   const [activeTab, setActiveTab] = useState('supply');
   const [modal, setModal] = useState(null);
   const [dbLoading, setDbLoading] = useState(false);
   const sbRef = useRef(null);
-  const userRef = useRef(null);
+  const userRef = useRef({ id: FIXED_USER_ID });
 
   useEffect(() => { saveActiveFactoryId(activeFactoryId); }, [activeFactoryId]);
 
-  // Init Supabase + auth on mount
+  // Init Supabase on mount — no auth required
   useEffect(() => {
     async function init() {
       try {
         const res = await fetch('/api/config');
         const { supabaseUrl, supabaseKey } = await res.json();
-        if (!supabaseUrl || !supabaseKey) { setAuthState('login'); return; }
-        const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
-        sbRef.current = sb;
-        const { data: { session } } = await sb.auth.getSession();
-        if (session) {
-          userRef.current = session.user;
-          await loadFromDB(sb, session.user.id);
-          setAuthState('app');
-        } else {
-          setAuthState('login');
+        if (supabaseUrl && supabaseKey) {
+          const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
+          sbRef.current = sb;
+          await loadFromDB(sb, FIXED_USER_ID);
         }
-        sb.auth.onAuthStateChange(async (_event, session) => {
-          if (session) {
-            userRef.current = session.user;
-            await loadFromDB(sb, session.user.id);
-            setAuthState('app');
-          } else {
-            userRef.current = null;
-            setFactories([]);
-            setAuthState('login');
-          }
-        });
-      } catch(e) { setAuthState('login'); }
+      } catch(e) { console.error('Init error:', e); }
+      setAppReady(true);
     }
     init();
   }, []);
@@ -3297,16 +3294,6 @@ function App() {
     }, { onConflict: 'user_id,factory_key' });
   }
 
-  async function handleLogin(mode, email, password) {
-    const sb = sbRef.current;
-    if (!sb) return { error: { message: 'Not initialized' } };
-    if (mode === 'login') return sb.auth.signInWithPassword({ email, password });
-    return sb.auth.signUp({ email, password });
-  }
-
-  async function handleLogout() {
-    if (sbRef.current) await sbRef.current.auth.signOut();
-  }
 
   const factory = factories.find(f => f.id === activeFactoryId) || factories[0];
 
@@ -3469,12 +3456,11 @@ function App() {
     }
   }
 
-  if (authState === 'loading') return (
+  if (!appReady) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f1f5f9',color:'#64748b',fontSize:'14px'}}>
       Loading…
     </div>
   );
-  if (authState === 'login') return <LoginScreen onLogin={handleLogin} />;
   if (!factory) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f1f5f9',color:'#64748b',fontSize:'14px'}}>
       {dbLoading ? 'Loading your data…' : 'No factories found.'}
